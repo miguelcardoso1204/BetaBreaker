@@ -138,11 +138,20 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 - Generated `lib/types/database.types.ts` via `npx supabase gen types typescript --local` — placeholder types (no tables yet, Phase 2 creates them).
 - Verified: `npx tsc --noEmit` passes, `npm test` passes (3 tests, 0 regressions).
 
-### Step 0.6 — Set Up Directory Structure
+### Step 0.6 — Set Up Directory Structure ✅
 
 **Depends on:** Step 0.1
+**Status:** Complete
 
-Create the folder layout from the System Architecture (§4): `app/`, `components/ui/`, `lib/`, `hooks/`, `stores/`, `services/`, `utils/`, `assets/`. Add placeholder `index.ts` barrel files where needed.
+- Created top-level directories: `hooks/`, `stores/`, `services/`.
+- Created component subdirectories: `components/ui/`, `components/routes/`, `components/session/`, `components/social/`.
+- Created Supabase subdirectories: `supabase/migrations/`, `supabase/functions/` (with `.gitkeep`).
+- Moved template UI primitives (`Themed.tsx`, `StyledText.tsx`, `ExternalLink.tsx`, `EditScreenInfo.tsx`) to `components/ui/`. Kept platform-specific hooks (`useColorScheme`, `useClientOnlyValue`) in `components/`.
+- Updated all import paths in `app/` screens to reference new `components/ui/` locations.
+- Created `lib/queryClient.ts`: TanStack Query `QueryClient` with `staleTime` (5 min), `gcTime` (30 min), `retry` (2) — teaching comments explain each default.
+- Created `lib/constants.ts`: placeholder for domain constants (grades, roles, scoring) — populated in Phase 1.
+- Created barrel `index.ts` files with teaching comments in `hooks/`, `stores/`, `services/`.
+- Verified: `npx tsc --noEmit` passes, `npm test` passes (3 tests, 0 regressions).
 
 ### Step 0.7 — CI Pipeline (GitHub Actions)
 
