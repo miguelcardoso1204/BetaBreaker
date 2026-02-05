@@ -76,15 +76,25 @@ Tasks are grouped into **Phases** (sequential) and **Steps** within each phase (
 
 **Template structure notes:** The tabs template includes `app/(tabs)/` with two tab screens, `components/` with shared UI, `constants/Colors.ts`, and `assets/`. Directories not yet created (will be added in later steps): `lib/`, `hooks/`, `stores/`, `services/`, `utils/`, `supabase/`.
 
-### Step 0.2 — Install Core Dependencies
+### Step 0.2 — Install Core Dependencies ✅
 
 **Depends on:** Step 0.1
+**Status:** Complete
 
-Install the packages from the System Architecture (§15 Appendix):
+Installed all core dependencies via `npx expo install` for SDK 54 compatibility:
 
-- `@supabase/supabase-js`, `@tanstack/react-query`, `zustand`, `nativewind`, `react-hook-form`, `zod`, `@hookform/resolvers`, `expo-secure-store`, `expo-sqlite`, `expo-camera`, `expo-image`, `expo-video`, `expo-haptics`, `expo-notifications`, `react-native-reanimated`, `react-native-gesture-handler`, `lucide-react-native`, `date-fns`, `@sentry/react-native`.
+- **Backend:** `@supabase/supabase-js` ^2.95.1
+- **Server state:** `@tanstack/react-query` ^5.90.20
+- **Client state:** `zustand` ^5.0.11
+- **Styling:** `nativewind` ^4.2.1, `tailwindcss` ^3.4.19
+- **Forms:** `react-hook-form` ^7.71.1, `zod` ^4.3.6, `@hookform/resolvers` ^5.2.2
+- **Expo native modules:** `expo-secure-store`, `expo-sqlite`, `expo-camera`, `expo-image`, `expo-video`, `expo-haptics`, `expo-notifications` (all SDK 54 pinned)
+- **Navigation/animation:** `react-native-gesture-handler` ~2.28.0, `react-native-reanimated` ~4.1.1 (already from template)
+- **Icons:** `lucide-react-native` ^0.563.0, `react-native-svg` 15.12.1 (peer dep)
+- **Utilities:** `date-fns` ^4.1.0
+- **Monitoring:** `@sentry/react-native` ~7.2.0
 
-Pin versions via `npx expo install` for SDK 54 compat. Commit `package.json` + lockfile.
+Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `expo-video`, `@sentry/react-native`. TypeScript compiles cleanly.
 
 ### Step 0.3 — Configure Testing Infrastructure
 
