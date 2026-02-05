@@ -34,7 +34,269 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      gyms: {
+        Row: {
+          address: string | null
+          created_at: string
+          default_grade_system: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          name: string
+          social_links: Json | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          default_grade_system?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name: string
+          social_links?: Json | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          default_grade_system?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          name?: string
+          social_links?: Json | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          home_gym_id: string | null
+          id: string
+          onboarding_completed: boolean
+          preferred_grade_system: string
+          tier: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          home_gym_id?: string | null
+          id: string
+          onboarding_completed?: boolean
+          preferred_grade_system?: string
+          tier?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          home_gym_id?: string | null
+          id?: string
+          onboarding_completed?: boolean
+          preferred_grade_system?: string
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_home_gym_id_fkey"
+            columns: ["home_gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_ascents: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          notes: string | null
+          perceived_grade: number | null
+          route_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          perceived_grade?: number | null
+          route_id: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          perceived_grade?: number | null
+          route_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_ascents_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_ascents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_style_tags: {
+        Row: {
+          route_id: string
+          tag_id: string
+          vote_count: number
+        }
+        Insert: {
+          route_id: string
+          tag_id: string
+          vote_count?: number
+        }
+        Update: {
+          route_id?: string
+          tag_id?: string
+          vote_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_style_tags_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_style_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "style_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routes: {
+        Row: {
+          canonical_grade: number
+          color: string | null
+          created_at: string
+          gym_id: string
+          id: string
+          name: string | null
+          retired_at: string | null
+          setter_id: string | null
+          status: string
+          wall_section: string | null
+        }
+        Insert: {
+          canonical_grade: number
+          color?: string | null
+          created_at?: string
+          gym_id: string
+          id?: string
+          name?: string | null
+          retired_at?: string | null
+          setter_id?: string | null
+          status?: string
+          wall_section?: string | null
+        }
+        Update: {
+          canonical_grade?: number
+          color?: string | null
+          created_at?: string
+          gym_id?: string
+          id?: string
+          name?: string | null
+          retired_at?: string | null
+          setter_id?: string | null
+          status?: string
+          wall_section?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routes_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routes_setter_id_fkey"
+            columns: ["setter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      style_tags: {
+        Row: {
+          category: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      user_gym_roles: {
+        Row: {
+          created_at: string
+          gym_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gym_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gym_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_gym_roles_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_gym_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

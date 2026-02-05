@@ -1,35 +1,87 @@
 /**
- * Jest configuration for Beta Breaker.
+ * Jest configuration for Beta Breaker — multi-project setup.
  *
- * Uses the jest-expo preset which pre-configures Jest for Expo/React Native:
- * - Sets up the React Native runtime environment
- * - Handles asset transforms (images, fonts, etc.)
- * - Configures module resolution for Expo packages
+ * We split tests into two "projects" so they run in different environments:
  *
- * The `setupFilesAfterEnv` array loads the built-in Jest matchers from
- * @testing-library/react-native, giving us assertions like toBeOnTheScreen(),
- * toHaveTextContent(), etc. without the deprecated @testing-library/jest-native.
+ * 1. **unit** — Uses jest-expo preset (React Native + Expo env).
+ *    Runs all tests in the app except `supabase/__tests__/`.
+ *    This is the default when you run `npm test`.
  *
- * moduleNameMapper mirrors the @/* path alias from tsconfig.json so imports
- * like `@/utils/grades` resolve correctly in test files.
+ * 2. **integration** — Uses plain Node.js env (no React Native).
+ *    Runs database integration tests in `supabase/__tests__/`.
+ *    Requires local Supabase to be running (`npx supabase start`).
+ *    Run with `npm run test:integration`.
+ *
+ * Why two projects?
+ * - Unit tests need the React Native runtime (transforms JSX, handles
+ *   native modules). They should be fast and not require Docker.
+ * - Integration tests connect directly to Postgres via the `pg` npm
+ *   package to verify migrations, RLS, triggers, etc. They need a
+ *   Node.js environment with network access, not a React Native one.
+ *
+ * `npm test` runs only unit tests (fast, no Docker needed).
+ * `npm run test:integration` runs only DB integration tests.
  */
 module.exports = {
-  // jest-expo/jest-preset configures the test environment for React Native + Expo
-  preset: 'jest-expo',
+  projects: [
+    // --- Unit tests (React Native / Expo) ---
+    {
+      displayName: 'unit',
 
-  // Load built-in matchers from @testing-library/react-native (replaces deprecated jest-native)
-  // Gives us assertions like toBeOnTheScreen(), toHaveTextContent(), etc.
-  setupFilesAfterEnv: [
-    '@testing-library/react-native/build/matchers/extend-expect',
-  ],
+      // jest-expo/jest-preset configures the test environment for React Native + Expo
+      preset: 'jest-expo',
 
-  // Mirror the @/* path alias from tsconfig.json so tests can use the same import paths
-  moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-  },
+      // Load built-in matchers from @testing-library/react-native
+      // Gives us assertions like toBeOnTheScreen(), toHaveTextContent(), etc.
+      setupFilesAfterEnv: [
+        '@testing-library/react-native/build/matchers/extend-expect',
+      ],
 
-  // Only look for tests in project directories, not in node_modules
-  testPathIgnorePatterns: [
-    '/node_modules/',
+      // Mirror the @/* path alias from tsconfig.json so tests can use the same import paths
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/$1',
+      },
+
+      // Run all tests EXCEPT those in supabase/__tests__/ (those are integration tests)
+      testPathIgnorePatterns: [
+        '/node_modules/',
+        '<rootDir>/supabase/__tests__/',
+      ],
+    },
+
+    // --- Integration tests (Node.js + Postgres) ---
+    {
+      displayName: 'integration',
+
+      // Plain Node.js environment — no React Native transforms needed.
+      // We talk directly to Postgres via the `pg` package.
+      testEnvironment: 'node',
+
+      // Only run tests inside supabase/__tests__/
+      testMatch: ['<rootDir>/supabase/__tests__/**/*.test.ts'],
+
+      // Integration tests are written in TypeScript, so we need ts-jest
+      // to compile them. We use the default tsconfig which has strict mode.
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', {
+          // Use the project's tsconfig but override the module system
+          // to CommonJS since Jest doesn't support ESM natively
+          tsconfig: {
+            module: 'commonjs',
+            moduleResolution: 'node',
+            esModuleInterop: true,
+            // Inherit strict mode from the project tsconfig
+            strict: true,
+          },
+        }],
+      },
+
+      // Mirror the @/* path alias so integration tests can import shared utils
+      moduleNameMapper: {
+        '^@/(.*)$': '<rootDir>/$1',
+      },
+
+      testPathIgnorePatterns: ['/node_modules/'],
+    },
   ],
 };

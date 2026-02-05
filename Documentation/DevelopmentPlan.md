@@ -390,10 +390,11 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 > Tests run against Supabase local. Use `pgTAP` or a custom test harness that connects to local Postgres.
 
-### Step 2.1 — Core Tables Migration
+### Step 2.1 — Core Tables Migration ✅
 
-**Depends on:** Phase 0 (Step 0.5 for Supabase local)  
+**Depends on:** Phase 0 (Step 0.5 for Supabase local)
 **Relevant requirements:** FR-A1, FR-B1, FR-C1, FR-D1, FR-L1
+**Status:** Complete
 
 **What to test (SQL / integration test):**
 
