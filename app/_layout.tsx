@@ -1,3 +1,8 @@
+// Import the compiled Tailwind CSS so NativeWind can apply utility classes
+// throughout the app. This must be imported in the root layout so styles
+// are available to every screen and component.
+import "../global.css";
+
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';

@@ -1,0 +1,8 @@
+/* global.css — Tailwind CSS entry point for NativeWind v4.
+ * These three directives inject Tailwind's base reset styles,
+ * component classes, and utility classes respectively.
+ * NativeWind compiles these into React Native StyleSheet objects
+ * at build time via the Metro bundler integration. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
