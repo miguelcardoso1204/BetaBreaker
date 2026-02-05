@@ -96,14 +96,18 @@ Installed all core dependencies via `npx expo install` for SDK 54 compatibility:
 
 Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `expo-video`, `@sentry/react-native`. TypeScript compiles cleanly.
 
-### Step 0.3 — Configure Testing Infrastructure
+### Step 0.3 — Configure Testing Infrastructure ✅
 
 **Depends on:** Step 0.2
+**Status:** Complete
 
-- Install `jest`, `@testing-library/react-native`, `@testing-library/jest-native`, `jest-expo`.
-- Create `jest.config.js` extending `jest-expo/jest-preset`.
-- Add a trivial `utils/__tests__/sanity.test.ts` that asserts `1 + 1 === 2`.
-- Run `npm test` — confirm green.
+- Installed `jest-expo` ~54.0.17 (SDK 54 compatible), `@testing-library/react-native` ^13.3.3, `@types/jest` ^30.0.0 as dev dependencies.
+- Skipped deprecated `@testing-library/jest-native` — built-in matchers in RNTL v13+ replace it (loaded via `setupFilesAfterEnv`).
+- Created `jest.config.js` extending `jest-expo` preset with `@/*` path alias support and RNTL built-in matchers.
+- Added `npm test`, `npm run test:watch`, and `npm run test:coverage` scripts to `package.json`.
+- Created `utils/__tests__/sanity.test.ts` with 3 passing assertions.
+- Removed template's broken `StyledText-test.js` (React 19 incompatible with `react-test-renderer`).
+- `npm test` passes cleanly (3 tests, 0 warnings).
 
 ### Step 0.4 — Configure NativeWind (Tailwind)
 
