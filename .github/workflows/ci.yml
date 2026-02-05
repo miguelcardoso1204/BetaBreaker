@@ -1,0 +1,94 @@
+# CI Pipeline — Lint, Type-Check, and Test on every PR and push to main
+#
+# GitHub Actions is a CI/CD (Continuous Integration / Continuous Delivery) service
+# built into GitHub. Every time you push code or open a PR, this workflow runs
+# automatically to catch problems before they reach the main branch.
+#
+# The pipeline runs three checks in order:
+#   1. ESLint  — catches code quality issues (unused vars, hook violations, etc.)
+#   2. tsc     — TypeScript type-checking (catches type mismatches without building)
+#   3. Jest    — runs your test suite to verify behavior hasn't broken
+#
+# If any step fails, the whole workflow fails and the PR gets a red X,
+# preventing you from accidentally merging broken code.
+
+# The `name` appears in the GitHub Actions tab and on PR status checks.
+name: CI
+
+# `on` defines which GitHub events trigger this workflow.
+# We run on:
+#   - pull_request: any PR opened/updated against any branch
+#   - push to main: catches issues that land on the main branch directly
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# `concurrency` prevents wasted CI minutes. If you push twice quickly to the
+# same branch, the first run gets cancelled so only the latest code is tested.
+# The `group` key creates a unique ID per branch — `github.ref` is the branch name
+# (e.g., "refs/heads/feature/my-branch") or PR ref (e.g., "refs/pull/42/merge").
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # We use a single job with sequential steps. This is simpler and cheaper than
+  # separate jobs (which each spin up a fresh VM). Since lint/typecheck/test all
+  # need the same node_modules, running them in one job avoids redundant installs.
+  lint-typecheck-test:
+    name: Lint → Type-check → Test
+    # `runs-on` specifies the runner OS. ubuntu-latest is the default choice —
+    # it's fast, free for public repos, and has the tools we need pre-installed.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code.
+      # `actions/checkout` clones your repo into the runner's workspace so
+      # subsequent steps can access your files.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Node.js with npm caching.
+      # `actions/setup-node` installs the Node.js version specified in .nvmrc,
+      # ensuring CI uses the exact same version as local development.
+      # The `cache: 'npm'` option caches the npm global store (~/.npm) between runs,
+      # so `npm ci` only downloads packages that changed — much faster on repeat runs.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # `node-version-file` reads the version from .nvmrc instead of hardcoding
+          # it here. Single source of truth — update .nvmrc and CI follows automatically.
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      # Step 3: Install dependencies.
+      # `npm ci` (Clean Install) is the CI-specific install command. Unlike `npm install`:
+      #   - It deletes node_modules first for a clean slate
+      #   - It installs exact versions from package-lock.json (no "^" range resolution)
+      #   - It fails if package-lock.json is out of sync with package.json
+      # This guarantees reproducible builds — every CI run gets identical dependencies.
+      - name: Install dependencies
+        run: npm ci
+
+      # Step 4: Lint — run ESLint to catch code quality issues.
+      # This runs the "lint" script from package.json ("eslint .").
+      # Catches things like: unused variables, missing hook dependencies,
+      # incorrect import paths, React anti-patterns, etc.
+      - name: Lint
+        run: npm run lint
+
+      # Step 5: Type-check — run the TypeScript compiler in check-only mode.
+      # `--noEmit` means "check types but don't produce output files."
+      # This catches type mismatches, missing properties, wrong function signatures,
+      # etc. — all the errors that would prevent a successful build.
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      # Step 6: Test — run the Jest test suite.
+      # `--ci` flag optimizes Jest for CI environments:
+      #   - Disables interactive watch mode
+      #   - Fails if no tests are found (prevents silent test suite loss)
+      #   - Creates a new cache on every run (avoids stale cache issues)
+      - name: Test
+        run: npm test -- --ci

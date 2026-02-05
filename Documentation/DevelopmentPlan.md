@@ -153,13 +153,22 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 - Created barrel `index.ts` files with teaching comments in `hooks/`, `stores/`, `services/`.
 - Verified: `npx tsc --noEmit` passes, `npm test` passes (3 tests, 0 regressions).
 
-### Step 0.7 — CI Pipeline (GitHub Actions)
+### Step 0.7 — CI Pipeline (GitHub Actions) ✅
 
 **Depends on:** Steps 0.3, 0.5
 
 - Create `.github/workflows/ci.yml`:
   - On PR: `npm run lint`, `npx tsc --noEmit`, `npm test`.
 - Verify pipeline passes on a test PR.
+
+**Implementation notes:**
+- Upgraded Node.js from v20.20.0 to v24.13.0 (Active LTS, EOL April 2028); regenerated `package-lock.json` with npm 11.
+- Installed `eslint` 9.x and `eslint-config-expo` 10.x; created `eslint.config.js` using ESLint 9+ flat config format with Expo's official shareable config.
+- Added `"lint": "eslint ."` script to `package.json`.
+- Fixed two `react/no-unescaped-entities` lint errors in `app/+not-found.tsx` and `components/ui/EditScreenInfo.tsx`.
+- Created `.nvmrc` (pins Node 24.13.0) for local dev and CI consistency.
+- Created `.github/workflows/ci.yml`: triggers on PR and push to main, runs lint → type-check → test in a single job with npm caching and concurrency cancellation.
+- Verified: `npm run lint` clean, `npx tsc --noEmit` passes, `npm test -- --ci` passes (3 tests, 0 regressions).
 
 **Phase 0 Acceptance:** Project boots on iOS Simulator / Android Emulator, `npm test` passes, Supabase local runs, CI is green.
 
