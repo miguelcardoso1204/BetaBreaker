@@ -302,10 +302,20 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.4 — Zod Validation Schemas
+### Step 1.4 — Zod Validation Schemas ✅
 
-**Depends on:** Step 0.3  
+**Status:** Complete
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-D1, FR-A1, FR-C1
+
+**Implementation notes:**
+- `utils/validation.ts`: 7 Zod schemas (ascentLogSchema, registrationSchema, loginSchema, routeCreateSchema, profileUpdateSchema, eventCreateSchema, feedbackSchema) + 7 inferred TypeScript types
+- `utils/__tests__/validation.test.ts`: 52 tests across 8 describe blocks — 100% coverage (stmts, branches, functions, lines)
+- Uses Zod v4 top-level constructors: z.uuid(), z.email(), z.url(), z.int(), z.iso.datetime()
+- Enum values defined as local `as const` arrays to avoid cross-module imports
+- profileUpdateSchema uses .partial() for PATCH semantics (all fields optional)
+- eventCreateSchema uses .refine() for cross-field date ordering validation; type inferred from base (pre-refine) schema
+- loginSchema uses min(1) for password (not min(8)) — strength rules only at registration
 
 **What to test (`utils/__tests__/validation.test.ts`):**
 
