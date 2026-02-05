@@ -62,14 +62,19 @@ Tasks are grouped into **Phases** (sequential) and **Steps** within each phase (
 
 > No TDD yet — this is the skeleton that enables everything else.
 
-### Step 0.1 — Initialize Expo Project
+### Step 0.1 — Initialize Expo Project ✅
 
 **Depends on:** Nothing
+**Status:** Complete
 
-- Run `npx create-expo-app beta-breaker -t tabs` (Expo SDK 54).
-- Switch to TypeScript template if not default.
-- Verify `npx expo start` launches without errors.
-- Commit the bare project.
+- Ran `npx create-expo-app beta-breaker --template tabs` (Expo SDK 54, TypeScript default).
+- Moved template files into repo root alongside existing `CLAUDE.md` and `Documentation/`.
+- Updated `app.json`: name → "Beta Breaker", slug → "beta-breaker".
+- Fixed template TS issue: removed unused `@ts-expect-error` in `ExternalLink.tsx`.
+- Verified `npx tsc --noEmit` passes with no errors.
+- Committed the scaffolded project.
+
+**Template structure notes:** The tabs template includes `app/(tabs)/` with two tab screens, `components/` with shared UI, `constants/Colors.ts`, and `assets/`. Directories not yet created (will be added in later steps): `lib/`, `hooks/`, `stores/`, `services/`, `utils/`, `supabase/`.
 
 ### Step 0.2 — Install Core Dependencies
 
