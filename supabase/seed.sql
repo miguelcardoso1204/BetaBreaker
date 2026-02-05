@@ -1,0 +1,3 @@
+-- Seed data for local development.
+-- This file runs automatically during `supabase db reset`.
+-- Phase 2 will populate this with test gyms, routes, and users.

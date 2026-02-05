@@ -123,14 +123,20 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 - Added `nativewind-env.d.ts` to `tsconfig.json` includes for className type support.
 - Verified: `npx tsc --noEmit` passes, `npm test` passes (3 tests green).
 
-### Step 0.5 — Set Up Supabase Local Dev
+### Step 0.5 — Set Up Supabase Local Dev ✅
 
 **Depends on:** Step 0.1
+**Status:** Complete
 
-- Run `supabase init` inside project root (creates `supabase/` dir).
-- Run `supabase start` — verify local Postgres, Auth, Storage, Realtime spin up.
-- Create `lib/supabase.ts` that initializes the Supabase client (env vars for URL/anon key).
-- Generate initial types: `supabase gen types typescript --local > lib/types/database.types.ts`.
+- Installed `supabase` CLI v2.75.5 as a dev dependency (global npm install not supported).
+- Ran `npx supabase init` — created `supabase/config.toml` (project_id: "BetaBreaker") and `supabase/.gitignore`.
+- Created `supabase/seed.sql` placeholder (referenced by config, populated in Phase 2).
+- Added `.supabase/` to root `.gitignore` (Docker runtime state, must not be committed).
+- Ran `npx supabase start` — pulled all Docker images, started local Postgres, Auth, Storage, Realtime, Studio.
+- Created `.env.local` (gitignored) with `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` from local credentials.
+- Created `lib/supabase.ts`: typed `createClient<Database>()` with `ExpoSecureStoreAdapter` for native token storage, `localStorage` fallback on web, PKCE auth flow, teaching comments throughout.
+- Generated `lib/types/database.types.ts` via `npx supabase gen types typescript --local` — placeholder types (no tables yet, Phase 2 creates them).
+- Verified: `npx tsc --noEmit` passes, `npm test` passes (3 tests, 0 regressions).
 
 ### Step 0.6 — Set Up Directory Structure
 
