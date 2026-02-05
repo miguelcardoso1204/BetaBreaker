@@ -219,10 +219,20 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.2 — Streak Calculation Logic
+### Step 1.2 — Streak Calculation Logic ✅
 
-**Depends on:** Step 0.3  
+**Status:** Complete
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-F2
+
+**Implementation notes:**
+- `utils/streaks.ts`: computeWeeklyStreak (public), groupByWeek (exported @internal), analyzeStreak (internal generic helper), deduplicateAndSort (internal)
+- `utils/__tests__/streaks.test.ts`: 22 tests across 8 describe blocks — 97.82% statement, 90.9% branch, 100% function/line coverage
+- Uses date-fns v4 `startOfISOWeek` and `differenceInCalendarISOWeeks` for year-boundary-safe week math
+- Recovery mechanic: gap of 2 (1 missed week) freezes the streak (continues growing); gap of 3+ breaks it entirely. `decayedFrom` records the freeze point for UI hints
+- `computeMonthlyStreak` deferred — analyzeStreak is generic and accepts a periodDiff callback, so monthly support can be added by passing `differenceInCalendarMonths` + `startOfMonth`
+- Optional `referenceDate` parameter enables deterministic testing without fake timers
+- All dates constructed with `new Date(year, monthIndex, day)` to avoid UTC parsing issues
 
 **What to test (`utils/__tests__/streaks.test.ts`):**
 
