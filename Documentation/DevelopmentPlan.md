@@ -260,10 +260,11 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.3 — Leaderboard Scoring Logic
+### Step 1.3 — Leaderboard Scoring Logic ✅
 
-**Depends on:** Step 0.3  
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-G1
+**Status:** Complete
 
 **What to test (`utils/__tests__/scoring.test.ts`):**
 
@@ -288,6 +289,16 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 - Tie-breaking comparator.
 
 **Acceptance:** All scoring tests green.
+
+**Implementation notes:**
+- 22 tests across 6 describe blocks: `computeScore` (11), `filterByPeriod` (4), `rankLeaderboard` (5), `getSuccessfulAscents` (1), integration (1).
+- Ascent status uses three-way enum (`'flash' | 'send' | 'attempt'`) — attempts excluded from all scoring models.
+- Flash rate stored as decimal (0.0–1.0), not percentage. UI layer formats for display.
+- Ranking uses standard competition ranking (1224 system): ties share rank, next rank skips.
+- Tiebreaker is optional on `LeaderboardEntry` — lower value wins (e.g., earlier timestamp).
+- `getSuccessfulAscents()` exported as `@internal` helper for testability.
+- No dependency on `grades.ts` — grades are opaque integers for scoring.
+- 100% code coverage (statements, branches, functions, lines).
 
 ---
 
