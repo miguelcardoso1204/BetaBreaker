@@ -347,10 +347,21 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.5 — Constants & Type Definitions
+### Step 1.5 — Constants & Type Definitions ✅
 
-**Depends on:** Step 0.3  
+**Status:** Complete
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-L1, FR-L3, FR-C7
+
+**Implementation notes:**
+- `lib/constants.ts`: 7 `as const` arrays (ROLES, ROUTE_STATUSES, GRADE_SYSTEMS, SCORING_MODELS, ASCENT_STATUSES, NOTIFICATION_CATEGORIES, SAVE_TYPES) + 3 tier config objects (FREE_TIER, PRO_TIER, TIERS) + 8 derived TypeScript types
+- `lib/__tests__/constants.test.ts`: 13 tests across 12 describe blocks — 100% coverage (stmts, branches, functions, lines)
+- Uses `as const` arrays with `typeof X[number]` pattern for type derivation — simpler than TS enums, works with Array.includes() and z.enum()
+- Snake_case values (gym_admin, retiring_soon) to match future Postgres CHECK constraints
+- PRO_TIER uses `Infinity` for betaPerWeek enabling simple `count <= tier.betaPerWeek` comparisons
+- Tier type derived from `keyof typeof TIERS` rather than a separate const array
+- Types co-located in constants.ts (no separate lib/types/ file needed) — change the array, type updates automatically
+- Intentional duplication with utils/validation.ts by design: validation.ts is self-contained, constants.ts is the canonical app-wide reference
 
 **What to test (`lib/__tests__/constants.test.ts`):**
 
@@ -359,17 +370,17 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 | All roles defined | `ROLES` contains Climber, Setter, Judge, GymAdmin, SuperAdmin |
 | Free tier limits | `FREE_TIER.maxBadges === 1`, `FREE_TIER.betaPerWeek === 5` |
 | Pro tier limits | `PRO_TIER.maxBadges === 3`, unlimited beta |
-| Route statuses | `ROUTE_STATUS` contains Active, RetiringSoon, Archived |
+| Route statuses | `ROUTE_STATUSES` contains active, retiring_soon, archived |
 | Grade systems list | Contains v-scale, font, yds |
 | Scoring models list | Contains hardest_grade, flash_rate, volume |
 | Notification categories | Contains friends, routes, comps, achievements |
 | Save types | Contains project, wishlist, favorite |
 
-**What to implement (`lib/constants.ts`, `lib/types/`):**
+**What to implement (`lib/constants.ts`):**
 
-- `ROLES`, `TIERS`, `ROUTE_STATUS`, `GRADE_SYSTEMS`, `SCORING_MODELS`, `NOTIFICATION_CATEGORIES`, `SAVE_TYPES` as const objects.
-- TypeScript types/enums derived from constants.
-- `UserRole`, `Tier`, `RouteStatus`, `AscentStatus`, `ScoringModel`, `SaveType` types.
+- `ROLES`, `TIERS`, `ROUTE_STATUSES`, `GRADE_SYSTEMS`, `SCORING_MODELS`, `NOTIFICATION_CATEGORIES`, `SAVE_TYPES` as const arrays.
+- `FREE_TIER`, `PRO_TIER`, `TIERS` tier config objects.
+- `UserRole`, `Tier`, `RouteStatus`, `AscentStatus`, `ScoringModel`, `GradeSystem`, `NotificationCategory`, `SaveType` types derived from constants.
 
 **Acceptance:** Constants tests green, types compile with `tsc --noEmit`.
 

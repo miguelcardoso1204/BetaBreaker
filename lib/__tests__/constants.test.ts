@@ -1,0 +1,220 @@
+/**
+ * Tests for lib/constants.ts — App-Wide Domain Constants
+ *
+ * These tests verify that all domain constants are correctly defined and that
+ * TypeScript types are properly derived from the `as const` arrays. This is
+ * the "single source of truth" for business domain values used throughout
+ * the app — services, hooks, UI components, and database schemas all
+ * reference these constants.
+ *
+ * TDD Red Phase: These tests are written FIRST, before the constants exist.
+ * They will fail until we implement the constants in lib/constants.ts.
+ */
+
+import {
+  ROLES,
+  ROUTE_STATUSES,
+  GRADE_SYSTEMS,
+  SCORING_MODELS,
+  ASCENT_STATUSES,
+  NOTIFICATION_CATEGORIES,
+  SAVE_TYPES,
+  FREE_TIER,
+  PRO_TIER,
+  TIERS,
+  APP_NAME,
+} from '../constants';
+
+// Import types to verify they exist and are usable at compile time.
+// These imports will cause TypeScript errors until the types are exported.
+import type {
+  UserRole,
+  Tier,
+  RouteStatus,
+  AscentStatus,
+  ScoringModel,
+  GradeSystem,
+  NotificationCategory,
+  SaveType,
+} from '../constants';
+
+/* ── ROLES ──────────────────────────────────────────────────────────────── */
+
+describe('ROLES', () => {
+  it('contains all 5 expected roles in the correct hierarchy order', () => {
+    // Roles represent the permission hierarchy in the app:
+    // climber (basic) → setter (route creator) → judge (event official)
+    // → gym_admin (manages a gym) → super_admin (platform-wide)
+    expect(ROLES).toContain('climber');
+    expect(ROLES).toContain('setter');
+    expect(ROLES).toContain('judge');
+    expect(ROLES).toContain('gym_admin');
+    expect(ROLES).toContain('super_admin');
+  });
+
+  it('has exactly 5 entries (no extras sneaking in)', () => {
+    // Guard against accidentally adding roles without updating tests.
+    // If this fails, a new role was added — update the test above too.
+    expect(ROLES).toHaveLength(5);
+  });
+});
+
+/* ── FREE_TIER ──────────────────────────────────────────────────────────── */
+
+describe('FREE_TIER', () => {
+  it('has correct limits for the free plan', () => {
+    // Free tier is intentionally restrictive to encourage upgrades:
+    // - 1 badge displayed on profile (pro gets 3)
+    // - 5 beta videos per week (pro gets unlimited)
+    // - No analytics dashboard access
+    expect(FREE_TIER.name).toBe('free');
+    expect(FREE_TIER.maxBadges).toBe(1);
+    expect(FREE_TIER.betaPerWeek).toBe(5);
+    expect(FREE_TIER.analyticsEnabled).toBe(false);
+  });
+});
+
+/* ── PRO_TIER ───────────────────────────────────────────────────────────── */
+
+describe('PRO_TIER', () => {
+  it('has correct limits for the pro plan', () => {
+    // Pro tier unlocks the full experience:
+    // - 3 badges on profile
+    // - Infinity for betaPerWeek means no limit — simple `count <= tier.betaPerWeek` checks work
+    // - Analytics dashboard enabled for tracking climbing progress
+    expect(PRO_TIER.name).toBe('pro');
+    expect(PRO_TIER.maxBadges).toBe(3);
+    expect(PRO_TIER.betaPerWeek).toBe(Infinity);
+    expect(PRO_TIER.analyticsEnabled).toBe(true);
+  });
+});
+
+/* ── ROUTE_STATUSES ─────────────────────────────────────────────────────── */
+
+describe('ROUTE_STATUSES', () => {
+  it('contains all 3 route lifecycle statuses', () => {
+    // Routes move through these statuses over their lifecycle:
+    // active (climbable) → retiring_soon (about to be taken down) → archived (removed)
+    expect(ROUTE_STATUSES).toContain('active');
+    expect(ROUTE_STATUSES).toContain('retiring_soon');
+    expect(ROUTE_STATUSES).toContain('archived');
+    expect(ROUTE_STATUSES).toHaveLength(3);
+  });
+});
+
+/* ── GRADE_SYSTEMS ──────────────────────────────────────────────────────── */
+
+describe('GRADE_SYSTEMS', () => {
+  it('contains all 3 supported grading systems', () => {
+    // Different regions/gyms prefer different grade systems:
+    // v-scale (US bouldering), font (European bouldering), yds (rope climbing)
+    expect(GRADE_SYSTEMS).toContain('v-scale');
+    expect(GRADE_SYSTEMS).toContain('font');
+    expect(GRADE_SYSTEMS).toContain('yds');
+    expect(GRADE_SYSTEMS).toHaveLength(3);
+  });
+});
+
+/* ── SCORING_MODELS ─────────────────────────────────────────────────────── */
+
+describe('SCORING_MODELS', () => {
+  it('contains all 3 competition scoring models', () => {
+    // Each scoring model rewards a different climbing style:
+    // hardest_grade (strength), flash_rate (consistency), volume (endurance)
+    expect(SCORING_MODELS).toContain('hardest_grade');
+    expect(SCORING_MODELS).toContain('flash_rate');
+    expect(SCORING_MODELS).toContain('volume');
+    expect(SCORING_MODELS).toHaveLength(3);
+  });
+});
+
+/* ── NOTIFICATION_CATEGORIES ────────────────────────────────────────────── */
+
+describe('NOTIFICATION_CATEGORIES', () => {
+  it('contains all 4 notification categories', () => {
+    // Users can toggle notifications per category in their settings:
+    // friends (social activity), routes (new/retiring routes),
+    // comps (competition updates), achievements (badges/streaks)
+    expect(NOTIFICATION_CATEGORIES).toContain('friends');
+    expect(NOTIFICATION_CATEGORIES).toContain('routes');
+    expect(NOTIFICATION_CATEGORIES).toContain('comps');
+    expect(NOTIFICATION_CATEGORIES).toContain('achievements');
+    expect(NOTIFICATION_CATEGORIES).toHaveLength(4);
+  });
+});
+
+/* ── SAVE_TYPES ─────────────────────────────────────────────────────────── */
+
+describe('SAVE_TYPES', () => {
+  it('contains all 3 save/bookmark types', () => {
+    // Climbers can save routes for different reasons:
+    // project (working on it), wishlist (want to try), favorite (completed & loved)
+    expect(SAVE_TYPES).toContain('project');
+    expect(SAVE_TYPES).toContain('wishlist');
+    expect(SAVE_TYPES).toContain('favorite');
+    expect(SAVE_TYPES).toHaveLength(3);
+  });
+});
+
+/* ── ASCENT_STATUSES ────────────────────────────────────────────────────── */
+
+describe('ASCENT_STATUSES', () => {
+  it('contains all 3 ascent outcome statuses', () => {
+    // How a climbing attempt ended:
+    // flash (first try success), send (completed after multiple tries), attempt (didn't finish)
+    expect(ASCENT_STATUSES).toContain('flash');
+    expect(ASCENT_STATUSES).toContain('send');
+    expect(ASCENT_STATUSES).toContain('attempt');
+    expect(ASCENT_STATUSES).toHaveLength(3);
+  });
+});
+
+/* ── TIERS ──────────────────────────────────────────────────────────────── */
+
+describe('TIERS', () => {
+  it('maps tier names to their config objects', () => {
+    // TIERS is a convenience lookup: given a tier name string ('free' or 'pro'),
+    // you can get the full config object with `TIERS[tierName]`
+    expect(TIERS.free).toBe(FREE_TIER);
+    expect(TIERS.pro).toBe(PRO_TIER);
+  });
+});
+
+/* ── Type Inference ─────────────────────────────────────────────────────── */
+
+describe('type inference', () => {
+  it('all 8 derived types exist and are assignable', () => {
+    // This test verifies at compile time that each type is correctly derived
+    // from its `as const` array using `typeof X[number]`. If any type is
+    // missing or incorrectly defined, TypeScript will error during `tsc --noEmit`.
+    //
+    // At runtime, we just assign valid values to confirm the types work.
+    // The real value is the compile-time check — if this file compiles, the types are correct.
+    const role: UserRole = 'climber';
+    const tier: Tier = 'free';
+    const routeStatus: RouteStatus = 'active';
+    const ascentStatus: AscentStatus = 'flash';
+    const scoringModel: ScoringModel = 'volume';
+    const gradeSystem: GradeSystem = 'font';
+    const notificationCategory: NotificationCategory = 'friends';
+    const saveType: SaveType = 'project';
+
+    // Use the variables so TypeScript doesn't warn about unused locals
+    expect(role).toBe('climber');
+    expect(tier).toBe('free');
+    expect(routeStatus).toBe('active');
+    expect(ascentStatus).toBe('flash');
+    expect(scoringModel).toBe('volume');
+    expect(gradeSystem).toBe('font');
+    expect(notificationCategory).toBe('friends');
+    expect(saveType).toBe('project');
+  });
+});
+
+/* ── APP_NAME (existing) ────────────────────────────────────────────────── */
+
+describe('APP_NAME', () => {
+  it('is the correct app name string', () => {
+    expect(APP_NAME).toBe('Beta Breaker');
+  });
+});
