@@ -178,10 +178,17 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 > Pure TypeScript logic — no UI, no network. Perfect for TDD.
 
-### Step 1.1 — Grade Conversion System
+### Step 1.1 — Grade Conversion System ✅
 
-**Depends on:** Phase 0 (Step 0.3 for test infra)  
+**Status:** Complete
+**Depends on:** Phase 0 (Step 0.3 for test infra)
 **Relevant requirements:** FR-P1, FR-E4
+
+**Implementation notes:**
+- `utils/grades.ts`: GRADE_TABLE (31 entries, canonical 0–30), canonicalToDisplay, displayToCanonical (lazy reverse maps), compareGrades, getGradeRange
+- `utils/__tests__/grades.test.ts`: 25 tests across 6 describe blocks — 100% coverage
+- Unique grade counts: V-scale 13, Font 25, YDS 27 (plan estimated 24 for YDS; actual count is 27 due to the table having more unique YDS sub-grades than initially projected)
+- displayToCanonical returns first canonical index for shared display strings (round-trip collapse by design)
 
 **What to test (`utils/__tests__/grades.test.ts`):**
 
