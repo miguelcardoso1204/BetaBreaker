@@ -1,40 +1,25 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
+// app/+not-found.tsx
+//
+// 404 screen shown when a route doesn't match.
+// Uses NativeWind classes and expo-router's Link for navigation.
 
-import { Text, View } from '@/components/ui/Themed';
+import { Link, Stack } from "expo-router";
+import { Text, View } from "react-native";
 
 export default function NotFoundScreen() {
   return (
     <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.title}>This screen doesn&apos;t exist.</Text>
-
-        <Link href="/" style={styles.link}>
-          <Text style={styles.linkText}>Go to home screen!</Text>
+      <Stack.Screen options={{ title: "Oops!" }} />
+      <View className="flex-1 items-center justify-center p-5 bg-background">
+        <Text className="text-text-primary text-xl font-bold">
+          This screen doesn&apos;t exist.
+        </Text>
+        <Link href="/" className="mt-4 py-4">
+          <Text className="text-accent-light text-sm">
+            Go to home screen!
+          </Text>
         </Link>
       </View>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-  linkText: {
-    fontSize: 14,
-    color: '#2e78b7',
-  },
-});

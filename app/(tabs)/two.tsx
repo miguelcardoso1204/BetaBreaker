@@ -1,31 +1,17 @@
-import { StyleSheet } from 'react-native';
+// app/(tabs)/two.tsx
+//
+// Second tab placeholder. Will be replaced with the route browse
+// screen in Phase 4.
 
-import EditScreenInfo from '@/components/ui/EditScreenInfo';
-import { Text, View } from '@/components/ui/Themed';
+import { Text, View } from "react-native";
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab Two</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/two.tsx" />
+    <View className="flex-1 items-center justify-center bg-background">
+      <Text className="text-text-primary text-2xl font-bold">Explore</Text>
+      <Text className="text-text-secondary text-base mt-2">
+        Route browsing coming soon
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});

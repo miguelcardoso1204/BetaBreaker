@@ -1,31 +1,20 @@
-import { StyleSheet } from 'react-native';
+// app/(tabs)/index.tsx
+//
+// Home tab placeholder. Will be replaced with the activity feed
+// in Phase 4+. For now, shows a centered title to verify the
+// NativeWind design system is working.
 
-import EditScreenInfo from '@/components/ui/EditScreenInfo';
-import { Text, View } from '@/components/ui/Themed';
+import { Text, View } from "react-native";
 
-export default function TabOneScreen() {
+export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
+    <View className="flex-1 items-center justify-center bg-background">
+      <Text className="text-text-primary text-2xl font-bold">
+        Beta Breaker
+      </Text>
+      <Text className="text-text-secondary text-base mt-2">
+        Home screen coming soon
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});

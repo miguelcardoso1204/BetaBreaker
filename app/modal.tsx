@@ -1,35 +1,16 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
+// app/modal.tsx
+//
+// Modal screen placeholder. Will be used for quick-log or
+// confirmation dialogs in later phases.
 
-import EditScreenInfo from '@/components/ui/EditScreenInfo';
-import { Text, View } from '@/components/ui/Themed';
+import { StatusBar } from "expo-status-bar";
+import { Platform, Text, View } from "react-native";
 
 export default function ModalScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/modal.tsx" />
-
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
-      <StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+    <View className="flex-1 items-center justify-center bg-background">
+      <Text className="text-text-primary text-xl font-bold">Modal</Text>
+      <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
-});
