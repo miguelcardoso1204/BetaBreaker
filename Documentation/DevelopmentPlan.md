@@ -521,9 +521,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.6 — Competitions & Events Tables
+### Step 2.6 — Competitions & Events Tables ✅
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** FR-H1–H5
 
 **What to test:**
@@ -546,6 +546,12 @@ Run `supabase db push`, then run test suite against local DB.
 - RLS: gym_admin creates events; judge/verified writes scores; authenticated reads.
 
 **Acceptance:** Competition tables exist; insertion and RLS tests pass.
+
+**Implementation notes:**
+- Migration: `supabase/migrations/20260206060000_competitions.sql` — 4 tables, RLS on all, ~13 policies, CHECK constraints on scoring_model/status/dates, indexes on gym_id/status/event_id/user_id.
+- Tests: `supabase/__tests__/00006_competitions.test.ts` — 48 tests covering table existence (4), RLS enabled (4), events CRUD + constraints (6), event_routes (5), event_categories (4), competition_scores (7), RLS behavioral policies (18).
+- Key fix: `events.created_by` uses `ON DELETE SET NULL` (nullable) rather than `NOT NULL` — these conflict because cascade-deleting a user through `auth.users → profiles` would try to SET NULL on a NOT NULL column.
+- Total integration tests: 217 (48 new + 169 existing).
 
 ---
 
