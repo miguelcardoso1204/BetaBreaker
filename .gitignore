@@ -46,6 +46,9 @@ coverage/
 # Supabase local runtime (Docker state from `supabase start`)
 .supabase/
 
+# Figma mockup screenshots (large binary files, not for version control)
+Documentation/mockups/
+
 # generated native folders
 /ios
 /android
