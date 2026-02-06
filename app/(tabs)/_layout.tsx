@@ -1,59 +1,51 @@
-import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+// app/(tabs)/_layout.tsx
+//
+// Tab navigator layout with 4 tabs and a custom tab bar.
+//
+// WHY A CUSTOM TAB BAR?
+// The default React Navigation tab bar doesn't support injecting a
+// non-tab element (our Start Session FAB) into the middle. We pass
+// our CustomTabBar component via the `tabBar` prop, which renders
+// 4 route tabs (Home, Map, Leaderboards, Profile) with a raised
+// FAB button in the center.
+//
+// WHY headerShown: false?
+// Each screen manages its own header (or has none). Disabling the
+// tab navigator's built-in header avoids a double-header situation
+// where both the tab navigator and the screen show headers.
+//
+// SCREEN ORDER MATTERS:
+// The order of <Tabs.Screen> declarations determines the order of
+// tabs in the bar. Our CustomTabBar renders them based on the
+// routes array from navigation state, which follows this order.
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+import React from "react";
+import { Tabs } from "expo-router";
+import { CustomTabBar } from "@/components/navigation/CustomTabBar";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
+      // Pass our custom tab bar component. React Navigation calls this
+      // function with BottomTabBarProps (state, navigation, insets, etc.)
+      // and renders the returned component instead of the default bar.
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
-        headerShown: useClientOnlyValue(false, true),
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="two"
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-        }}
-      />
+        // Disable the built-in header — screens handle their own headers.
+        headerShown: false,
+      }}
+    >
+      {/* Home tab — Strava-style activity feed (placeholder for now) */}
+      <Tabs.Screen name="index" />
+
+      {/* Map tab — gym map browse (placeholder for now) */}
+      <Tabs.Screen name="map" />
+
+      {/* Leaderboards tab — rankings and competitions (placeholder for now) */}
+      <Tabs.Screen name="leaderboards" />
+
+      {/* Profile tab — user profile and settings (placeholder for now) */}
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }
