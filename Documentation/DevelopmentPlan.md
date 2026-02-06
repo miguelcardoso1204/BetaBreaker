@@ -968,10 +968,17 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.2 — useRoutes Hook
+### Step 4.2 — useRoutes Hook ✅
 
-**Depends on:** Step 4.1  
+**Depends on:** Step 4.1
 **Relevant requirements:** FR-C3
+
+> **Implementation notes (2026-02-06):**
+> - Created `hooks/useRoutes.ts` with `useRoutes(filters)` and `useRouteDetail(routeId)`
+> - Query keys: `["routes", filters]` for lists, `["routes", routeId]` for detail
+> - queryFn unwraps Supabase `{ data, error }` — throws on error, returns data
+> - 5 unit tests in `hooks/__tests__/useRoutes.test.tsx`
+> - Total unit tests: 246
 
 **What to test (`hooks/__tests__/useRoutes.test.ts`):**
 
