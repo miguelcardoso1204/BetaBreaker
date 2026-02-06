@@ -35,6 +35,8 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Mail } from "lucide-react-native";
+
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema } from "@/utils/validation";
 import type { LoginInput } from "@/utils/validation";
@@ -136,6 +138,7 @@ export default function LoginScreen() {
                 placeholder="your@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                leftIcon={Mail}
                 error={errors.email?.message}
                 testID="email-input"
               />

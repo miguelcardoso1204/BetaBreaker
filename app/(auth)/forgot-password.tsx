@@ -29,6 +29,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { Mail } from "lucide-react-native";
+
 import { authService } from "@/services/auth.service";
 import { Button, AppTextInput } from "@/components/ui";
 
@@ -147,6 +149,7 @@ export default function ForgotPasswordScreen() {
                   placeholder="your@email.com"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  leftIcon={Mail}
                   error={errors.email?.message}
                   testID="email-input"
                 />

@@ -34,6 +34,8 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { Mail, User } from "lucide-react-native";
+
 import { useAuth } from "@/hooks/useAuth";
 import { registrationSchema } from "@/utils/validation";
 import type { RegistrationInput } from "@/utils/validation";
@@ -203,6 +205,7 @@ export default function RegisterScreen() {
                 placeholder="your@email.com"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                leftIcon={Mail}
                 error={errors.email?.message}
                 testID="email-input"
               />
@@ -222,6 +225,7 @@ export default function RegisterScreen() {
                 onChangeText={onChange}
                 placeholder="@yourname"
                 autoCapitalize="words"
+                leftIcon={User}
                 error={errors.displayName?.message}
                 testID="name-input"
               />
