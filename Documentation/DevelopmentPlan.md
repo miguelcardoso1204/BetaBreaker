@@ -592,9 +592,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.8 — Admin & Audit Tables
+### ✅ Step 2.8 — Admin & Audit Tables
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** FR-O3, FR-I3, FR-I4
 
 **What to test:**
@@ -616,6 +616,17 @@ Run `supabase db push`, then run test suite against local DB.
 - RLS: authenticated reads on audit_log for gym_admin; own inserts for tickets.
 
 **Acceptance:** Admin tables exist; audit trigger fires on route changes.
+
+**Implementation notes (completed):**
+- Migration: `supabase/migrations/20260206080000_admin_audit.sql` — 3 tables, 10 RLS policies, 1 SECURITY DEFINER trigger function, 5 indexes
+- Tests: `supabase/__tests__/00008_admin_audit.test.ts` — 41 tests (tables exist, RLS enabled, CHECK constraints, trigger behavior, RLS policies, CASCADE deletes)
+- Key decisions:
+  - `audit_log` is append-only — no UPDATE/DELETE policies for any role, only SECURITY DEFINER trigger and service_role can INSERT
+  - `audit_log.actor_id` uses ON DELETE SET NULL to preserve audit history when actors are deleted
+  - `on_route_update` trigger uses IS DISTINCT FROM (not !=) to correctly handle NULL → value transitions for color/wall_section
+  - `maintenance_tickets` INSERT uses no RETURNING when called by plain authenticated user because the SELECT policy requires setter+ role (Postgres RLS requires RETURNING rows to pass SELECT policies)
+  - `maintenance_tickets` gym is resolved via subquery `(SELECT gym_id FROM routes WHERE id = route_id)` — same pattern as event_routes
+- Total integration tests: 302 (41 new + 261 existing)
 
 ---
 
