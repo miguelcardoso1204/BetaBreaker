@@ -779,7 +779,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.4 — Design System & UI Foundations
+### Step 3.4 — Design System & UI Foundations ✅
 
 **Depends on:** Step 3.3
 **Relevant requirements:** NFR-UX1, NFR-UX2
@@ -816,6 +816,14 @@ Run `supabase db push`, then run test suite against local DB.
 10. **Verify** all existing tests still pass (`npm test`, `npx tsc --noEmit`).
 
 **Acceptance:** Design docs complete and reviewed, `tailwind.config.js` has real tokens, base UI components type-check, all existing tests pass.
+
+**Implementation notes (completed 2026-02-06):**
+- **Files created:** `Documentation/DesignSystem.md` (646 lines, 10 sections), `Documentation/Wireframes.md` (1,100 lines, 11 screens), `components/ui/Button.tsx`, `components/ui/TextInput.tsx`, `components/ui/Card.tsx`, `components/ui/Badge.tsx`, `components/ui/IconButton.tsx`, `components/ui/Divider.tsx`, `components/ui/Avatar.tsx`, `components/ui/index.ts` (barrel export)
+- **Files modified:** `tailwind.config.js` (populated with 25+ color tokens, fontFamily, borderRadius, boxShadow), `constants/Colors.ts` (updated to match design system)
+- **Files deleted:** `components/ui/Themed.tsx`, `components/ui/StyledText.tsx`, `components/ui/EditScreenInfo.tsx` (legacy Expo template components replaced by NativeWind)
+- **Files updated:** `app/(tabs)/index.tsx`, `app/(tabs)/two.tsx`, `app/modal.tsx`, `app/+not-found.tsx` (rewritten to use NativeWind classes)
+- **Tests:** 42 new component tests (Button: 12, TextInput: 8, Card: 5, Badge: 6, IconButton: 4, Divider: 2, Avatar: 5). Total unit tests: 197
+- **Key decisions:** Dark-first design (primary theme), purple accent (#7C3AED), NativeWind v4 with Tailwind 3.x, lucide-react-native for icons, expo-image for Avatar, Pressable over TouchableOpacity, AppTextInput naming to avoid RN collision
 
 ---
 
