@@ -2,7 +2,7 @@
 
 **Product:** Beta Breaker (iOS/Android)
 **Version:** 1.0 (MVP)
-**Last updated:** 2026-02-05
+**Last updated:** 2026-02-06
 
 ---
 
@@ -38,6 +38,7 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-B2 | 2 | Sectors/areas metadata and map position inside gym |
 | FR-B3 | 4 | QR/NFC station mapping to open route details |
 | FR-B4 | 4 | User sets a "home gym"; home gym content prioritized in feeds and leaderboards |
+| FR-B5 | 3 | Location-based nearest gym detection for quick session start (FAB prompt) |
 
 ### C. Problems/Routes Catalog
 
@@ -46,7 +47,7 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-C1 | 5 | Route model with setter ID; user-sourced tags aggregated by consensus |
 | FR-C2 | 4 | Media attachments: beta videos |
 | FR-C3 | 5 | Search & filters by grade, style, tags, recency, popularity, sent/unsent, setter |
-| FR-C4 | 4 | Save routes as Project/Wishlist/Favorite, access from logbook |
+| FR-C4 | 4 | Save routes as Project/Wishlist/Favorite; viewable list on Profile or dedicated Saved Routes screen |
 | FR-C5 | 4 | System generates unique route IDs and printable QR/NFC payloads |
 | FR-C6 | 3 | Feedback governance: up/down-vote tags and beta tips; low-score/spam hidden |
 | FR-C7 | 4 | Route lifecycle status visible to users (Active, Retiring Soon, Archived) with visual indicator |
@@ -60,6 +61,7 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-D3 | 4 | Offline cache and sync with conflict resolution |
 | FR-D4 | 4 | Explicit session start/end; compute duration |
 | FR-D5 | 2 | Auto-suggest session start based on geofence/QR or multiple logs |
+| FR-D6 | 4 | Session summary screen at session end: attempts, sends, grade distribution, duration; also viewable from activity history |
 
 ### E. Progression & Analytics
 
@@ -69,14 +71,14 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-E2 | 3 | Style insights from crowd tags (slab, overhang, dyno) |
 | FR-E3 | 3 | Personalized route suggestions (Pro) |
 | FR-E4 | 3 | Grade conversion view (Font/V/YDS) respecting gym defaults and user pref |
-| FR-E5 | 3 | Session history / logbook view: chronological list of all sessions with summary stats and drill-down |
+| FR-E5 | 3 | Session history / logbook view: chronological activity history on Profile tab with summary stats and drill-down to session summaries |
 
 ### F. Gamification
 
 | ID | PW | Requirement |
 |---|---|---|
 | FR-F1 | 4 | Badges/achievements for milestones; user chooses display |
-| FR-F2 | 4 | Streaks (weekly/monthly) with decay and recovery mechanics |
+| FR-F2 | 4 | Streaks (weekly/monthly) with decay and recovery mechanics; streak display surfaced on Profile |
 | FR-F3 | 3 | Time-boxed challenges/quests |
 | FR-F4 | 1 | Elo-like ranks (low priority), decay rules |
 
@@ -89,6 +91,7 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-G3 | 4 | Report abuse/spam on users, videos, tags, comments (moderation queue) |
 | FR-G4 | 4 | Gym-configurable video requirement for leaderboard sends above grade threshold |
 | FR-G5 | 3 | Follow / friend system: follow other climbers to see their activity in a feed |
+| FR-G6 | 4 | Activity feed (Home tab): aggregated event stream showing friend activity, gym route resets, leaderboard updates, and competition events |
 
 ### H. Competitions & Events
 
@@ -116,6 +119,7 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-J1 | 4 | Push notifications (configurable): friends' sends, route retirements, comp updates, rank changes |
 | FR-J2 | 4 | In-app notification center: list of recent notifications with read/unread state |
 | FR-J3 | 3 | Notification preferences screen: per-category opt-in/out (friends, routes, comps, achievements) |
+| FR-J4 | 3 | Notification bell icon on Home tab header linking to in-app notification center (FR-J2) |
 
 ### K. Content Moderation
 

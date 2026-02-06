@@ -3,7 +3,7 @@
 **Product:** Beta Breaker (iOS/Android)  
 **Version:** 1.0 (MVP)  
 **Methodology:** Test-Driven Development (Red → Green → Refactor)  
-**Last updated:** 2026-02-05
+**Last updated:** 2026-02-06
 
 ---
 
@@ -35,12 +35,12 @@ Tasks are grouped into **Phases** (sequential) and **Steps** within each phase (
 | 1 | Data Foundation (Utilities) | 3–4 days | Phase 0 | FR-P1, FR-E4, FR-F2, FR-G1, FR-D1, FR-L1, FR-L3, FR-C7 |
 | 2 | Database Schema & RLS | 5–7 days | Phase 0 | FR-A1, FR-B1, FR-C1, FR-D1, FR-L1, NFR-4, FR-F1, FR-G1–G5, FR-K1, FR-H1–H5, FR-J1–J2, FR-C4 |
 | 3 | Authentication & Session Mgmt | 4–5 days | Phases 1, 2 | FR-A1, FR-A4, FR-L1, NFR-8 |
-| 4 | Gym & Route Data Layer | 5–7 days | Phase 3 | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7, NFR-8 |
+| 4 | Gym, Route & Tab Data Layer | 5–7 days | Phase 3 | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7, FR-G1, FR-G6, NFR-8 |
 | 5 | Tick-Logging & Sessions | 5–7 days | Phase 4 | FR-D1, FR-D2, FR-D4, FR-E5, FR-C2, FR-G2 |
 | 6 | Offline Support | 3–4 days | Phase 5 | FR-D3, NFR-3, NFR-9 |
 | 7 | QR/NFC Scanning | 2–3 days | Phases 4, 5 | FR-B3, FR-C5, FR-P3 |
 | 8 | Gamification | 3–4 days | Phases 2, 5 | FR-F1, FR-F2, FR-F3, FR-F4, FR-A2 |
-| 9 | Social & Leaderboards | 5–6 days | Phases 5, 8 | FR-G1–G5, FR-C6, FR-K2, FR-K3 |
+| 9 | Social & Leaderboards | 5–6 days | Phases 5, 8 | FR-G1–G5, FR-G6, FR-C6, FR-K2, FR-K3 |
 | 10 | Notifications | 3–4 days | Phases 2, 9 | FR-J1, FR-J2, FR-J3 |
 | 11 | Competitions & Events | 4–5 days | Phases 4, 9 | FR-H1–H5 |
 | 12 | Media (Beta Videos) | 3–4 days | Phase 4 | FR-C2, FR-K1, NFR-11 |
@@ -928,7 +928,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-## Phase 4 — Gym & Route Data Layer
+## Phase 4 — Gym, Route & Tab Data Layer
 
 ### Step 4.1 — Routes Service ✅
 
@@ -1068,9 +1068,35 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.5 — Route List Screen (Home Tab)
+### Step 4.5 — Tab Bar Layout with FAB
 
-**Depends on:** Steps 4.2, 4.4  
+**Depends on:** Phase 3 (Step 3.6 — root layout)
+**Relevant requirements:** NFR-8
+
+**What to test (`app/(tabs)/__tests__/_layout.test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Renders 4 tab slots + FAB | Home, Map Browse, center FAB, Leaderboards, Profile tabs visible |
+| FAB button renders | Center slot is a 56x56 purple circle with Plus icon, elevated above tab bar |
+| Active tab highlighting | Tapping a tab changes its icon color to accent (#7C3AED) |
+| FAB opens start session | Pressing the FAB navigates to Start Session modal |
+| Tab bar hidden on detail screens | Tab bar not visible on gym/[id], profile/[userId], etc. |
+
+**What to implement (`app/(tabs)/_layout.tsx`):**
+
+- Custom tab bar component using Expo Router's `Tabs` with `tabBar` prop.
+- 4 tabs + center FAB: Home (Home icon), Map Browse (MapPin icon), center FAB (Plus icon), Leaderboards (Trophy icon), Profile (User icon).
+- FAB: 56x56px circle, `bg-accent`, elevated ~12px above tab bar. Uses `expo-haptics` for feedback.
+- Active/inactive colors: `accent` (#7C3AED) when active, `text-muted` when inactive.
+
+**Acceptance:** Custom tab bar renders; FAB elevated; navigation works for all tabs + FAB.
+
+---
+
+### Step 4.6 — Gym Routes Screen
+
+**Depends on:** Steps 4.2, 4.4
 **Relevant requirements:** FR-C3
 
 **What to test:**
@@ -1082,22 +1108,23 @@ Run `supabase db push`, then run test suite against local DB.
 | Filter bar | Grade, style, and sort dropdowns visible |
 | Empty state | "No routes found" when filters return nothing |
 | Pull to refresh | Triggers refetch |
-| Navigates to detail | Tapping card goes to `[routeId]` screen |
+| Navigates to detail | Tapping card goes to route detail screen |
+| Back navigates to gym | Back button returns to Gym Main Page |
 
-**What to implement (`app/(tabs)/home/index.tsx`):**
+**What to implement (`app/gym/[id]/routes.tsx`):**
 
-- `FlatList` with `useRoutes()` hook.
+- FlatList with `useRoutes()` hook (gymId from route params).
 - Filter bar component (grade range, tags, sort).
 - Zustand `uiStore` for persisting active filters.
 - Pull-to-refresh wired to `refetch()`.
 
-**Acceptance:** Home screen renders routes from Supabase local; filters work.
+**Acceptance:** Screen renders routes for a gym; filters work; navigation correct.
 
 ---
 
-### Step 4.6 — Route Detail Screen
+### Step 4.7 — Route Detail Screen
 
-**Depends on:** Steps 4.2, 4.4  
+**Depends on:** Steps 4.2, 4.4
 **Relevant requirements:** FR-C1, FR-C2, FR-C4, FR-C7, FR-G2
 
 **What to test:**
@@ -1106,58 +1133,28 @@ Run `supabase db push`, then run test suite against local DB.
 |---|---|
 | Renders route info | Grade, color, wall section, setter, status |
 | Grade conversion display | Shows grade in user's preferred system |
-| Beta videos section | Lists attached videos (or "No beta yet") |
-| Save button | Tapping save opens save-type picker (Project/Wishlist/Favorite) |
-| Log button | "Log Ascent" button opens QuickLogSheet |
-| Feedback section | Shows beta tips list |
+| Beta videos section | Lists video submissions as feed with sender comments |
+| Favorite button | Tapping toggles favorite state |
+| Add Ascent button | Button visible; prompts start session if no active session |
 | Status banner | Retiring Soon routes show warning banner |
+| Back navigates to routes | Back button returns to Gym Routes |
 
-**What to implement (`app/(tabs)/home/[routeId].tsx`):**
+**What to implement (`app/gym/[gymId]/route/[routeId].tsx`):**
 
 - Fetch route detail via `useRouteDetail(routeId)`.
-- Sections: header (grade/color/status), beta videos, feedback, log CTA.
-- "Save" action → `saved_routes` insert.
-- "Log" action → opens bottom sheet (built in Phase 5).
+- Sections: header (grade/color/status), video submissions feed, ascent CTA.
+- Favorite toggle → `saved_routes` insert.
+- "Add Ascent" → if active session, log ascent; if not, prompt to start session.
 
 **Acceptance:** Route detail screen renders fully with seeded data.
 
 ---
 
-### Step 4.7 — Tab Bar Layout with FAB
-
-**Depends on:** Phase 3 (Step 3.6 — root layout)
-**Relevant requirements:** NFR-8
-**Wireframe ref:** Tab Bar Layout section in `Documentation/Wireframes.md`
-
-**What to test (`app/(tabs)/__tests__/_layout.test.tsx`):**
-
-| Test case | Description |
-|---|---|
-| Renders 5 tab slots | Home, Map, center FAB, Routes, Profile tabs visible |
-| FAB button renders | Center slot is a 56x56 purple circle with Plus icon, elevated above tab bar |
-| Active tab highlighting | Tapping a tab changes its icon color to accent (#7C3AED) |
-| FAB navigates to activity | Pressing the FAB navigates to Start Activity screen |
-| Tab bar hidden on detail screens | Tab bar not visible on `route/[id]`, `gym/[id]`, `leaderboard/[id]` screens |
-
-**What to implement (`app/(tabs)/_layout.tsx`):**
-
-- Custom tab bar component using Expo Router's `Tabs` with `tabBar` prop for custom rendering.
-- 5 slots: Home (Home icon), Map (MapPin icon), center FAB (Plus icon in elevated circle), Routes (List icon), Profile (User icon).
-- FAB: 56x56px circle, `bg-accent`, elevated ~12px above tab bar with `accent-glow` shadow. Uses `expo-haptics` for tactile feedback on press.
-- Active/inactive icon colors: `accent` (#7C3AED) when active, `text-muted` (#6B6B80) when inactive.
-- Tab bar height: 56px (h-14) with `bg-background` and `border-t border-border`.
-
-**Why:** The wireframe specifies a custom tab bar with a prominent FAB center button — this is the primary entry point for starting a climbing session. Standard Expo Router tabs don't support a raised center button, so we need a custom `tabBar` renderer.
-
-**Acceptance:** Custom tab bar renders correctly; FAB elevated; haptic fires on press; navigation works for all 5 tabs.
-
----
-
-### Step 4.8 — Gym Detail Screen
+### Step 4.8 — Gym Main Page
 
 **Depends on:** Step 4.3 (Gym Service & Hook)
 **Relevant requirements:** FR-B1, FR-B4
-**Wireframe ref:** Screen 8 (Gym Browse) in `Documentation/Wireframes.md`, `Documentation/mockups/Gym Browse.png`
+**Wireframe ref:** Screen 8 (Gym Main Page) in `Documentation/Wireframes.md`
 
 **What to test (`app/gym/__tests__/[id].test.tsx`):**
 
@@ -1166,33 +1163,32 @@ Run `supabase db push`, then run test suite against local DB.
 | Renders gym name | Gym name displayed in heading |
 | Renders gym address | MapPin icon + address text visible |
 | Renders operating hours | Clock icon + hours text visible |
-| Open/closed indicator | Red dot when closed, green when open (based on current time vs hours) |
+| Open/closed indicator | Red dot when closed, green when open |
 | Social media handle | Social handle displayed in accent-light color |
 | Favorite toggle | Star icon toggleable |
-| Routes navigation card | "Routes" card navigates to Route Browse filtered to this gym |
-| Leaderboards navigation card | "Leaderboards" card navigates to gym leaderboard |
+| Routes navigation card | "Routes" card navigates to Gym Routes |
+| Leaderboards navigation card | "Leaderboards" card navigates to Gym Leaderboards |
 | Style Analysis navigation card | "Style Analysis" card present |
+| Start Session button | Big "Start Session" button starts a session at this gym |
 | Loading state | Spinner shown while fetching gym data |
 
 **What to implement (`app/gym/[id].tsx`):**
 
 - Fetch gym via `useGym(id)` hook.
-- Header: gym logo (`Avatar` rounded square variant), gym name, star favorite button.
-- Metadata: MapPin + address, Clock + hours with open/closed dot indicator, social handle.
-- Three `Card` (variant: "pressable") navigation items: Routes, Leaderboards, Style Analysis — each with text and ChevronRight icon.
-- Open/closed logic: compare current time to gym's operating hours, show `bg-success` (open) or `bg-error` (closed) dot.
+- Header: gym logo, gym name, star favorite button.
+- Metadata: address, hours with open/closed indicator, social handle.
+- Three navigation cards: Routes, Leaderboards, Style Analysis.
+- Big "Start Session" button (primary CTA).
 
-**Why:** The wireframe shows a gym detail screen as the gateway from map discovery to gym-specific content (routes, leaderboards, style analysis). It's the main gym information hub.
-
-**Acceptance:** Gym detail renders with all metadata; navigation cards route correctly; open/closed indicator works.
+**Acceptance:** Gym Main Page renders with all metadata; navigation cards route correctly.
 
 ---
 
 ### Step 4.9 — Map Browse Screen
 
 **Depends on:** Steps 4.3, 4.8
-**Relevant requirements:** FR-B1, NFR-8
-**Wireframe ref:** Screen 9 (Map Browse) in `Documentation/Wireframes.md`, `Documentation/mockups/Map Browse.png`
+**Relevant requirements:** FR-B1, FR-B5, NFR-8
+**Wireframe ref:** Screen 9 (Map Browse) in `Documentation/Wireframes.md`
 
 **What to test (`app/(tabs)/__tests__/map.test.tsx`):**
 
@@ -1201,25 +1197,71 @@ Run `supabase db push`, then run test suite against local DB.
 | Map renders | MapView component visible |
 | Gym markers displayed | Pins shown at gym coordinates |
 | Search bar renders | Search input overlaid on map |
-| Star filter renders | Favorites filter icon visible |
+| Favorites filter renders | Star filter icon visible |
 | Bottom sheet shows gym count | Collapsed bottom sheet shows "N gyms" text |
-| Bottom sheet expandable | Swiping up reveals full gym list |
-| Tap marker navigates | Tapping a gym marker navigates to Gym Detail |
-| Tap gym in list navigates | Tapping a gym row in bottom sheet navigates to Gym Detail |
-| Search filters markers | Typing in search filters visible gym markers and list |
+| Tap marker navigates | Tapping a gym marker navigates to Gym Main Page |
+| Search filters markers | Typing in search filters visible gyms |
 
 **What to implement (`app/(tabs)/map.tsx`):**
 
-- `react-native-maps` or Expo `MapView` — full-screen interactive map.
-- Gym markers: custom pin components at each gym's `latitude`/`longitude`.
-- Search bar: `AppTextInput` (search variant) positioned absolutely at top with `z-10`.
-- Star filter: `IconButton` to toggle favorites-only view.
-- Bottom sheet: draggable sheet (Reanimated + Gesture Handler) with collapsed state showing gym count, expanded state showing scrollable `FlatList` of gym entries.
-- Each gym entry: gym name, address, tap navigates to `app/gym/[id].tsx`.
+- `react-native-maps` or Expo MapView — full-screen interactive map.
+- Gym markers at each gym's latitude/longitude.
+- Search bar with star filter for favorites.
+- Bottom sheet with gym list; tapping navigates to `app/gym/[id].tsx`.
 
-**Why:** The Map Browse screen is the primary gym discovery interface — climbers use it to find nearby gyms when traveling or exploring. The bottom sheet pattern (collapsed count → expanded list) is a standard maps UX that balances map visibility with list browsability.
+**Acceptance:** Map renders with pins; search filters work; navigation to Gym Main Page works.
 
-**Acceptance:** Map renders with pins; search filters work; bottom sheet expands/collapses; navigation to gym detail works.
+---
+
+### Step 4.10 — Enrolled Leaderboards Tab
+
+**Depends on:** Steps 4.5 (tab bar)
+**Relevant requirements:** FR-G1
+
+**What to test:**
+
+| Test case | Description |
+|---|---|
+| Shows loading state | Spinner while fetching |
+| Renders leaderboard list | List of enrolled leaderboards with gym logo, name, rank |
+| Empty state | "No enrolled leaderboards" message with CTA |
+| Tap navigates to detail | Tapping leaderboard goes to Leaderboard Detail |
+
+**What to implement (`app/(tabs)/leaderboards.tsx`):**
+
+- Fetch user's enrolled leaderboards (service + hook to be built in Phase 9).
+- List cards with gym logo, competition name, rank, points, status badge.
+- Empty state with trophy icon and "Find gyms" button.
+
+**Acceptance:** Tab renders placeholder or real data; navigation to leaderboard detail works.
+
+---
+
+### Step 4.11 — Start Session Modal
+
+**Depends on:** Steps 4.3, 4.5
+**Relevant requirements:** FR-D4, FR-B5
+
+**What to test:**
+
+| Test case | Description |
+|---|---|
+| Shows loading state | Detecting location spinner |
+| Shows nearest gym prompt | "Start session at [gym name]?" displayed |
+| Yes button starts session | Tapping "Yes" navigates to Gym Main Page with active session |
+| No button goes to map | Tapping "No" navigates to Map Browse |
+| Location error fallback | If location unavailable, redirects to Map Browse |
+
+**What to implement (`app/start-session.tsx`):**
+
+- Modal screen triggered by FAB.
+- Detect user location via `expo-location`.
+- Find nearest gym from gym list (distance calculation).
+- Prompt: "Start session at [closest gym]?"
+- Yes → start session at gym, navigate to Gym Main Page.
+- No → navigate to Map Browse to pick manually.
+
+**Acceptance:** Modal opens from FAB; location detection works; both paths navigate correctly.
 
 ---
 

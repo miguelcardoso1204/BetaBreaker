@@ -1,6 +1,6 @@
 # Beta Breaker -- Wireframe Specifications
 
-**Version:** 1.0 (MVP)
+**Version:** 2.0
 **Last updated:** 2026-02-06
 **Derived from:** 13 Figma mockup screenshots in `Documentation/mockups/`
 **Companion doc:** `Documentation/DesignSystem.md` (color tokens, typography, components)
@@ -15,14 +15,18 @@
    - [1. Login](#1-login)
    - [2. Sign Up](#2-sign-up)
    - [3. Home / Activity Feed](#3-home--activity-feed)
-   - [4. Route Browse](#4-route-browse)
+   - [4. Gym Routes](#4-gym-routes)
    - [5. Route Details](#5-route-details)
    - [6. Ascent Form](#6-ascent-form)
-   - [7. Start Activity](#7-start-activity)
-   - [8. Gym Browse](#8-gym-browse)
+   - [7. Start Session](#7-start-session)
+   - [8. Gym Main Page](#8-gym-main-page)
    - [9. Map Browse](#9-map-browse)
-   - [10. Leaderboard](#10-leaderboard)
-   - [11. Profile](#11-profile)
+   - [10. Leaderboard Detail](#10-leaderboard-detail)
+   - [11. Profile (Own)](#11-profile-own)
+   - [12. Enrolled Leaderboards](#12-enrolled-leaderboards)
+   - [13. Gym Leaderboards](#13-gym-leaderboards)
+   - [14. Profile (Other User)](#14-profile-other-user)
+   - [15. Edit Profile](#15-edit-profile)
 4. [Navigation Flow](#navigation-flow)
 
 ---
@@ -82,18 +86,19 @@ holds component Z. Each indentation level = one level of JSX nesting.
 
 ## Tab Bar Layout
 
-The tab bar is the persistent bottom navigation visible on all main screens (Home, Map,
-Routes, Profile, and Start Activity). It is implemented by Expo Router's `(tabs)/_layout.tsx`.
+The tab bar is the persistent bottom navigation visible on all main screens (Home, Map Browse,
+Leaderboards, Profile, and the Start Session FAB). It is implemented by Expo Router's
+`(tabs)/_layout.tsx`.
 
 ### Structure
 
 ```
 TabBar (fixed at bottom, bg-background, border-t border-border, h-14)
-  ├── Tab: Home        (Home icon, 28px)          → app/(tabs)/index.tsx
-  ├── Tab: Map         (MapPin icon, 28px)         → app/(tabs)/map.tsx
-  ├── FAB: Center (+)  (Plus icon, purple circle)  → app/(tabs)/activity.tsx
-  ├── Tab: Routes      (List icon, 28px)           → app/(tabs)/routes.tsx
-  └── Tab: Profile     (User icon, 28px)           → app/(tabs)/profile.tsx
+  |-- Tab: Home          (Home icon, 28px)          -> app/(tabs)/index.tsx
+  |-- Tab: Map Browse    (MapPin icon, 28px)         -> app/(tabs)/map.tsx
+  |-- FAB: Center (+)    (Plus icon, purple circle)  -> app/start-session.tsx (modal)
+  |-- Tab: Leaderboards  (Trophy icon, 28px)         -> app/(tabs)/leaderboards.tsx
+  +-- Tab: Profile       (User icon, 28px)           -> app/(tabs)/profile.tsx
 ```
 
 ### Visual Details
@@ -104,16 +109,17 @@ TabBar (fixed at bottom, bg-background, border-t border-border, h-14)
   circle with `bg-accent` and the `Plus` icon in white. It is elevated above the tab bar by
   approximately 12px, creating a "floating" effect. A purple glow (`accent-glow`) radiates
   behind it. This draws the user's eye to the primary action: starting a climbing session.
-- **Why a FAB?** The "start activity" action is the most important thing a climber does in
+- **Why a FAB?** The "start session" action is the most important thing a climber does in
   the app. Elevating it above the tab bar makes it instantly discoverable and reachable with
   a thumb, even on large phones. This is a common pattern in fitness and social apps (think
   Instagram's camera button or Strava's record button).
 
 ### Tab Bar Visibility
 
-- **Visible on:** All `(tabs)/` screens (Home, Map, Routes, Profile, Start Activity).
-- **Hidden on:** Auth screens (`(auth)/`), detail screens (`route/[id]`, `gym/[id]`,
-  `leaderboard/[id]`), and modal overlays (ascent form).
+- **Visible on:** All `(tabs)/` screens (Home, Map Browse, Leaderboards, Profile).
+- **Hidden on:** Auth screens (`(auth)/`), detail screens (`gym/[id]`, `gym/[gymId]/route/[routeId]`,
+  `gym/[gymId]/leaderboard/[leaderboardId]`), modal overlays (start session, ascent form),
+  and profile detail screens (`profile/[userId]`, `profile/edit`).
 
 ---
 
@@ -138,7 +144,7 @@ Screen (SafeAreaView, bg-background, flex-1)
     FormSection (gap-4, w-full)
       TextInput (label: "Username", leftIcon: CircleUser, placeholder: "Username")
       TextInput (label: "Password", leftIcon: Lock, rightIcon: Eye/EyeOff toggle,
-                 placeholder: "••••••••", secureTextEntry: true)
+                 placeholder: "--------", secureTextEntry: true)
       Button (variant: "ghost", align: right, "Forgot Password?")
 
     ActionSection (mt-6, gap-4, w-full)
@@ -204,7 +210,7 @@ Screen (SafeAreaView, bg-background, flex-1)
       TextInput (label: "Your Name", leftIcon: CircleUser,
                  placeholder: "@yourname")
       TextInput (label: "Password", leftIcon: Lock, rightIcon: Eye/EyeOff,
-                 placeholder: "••••••••", secureTextEntry: true)
+                 placeholder: "--------", secureTextEntry: true)
       PasswordStrengthIndicator (flex-row, gap-1)
         StrengthBar (4 bars, colored by strength level)
         Text ("Strong", text-sm text-success)
@@ -253,8 +259,8 @@ Screen (SafeAreaView, bg-background, flex-1)
 ### 3. Home / Activity Feed
 
 **File:** `app/(tabs)/index.tsx`
-**Purpose:** Welcome the user and show a chronological feed of events that happened since
-their last visit -- new routes, leaderboard changes, video milestones, competition results.
+**Purpose:** Welcome the user and show a Strava-style chronological feed of activity and events --
+friend ascents, gym route resets, leaderboard changes, competition results, and achievements.
 **Mockup:** `Documentation/mockups/Home.png`
 
 #### Layout
@@ -276,7 +282,7 @@ Screen (SafeAreaView, bg-background, flex-1)
           Text (month abbr, text-xs text-muted)             // e.g., "Oct"
         ContentColumn (flex-1)
           Text (description with bold names + emoji, text-base text-secondary)
-            // e.g., "São Rock had new routesetting! 🧗"
+            // e.g., "Sao Rock had new routesetting!"
             // Bold gym/competition names use text-white font-bold
           Button (variant: "ghost", text-accent-light)
             // e.g., "Check out the new routes!"
@@ -299,7 +305,7 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Element | Action | Result |
 |---|---|---|
-| Link text (e.g., "Check out the new routes!") | Tap | Navigates to the relevant screen (routes list, leaderboard, video submission, etc.) |
+| Link text (e.g., "Check out the new routes!") | Tap | Navigates to the relevant screen (gym routes, leaderboard, video submission, etc.) |
 | Pull down | Swipe | Refresh feed data |
 | Feed item (full row) | Tap | Could also navigate to the relevant detail screen |
 
@@ -307,19 +313,20 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Trigger | Destination |
 |---|---|
-| "Check out the new routes!" | `app/(tabs)/routes.tsx` (Route Browse) filtered to new routes at that gym |
-| "Check the leaderboard!" | `app/leaderboard/[id].tsx` (Leaderboard) for the mentioned competition |
+| "Check out the new routes!" | `app/gym/[id]/routes.tsx` (Gym Routes) for the mentioned gym |
+| "Check the leaderboard!" | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` (Leaderboard Detail) for the mentioned competition |
 | "Check the submission!" | Route detail or video submission detail |
-| "Check them out!" | Video submissions list |
-| "Check the results!" | Competition results / leaderboard |
+| Friend name / avatar in feed | `app/profile/[userId].tsx` (Profile Other User) |
+| Gym name in feed | `app/gym/[id].tsx` (Gym Main Page) |
+| Competition in feed | Competition detail (future) |
 
 ---
 
-### 4. Route Browse
+### 4. Gym Routes
 
-**File:** `app/(tabs)/routes.tsx`
-**Purpose:** Search, filter, and browse climbing routes at the selected gym. This is the
-primary discovery screen where climbers find their next challenge.
+**File:** `app/gym/[id]/routes.tsx`
+**Purpose:** Search, filter, and browse climbing routes at a specific gym. Accessed from the
+Gym Main Page, not from the tab bar directly. This is where climbers find their next challenge.
 **Mockup:** `Documentation/mockups/Route Browse.png`, `Route Browse-1.png`
 
 #### Layout
@@ -327,8 +334,12 @@ primary discovery screen where climbers find their next challenge.
 ```
 Screen (SafeAreaView, bg-background, flex-1)
   HeaderSection (px-4, pt-4)
+    Row (flex-row, items-center, gap-2)
+      IconButton (ArrowLeft, back to Gym Main Page)
+      Text (gymName, text-xl font-bold text-white)  // e.g., "Sao Rock Routes"
+
     TextInput (variant: "search", leftIcon: Search,
-               placeholder: "Route name/ID")
+               placeholder: "Route name/ID", mt-3)
 
     FilterRow (flex-row, items-center, gap-2, mt-3)
       IconButton (Star icon, toggle for favorites filter)
@@ -346,8 +357,6 @@ Screen (SafeAreaView, bg-background, flex-1)
       Icon (ChevronRight, text-white)
 
     RouteCard ...  (repeats for each route)
-
-  TabBar (fixed bottom, with FAB center)
 ```
 
 #### Components Used
@@ -356,6 +365,7 @@ Screen (SafeAreaView, bg-background, flex-1)
 |---|---|---|
 | `TextInput` | search variant, leftIcon: Search | Search bar at top for filtering by route name or ID |
 | `IconButton` | Star icon, toggleable | Filters list to show only favorited routes |
+| `IconButton` | ArrowLeft | Back button navigating to Gym Main Page |
 | `Badge` | variant: "tag" | "New" filter chip |
 | `DropdownButton` | Custom or TextInput dropdown variant | "Difficulty" and "Styles" open bottom sheets or dropdown menus |
 | `Card` | variant: "pressable" | Each route is a horizontal card with image, text, and chevron |
@@ -375,6 +385,7 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Element | Action | Result |
 |---|---|---|
+| Back button | Tap | Returns to Gym Main Page |
 | Search bar | Type | Filters route list in real-time by name or ID |
 | Star filter | Tap | Toggles favorites-only filter; icon fills when active |
 | "New" chip | Tap | Filters to show only newly set routes |
@@ -388,16 +399,16 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Trigger | Destination |
 |---|---|
-| Tap route card | `app/route/[id].tsx` (Route Details) |
-| FAB (center +) | `app/(tabs)/activity.tsx` (Start Activity) |
+| Tap route card | `app/gym/[gymId]/route/[routeId].tsx` (Route Details) |
+| Back button | `app/gym/[id].tsx` (Gym Main Page) |
 
 ---
 
 ### 5. Route Details
 
-**File:** `app/route/[id].tsx`
+**File:** `app/gym/[gymId]/route/[routeId].tsx`
 **Purpose:** Show all information about a single climbing route -- grade, set date, send status,
-rating, style analysis, and community video submissions.
+rating, style analysis, and a feed of community video submissions with sender comments.
 **Mockup:** `Documentation/mockups/Route Details.png`, `Route Details-1.png`
 
 #### Layout
@@ -416,10 +427,10 @@ Screen (SafeAreaView, bg-background, flex-1)
         Row (flex-row, items-center, gap-2)
           Text (route ID, text-2xl font-bold font-mono text-white)  // "#01"
           IconButton (Star, outline, toggle favorite)
-        Text ("Rating: 4.2 ⭐", text-sm text-secondary)            // if rated
+        Text ("Rating: 4.2", text-sm text-secondary)               // if rated
         Row (flex-row, items-center, gap-1)
           Text ("Send Status:", text-sm text-secondary)
-          Badge (variant: "success", checkmark emoji)               // ✅ if sent
+          Badge (variant: "success", checkmark emoji)               // if sent
         Text ("Grade: 5", text-sm text-secondary)
         Text ("Set on: 23 November", text-sm text-secondary)
         Button (variant: "ghost", "Style Analysis >", text-accent-light)
@@ -427,20 +438,25 @@ Screen (SafeAreaView, bg-background, flex-1)
     ActionSection (mt-6)
       Button (variant: "secondary", full-width, "Add Ascent",
               border-accent, text-accent)
-        // Only shown if user has not yet logged an ascent,
-        // or can log another attempt
+        // Shown when the user can log an ascent.
+        // If NO active session: tapping prompts "Start session at [gym]?"
+        // If active session: navigates directly to Ascent Form.
 
-    VideoSection (mt-8)
+    VideoSubmissionsFeed (mt-8)
       Text ("Video Submissions:", text-lg font-semibold text-white, mb-4)
       VideoList (gap-3)
-        VideoRow (flex-row, items-center)
-          Avatar (sm, user photo)
-          Text (userName, text-base text-white, flex-1, ml-3)
-          Icon (Heart, filled, color: heart)
-          Text (count, text-sm text-secondary, ml-1)  // "57"
-          Icon (ChevronRight, text-white, ml-2)
+        VideoFeedItem (bg-surface, rounded-lg, p-3)
+          Row (flex-row, items-center)
+            Avatar (sm, user photo)
+            Text (userName, text-base text-white, flex-1, ml-3)
+            Icon (Heart, filled, color: heart)
+            Text (count, text-sm text-secondary, ml-1)  // "57"
+            Icon (ChevronRight, text-white, ml-2)
+          CommentText (mt-2, text-sm text-secondary)
+            // Sender's comment about the beta / video
+            // e.g., "Heel hook on the second hold makes the crux way easier"
 
-        VideoRow ...  (repeats)
+        VideoFeedItem ...  (repeats)
 ```
 
 #### Components Used
@@ -451,7 +467,7 @@ Screen (SafeAreaView, bg-background, flex-1)
 | `IconButton` | Star, toggleable | Favorite/unfavorite this route |
 | `Badge` | variant: "success" | Green checkmark for "Send Status" when route is completed |
 | `Button` | variant: "ghost" | "Style Analysis >" link navigates to style breakdown |
-| `Button` | variant: "secondary" with accent border | "Add Ascent" button, outlined style with purple border and text |
+| `Button` | variant: "secondary" with accent border | "Add Ascent" button, outlined style with purple border and text. Behavior depends on active session state. |
 | `Avatar` | size: "sm" | User photos next to video submission entries |
 | `Icon` | Heart (filled, color: heart) | Red heart showing upvote count per video |
 
@@ -461,25 +477,29 @@ Screen (SafeAreaView, bg-background, flex-1)
 |---|---|---|
 | Star icon | Tap | Toggle route as favorite (optimistic update, synced to server) |
 | "Style Analysis >" | Tap | Navigate to style analysis breakdown for this route |
-| "Add Ascent" button | Tap | Navigate to Ascent Form for this route |
-| Video submission row | Tap | Navigate to video player/detail for that submission |
-| Heart icon (on video row) | Tap | Upvote/un-upvote the video (heart fills/unfills, count updates) |
-| Back gesture / button | Swipe right / tap back | Return to Route Browse |
+| "Add Ascent" button (active session) | Tap | Navigate to Ascent Form for this route |
+| "Add Ascent" button (no active session) | Tap | Prompt: "Start session at [gym name]?" -- Yes starts session then opens Ascent Form, No redirects to Map Browse |
+| Video submission item | Tap | Navigate to video player/detail for that submission |
+| Sender avatar / name | Tap | Navigate to that user's profile |
+| Heart icon (on video item) | Tap | Upvote/un-upvote the video (heart fills/unfills, count updates) |
+| Back gesture / button | Swipe right / tap back | Return to Gym Routes |
 
 #### Navigation
 
 | Trigger | Destination |
 |---|---|
-| "Add Ascent" button | `app/route/[id]/ascent.tsx` (Ascent Form) |
-| "Style Analysis >" | Style analysis screen (future) |
-| Video submission row | Video player screen (future, Phase 12) |
-| Back | `app/(tabs)/routes.tsx` (Route Browse) |
+| "Add Ascent" (active session) | `app/gym/[gymId]/route/[routeId]/ascent.tsx` (Ascent Form) |
+| "Add Ascent" (no session) | `app/start-session.tsx` (Start Session prompt) |
+| "Style Analysis >" | `app/gym/[gymId]/route/[routeId]/style-analysis.tsx` (Route Style Analysis) |
+| Video submission item | Video player screen (future, Phase 12) |
+| Sender avatar / name | `app/profile/[userId].tsx` (Profile Other User) |
+| Back | `app/gym/[id]/routes.tsx` (Gym Routes) |
 
 ---
 
 ### 6. Ascent Form
 
-**File:** `app/route/[id]/ascent.tsx`
+**File:** `app/gym/[gymId]/route/[routeId]/ascent.tsx`
 **Purpose:** Log a climbing attempt (ascent) for a route. The climber rates the route, optionally
 adds a beta video and comment, and tags the climbing styles involved.
 **Mockup:** `Documentation/mockups/Ascent.png`
@@ -494,8 +514,8 @@ Screen (SafeAreaView, bg-background, flex-1)
       Image (route photo, ~80x80, rounded-xl)
       MetadataColumn (flex-1)
         Text ("#01", text-2xl font-bold font-mono text-white)
-        Text ("Rating: 4.2 ⭐", text-sm text-secondary)
-        Text ("Send Status: ✅", text-sm text-secondary)
+        Text ("Rating: 4.2", text-sm text-secondary)
+        Text ("Send Status:", text-sm text-secondary)
         Text ("Grade: 5", text-sm text-secondary)
         Text ("Set on: 23 November", text-sm text-secondary)
         Button (variant: "ghost", "Style Analysis >", text-accent-light)
@@ -560,85 +580,95 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Trigger | Destination |
 |---|---|
-| "Add Ascent" (successful submit) | `app/route/[id].tsx` (Route Details) -- data refreshed |
-| Back | `app/route/[id].tsx` (Route Details) |
+| "Add Ascent" (successful submit) | `app/gym/[gymId]/route/[routeId].tsx` (Route Details) -- data refreshed |
+| Back | `app/gym/[gymId]/route/[routeId].tsx` (Route Details) |
 | Camera/gallery picker | Native OS media picker (returns to form with selected media) |
 
 ---
 
-### 7. Start Activity
+### 7. Start Session
 
-**File:** `app/(tabs)/activity.tsx`
-**Purpose:** Select a gym to start a climbing session. This is a minimal screen -- the user
-picks their location (country, city, gym) and taps "Start Activity" to begin logging ascents.
-**Mockup:** `Documentation/mockups/Start Activity.png`
+**File:** `app/start-session.tsx` (modal)
+**Purpose:** Quickly start a climbing session using location detection. Instead of manually
+selecting country, city, and gym, the app detects the user's location and suggests the nearest
+gym. This reduces friction from three taps (cascade dropdowns) to a single confirmation.
+**Mockup:** Mockup: TBD (original mockup at `Documentation/mockups/Start Activity.png` shows
+the old cascade-dropdown design; the new flow is location-based)
 
 #### Layout
 
 ```
-Screen (SafeAreaView, bg-background, flex-1)
-  ContentArea (px-4, pt-8, flex-1)
-    DropdownSection (gap-6)
-      DropdownField
-        Text ("Country:", text-base font-semibold text-white, mb-2)
-        TextInput (variant: "dropdown", rightIcon: ChevronDown,
-                   value: "Portugal", bg-surface)
+Screen (Modal presentation, bg-background, flex-1)
+  ContentArea (px-4, flex-1, justify-center, items-center)
+    IconSection (mb-6)
+      Icon (MapPin, 48px, text-accent)
+        // Location pin icon to reinforce the "we found you" concept
 
-      DropdownField
-        Text ("City:", text-base font-semibold text-white, mb-2)
-        TextInput (variant: "dropdown", rightIcon: ChevronDown,
-                   value: "Porto", bg-surface)
+    PromptSection (items-center, gap-4)
+      Text ("Start session at", text-xl text-white)
+      Text (closestGymName, text-2xl font-bold text-accent-light)
+        // e.g., "Sao Rock"
+      Text (gymAddress, text-sm text-secondary, mt-1)
+        // e.g., "Rua de Godim 312, Porto"
 
-      DropdownField
-        Text ("Gym:", text-base font-semibold text-white, mb-2)
-        TextInput (variant: "dropdown", rightIcon: ChevronDown,
-                   value: "São Rock", bg-surface)
+    ButtonSection (mt-8, w-full, gap-3, px-4)
+      Button (variant: "primary", full-width, "Yes, start session!")
+      Button (variant: "ghost", full-width, "No, choose another gym")
 
-    Spacer (flex-1)
+    LoadingState (shown while detecting location)
+      ActivityIndicator (color: accent)
+      Text ("Finding nearby gyms...", text-base text-secondary, mt-2)
 
-    ActionSection (mb-8)
-      Button (variant: "primary", full-width, "Start Activity")
-
-  TabBar (fixed bottom)
+    ErrorState (shown if no gym found / location unavailable)
+      Text ("Could not detect nearby gym", text-base text-secondary)
+      Button (variant: "primary", full-width, "Browse gyms on map")
 ```
 
 #### Components Used
 
 | Component | Props / Config | Notes |
 |---|---|---|
-| `TextInput` | dropdown variant, rightIcon: ChevronDown | Each selector appears as a text input with a dropdown arrow. Tapping opens a picker/bottom sheet. |
-| `Button` | variant: "primary" | Purple "Start Activity" button, pushed toward the bottom of the screen |
+| `Icon` | MapPin, 48px | Large location icon reinforcing the geo-detection concept |
+| `Text` | Various sizes | Gym name in accent-light bold, address in secondary |
+| `Button` | variant: "primary" | "Yes, start session!" confirmation button |
+| `Button` | variant: "ghost" | "No, choose another gym" secondary action |
+| `ActivityIndicator` | color: accent | Shown while location is being detected |
 
 #### Interactions
 
 | Element | Action | Result |
 |---|---|---|
-| Country dropdown | Tap | Opens country picker (bottom sheet or modal list). Selected value updates the city dropdown options. |
-| City dropdown | Tap | Opens city picker, filtered by selected country. Selected value updates the gym dropdown options. |
-| Gym dropdown | Tap | Opens gym picker, filtered by selected city. |
-| "Start Activity" button | Tap | Creates a new climbing session for the selected gym. Navigates to the active session view (or Route Browse filtered to that gym). |
+| "Yes, start session!" | Tap | Creates a new climbing session at the detected gym. Navigates to Gym Main Page with active session indicator, or directly to Gym Routes. |
+| "No, choose another gym" | Tap | Navigates to Map Browse so the user can pick a different gym |
+| "Browse gyms on map" (error state) | Tap | Navigates to Map Browse |
+| Back gesture / close modal | Swipe down | Dismisses the modal, returns to previous screen |
 
 #### Navigation
 
 | Trigger | Destination |
 |---|---|
-| "Start Activity" | Active session screen or `app/(tabs)/routes.tsx` filtered to the selected gym |
+| "Yes, start session!" | `app/gym/[id].tsx` (Gym Main Page) with active session at the detected gym |
+| "No, choose another gym" | `app/(tabs)/map.tsx` (Map Browse) |
+| "Browse gyms on map" (error) | `app/(tabs)/map.tsx` (Map Browse) |
+| Dismiss modal | Previous screen |
 
 #### Design Note
 
-This is intentionally a simple screen. The cascading dropdowns (Country -> City -> Gym) are a
-**dependent selector** pattern: each selection constrains the next dropdown's options. This
-prevents the user from selecting an invalid combination (e.g., a gym in Porto but city set to
-Lisbon). The data for these dropdowns comes from the `gyms` table in Supabase, grouped by
-location fields.
+The old design used cascading dropdowns (Country -> City -> Gym) which required three
+sequential taps. The new location-based approach leverages the device's GPS to detect the
+closest gym and present a single confirmation prompt. This is a much faster flow for the
+common case (the climber is already at or near the gym they want to log for). If the
+detection is wrong or the user wants a different gym, the "No" path redirects to Map Browse
+where all gyms are visible and selectable.
 
 ---
 
-### 8. Gym Browse
+### 8. Gym Main Page
 
 **File:** `app/gym/[id].tsx`
-**Purpose:** Show details about a specific gym -- location, hours, social links -- and provide
-navigation to the gym's routes, leaderboards, and style analysis.
+**Purpose:** Hub for everything about a specific gym -- location, hours, social links -- and
+provide navigation to the gym's routes, leaderboards, and style analysis. Also serves as
+the launch point for starting a session at this gym.
 **Mockup:** `Documentation/mockups/Gym Browse.png`
 
 #### Layout
@@ -651,7 +681,7 @@ Screen (SafeAreaView, bg-background, flex-1)
         // The gym logo is a rounded square, not fully circular
       HeaderInfo (flex-1)
         Row (flex-row, items-center, gap-2)
-          Text (gymName, text-2xl font-bold text-white)  // "São Rock"
+          Text (gymName, text-2xl font-bold text-white)  // "Sao Rock"
           IconButton (Star, outline, toggle favorite)
         Row (flex-row, items-center, gap-1, mt-1)
           Icon (MapPin, 16px, text-secondary)
@@ -663,7 +693,13 @@ Screen (SafeAreaView, bg-background, flex-1)
         Text (socialHandle, text-sm text-accent-light, mt-1)
           // "@saorockclimbing"
 
-    NavigationCards (mt-8, gap-4)
+    StartSessionButton (mt-6, px-4)
+      Button (variant: "primary", full-width, size: "lg",
+              "Start Session", leftIcon: Play)
+        // Large prominent button to start a climbing session at this gym.
+        // This is the primary call-to-action on the Gym Main Page.
+
+    NavigationCards (mt-6, gap-4)
       Card (variant: "pressable", p-5)
         Row (flex-row, justify-between, items-center)
           Text ("Routes", text-xl font-semibold text-white)
@@ -678,8 +714,6 @@ Screen (SafeAreaView, bg-background, flex-1)
         Row (flex-row, justify-between, items-center)
           Text ("Style Analysis", text-xl font-semibold text-white)
           Icon (ChevronRight, text-white)
-
-  TabBar (fixed bottom)
 ```
 
 #### Components Used
@@ -689,6 +723,7 @@ Screen (SafeAreaView, bg-background, flex-1)
 | `Avatar` | size: "lg", rounded square variant | Gym logo -- note this is a rounded square, not circular like user avatars |
 | `IconButton` | Star, toggleable | Favorite/unfavorite this gym |
 | `Icon` | MapPin, Clock (16px, text-secondary) | Small metadata icons for location and hours |
+| `Button` | variant: "primary", size: "lg", leftIcon: Play | Large "Start Session" button -- the primary CTA on this screen |
 | `Card` | variant: "pressable" | Three large navigation cards with text and chevron |
 
 #### Visual Details
@@ -698,6 +733,9 @@ Screen (SafeAreaView, bg-background, flex-1)
   indicator calculated from the gym's operating hours and the user's current time.
 - **Social handle:** Displayed in `accent-light` color, suggesting it is tappable (could open
   the gym's social media profile).
+- **Start Session button:** Large, full-width purple button with a Play icon. Visually
+  distinguished from the navigation cards below to indicate it is the primary action on
+  this screen.
 
 #### Interactions
 
@@ -705,8 +743,9 @@ Screen (SafeAreaView, bg-background, flex-1)
 |---|---|---|
 | Star icon | Tap | Toggle gym as favorite |
 | Social handle | Tap | Open external link to gym's social media profile |
-| "Routes" card | Tap | Navigate to Route Browse filtered to this gym |
-| "Leaderboards" card | Tap | Navigate to Leaderboard list for this gym |
+| "Start Session" button | Tap | Starts a climbing session at this gym, navigates to Gym Routes with active session indicator |
+| "Routes" card | Tap | Navigate to Gym Routes for this gym |
+| "Leaderboards" card | Tap | Navigate to Gym Leaderboards list for this gym |
 | "Style Analysis" card | Tap | Navigate to style analysis for this gym |
 | Back gesture | Swipe right | Return to previous screen |
 
@@ -714,9 +753,10 @@ Screen (SafeAreaView, bg-background, flex-1)
 
 | Trigger | Destination |
 |---|---|
-| "Routes" card | `app/(tabs)/routes.tsx` filtered to this gym, or `app/gym/[id]/routes.tsx` |
-| "Leaderboards" card | `app/leaderboard/[id].tsx` for this gym |
-| "Style Analysis" card | Style analysis screen for this gym (future) |
+| "Start Session" button | Active session started; navigate to `app/gym/[id]/routes.tsx` (Gym Routes) |
+| "Routes" card | `app/gym/[id]/routes.tsx` (Gym Routes) |
+| "Leaderboards" card | `app/gym/[id]/leaderboards.tsx` (Gym Leaderboards) |
+| "Style Analysis" card | `app/gym/[id]/style-analysis.tsx` (Gym Style Analysis, future) |
 | Back | Previous screen (Map Browse or Home) |
 
 ---
@@ -767,15 +807,15 @@ Screen (SafeAreaView, bg-background, flex-1)
 | Star filter | Tap | Shows only favorited gyms |
 | Map | Pinch/spread | Zoom in/out |
 | Map | Pan/drag | Move to different area |
-| Map marker | Tap | Highlights the gym and scrolls the bottom sheet to that gym's entry, or navigates to Gym Browse |
+| Map marker | Tap | Highlights the gym and scrolls the bottom sheet to that gym's entry, or navigates to Gym Main Page |
 | Bottom sheet | Swipe up | Expands to show full gym list |
-| Bottom sheet gym entry | Tap | Navigate to Gym Browse for that gym |
+| Bottom sheet gym entry | Tap | Navigate to Gym Main Page for that gym |
 
 #### Navigation
 
 | Trigger | Destination |
 |---|---|
-| Tap map marker or gym in list | `app/gym/[id].tsx` (Gym Browse) |
+| Tap map marker or gym in list | `app/gym/[id].tsx` (Gym Main Page) |
 
 #### Design Note
 
@@ -786,9 +826,9 @@ be the accent purple appearing warm due to mockup rendering.
 
 ---
 
-### 10. Leaderboard
+### 10. Leaderboard Detail
 
-**File:** `app/leaderboard/[id].tsx`
+**File:** `app/gym/[gymId]/leaderboard/[leaderboardId].tsx`
 **Purpose:** Display ranked climbers for a specific gym competition. Shows prizes, rules, and a
 scrollable ranked list with special styling for the top 3 positions.
 **Mockup:** `Documentation/mockups/Leaderboard.png`
@@ -799,18 +839,18 @@ scrollable ranked list with special styling for the top 3 positions.
 Screen (SafeAreaView, bg-background, flex-1)
   ScrollView (px-4, pt-4)
     TitleSection
-      Text ("São Rock Leaderboards:", text-2xl font-bold text-white)
+      Text ("Sao Rock Leaderboards:", text-2xl font-bold text-white)
 
     CompetitionSelector (mt-4)
       TextInput (variant: "dropdown", rightIcon: ChevronDown,
-                 value: "São Comp Dec 2025")
+                 value: "Sao Comp Dec 2025")
 
     PrizesSection (mt-4)
       Text ("Prizes:", text-base font-semibold text-white, mb-2)
       BulletList
-        Text ("• La Sportiva Solution Comp", text-sm text-secondary)
-        Text ("• Organic Chalk Bucket", text-sm text-secondary)
-        Text ("• Chalkd Chalk Bag", text-sm text-secondary)
+        Text ("* La Sportiva Solution Comp", text-sm text-secondary)
+        Text ("* Organic Chalk Bucket", text-sm text-secondary)
+        Text ("* Chalkd Chalk Bag", text-sm text-secondary)
 
     RulesLink (mt-2)
       Button (variant: "ghost", "Rules", border border-accent,
@@ -818,7 +858,7 @@ Screen (SafeAreaView, bg-background, flex-1)
         // Outlined button style for the "Rules" link
 
     RankedList (mt-6, gap-2)
-      // Rank #1 — Gold highlight
+      // Rank #1 -- Gold highlight
       RankRow (bg-gold/20, border border-gold, rounded-md, p-3,
                flex-row, items-center)
         Avatar (sm, user photo)
@@ -827,19 +867,19 @@ Screen (SafeAreaView, bg-background, flex-1)
         Text (points, text-base font-bold font-mono text-white)
           // "57 points"
 
-      // Rank #2 — Silver/distinct styling
+      // Rank #2 -- Silver/distinct styling
       RankRow (bg-surface-elevated, rounded-md, p-3, flex-row, items-center)
         Avatar (sm)
         Text ("Magnus Midtbe", flex-1, ml-3, font-semibold)
         Text ("54 points", font-mono)
 
-      // Rank #3 — Bronze/distinct styling
+      // Rank #3 -- Bronze/distinct styling
       RankRow (bg-surface-elevated, rounded-md, p-3, flex-row, items-center)
         Avatar (sm)
         Text ("Chris Sharma", flex-1, ml-3, font-semibold)
         Text ("52 points", font-mono)
 
-      // Rank #4+ — Standard styling
+      // Rank #4+ -- Standard styling
       RankRow (bg-surface, rounded-md, p-3, flex-row, items-center)
         Text (rank, text-base text-muted, w-8)   // "4"
         Avatar (sm)
@@ -847,8 +887,6 @@ Screen (SafeAreaView, bg-background, flex-1)
         Text (points, font-mono)
 
       RankRow ...  (repeats for all ranked climbers)
-
-  TabBar (fixed bottom)
 ```
 
 #### Components Used
@@ -884,17 +922,18 @@ The leaderboard mockup uses distinct visual treatment for the top 3:
 
 | Trigger | Destination |
 |---|---|
-| Tap rank row | `app/(tabs)/profile.tsx` or `app/profile/[id].tsx` for that climber |
+| Tap rank row | `app/profile/[userId].tsx` (Profile Other User) for that climber |
 | "Rules" button | Competition rules screen/modal (future) |
-| Back | Previous screen (Gym Browse or Home feed) |
+| Back | Previous screen (Gym Leaderboards, Enrolled Leaderboards, or Home feed) |
 
 ---
 
-### 11. Profile
+### 11. Profile (Own)
 
 **File:** `app/(tabs)/profile.tsx`
-**Purpose:** Display the current user's profile -- avatar, personal info, earned achievements,
-and leaderboard enrollments. This is the user's "home base" in the app.
+**Purpose:** Display the current user's profile -- avatar, personal info, Pro status, streaks,
+earned achievements, enrolled leaderboards, and activity history. This is the user's
+"home base" in the app.
 **Mockup:** `Documentation/mockups/Profile.png`
 
 #### Layout
@@ -902,18 +941,42 @@ and leaderboard enrollments. This is the user's "home base" in the app.
 ```
 Screen (SafeAreaView, bg-background, flex-1)
   ScrollView (px-4, pt-4, items-center)
+    TopBar (flex-row, justify-end, w-full, mb-2)
+      Button (variant: "ghost", "Edit", leftIcon: Pencil, text-accent-light)
+        // Edit profile button in the top-right corner
+
     AvatarSection (items-center, mb-4)
       Avatar (size: "xl", source: user photo, badge: crown/rank overlay)
         // Large profile photo with optional achievement badge overlay
         // Mockup shows a small crown icon on top-left of avatar
 
-    InfoSection (items-center, mb-6)
-      Text (name, text-3xl font-bold text-white)        // "Alex Honnold"
+    InfoSection (items-center, mb-4)
+      Row (flex-row, items-center, gap-2)
+        Text (name, text-3xl font-bold text-white)        // "Alex Honnold"
+        ProBadge (bg-accent, rounded-full, px-2, py-0.5)
+          Text ("PRO", text-xs font-bold text-white)
+          // Only shown if user has Pro subscription
       Text ("Age: 40", text-sm text-secondary, mt-1)
-      Text ("Favorite gym: São Rock", text-sm text-secondary, mt-1)
+      Text ("Favorite gym: Sao Rock", text-sm text-secondary, mt-1)
+
+    StreaksSection (w-full, mb-6)
+      Text ("Streaks", text-xl font-semibold text-white, mb-3)
+      StreakRow (flex-row, justify-around)
+        StreakItem (items-center)
+          Icon (Flame, 24px, text-warning)
+          Text ("12", text-lg font-bold text-white)
+          Text ("Current", text-xs text-secondary)
+        StreakItem (items-center)
+          Icon (Flame, 24px, text-accent-light)
+          Text ("34", text-lg font-bold text-white)
+          Text ("Longest", text-xs text-secondary)
+        StreakItem (items-center)
+          Icon (Calendar, 24px, text-secondary)
+          Text ("87", text-lg font-bold text-white)
+          Text ("Total days", text-xs text-secondary)
 
     AchievementsSection (w-full, mb-6)
-      Text ("Achievments", text-xl font-semibold text-white, mb-4)
+      Text ("Achievements", text-xl font-semibold text-white, mb-4)
         // Note: mockup has typo "Achievments" -- implementation should use "Achievements"
       AchievementRow (flex-row, justify-around)
         AchievementBadge (items-center)
@@ -927,22 +990,36 @@ Screen (SafeAreaView, bg-background, flex-1)
           View (achievement icon)
           Text ("Early Bird", text-xs text-secondary, mt-1)
 
-    LeaderboardsSection (w-full)
+    LeaderboardsSection (w-full, mb-6)
       Text ("Currently enrolled Leaderboards", text-xl font-semibold text-white, mb-4)
       LeaderboardList (gap-3)
         LeaderboardRow (flex-row, items-center, p-3)
           Avatar (size: "sm", source: gym logo)
           Text (competitionName, text-base text-white, flex-1, ml-3)
-            // "São Comp Dec 2025"
+            // "Sao Comp Dec 2025"
           Text (rank, text-base font-bold font-mono text-accent-light)
             // "#1"
 
         LeaderboardRow ...
-          // "TNW Season 15" — #3
+          // "TNW Season 15" -- #3
         LeaderboardRow ...
-          // "Proa Contest v14" — #3
+          // "Proa Contest v14" -- #3
         LeaderboardRow ...
-          // "In the Zone 10" — #7
+          // "In the Zone 10" -- #7
+
+    ActivityHistorySection (w-full, mb-6)
+      Text ("Activity History", text-xl font-semibold text-white, mb-4)
+      ActivityList (gap-3)
+        ActivityItem (flex-row, items-start, gap-3, bg-surface, rounded-lg, p-3)
+          DateColumn (items-center, w-10)
+            Text (day, text-lg font-bold text-muted)
+            Text (month, text-xs text-muted)
+          ContentColumn (flex-1)
+            Text (description, text-sm text-secondary)
+              // e.g., "Sent route #14 (V5) at Sao Rock"
+              // e.g., "Completed 3 routes in a session at Sao Rock"
+
+        ActivityItem ...  (repeats, with pagination or "Load more")
 
   TabBar (fixed bottom, Profile tab active)
 ```
@@ -952,26 +1029,367 @@ Screen (SafeAreaView, bg-background, flex-1)
 | Component | Props / Config | Notes |
 |---|---|---|
 | `Avatar` | size: "xl", badge overlay | Large profile photo (~96x96) with optional crown/badge icon overlay |
+| `Button` | variant: "ghost", leftIcon: Pencil | Edit profile button in the top-right area |
+| `ProBadge` | Custom inline badge | Small purple "PRO" pill next to name, only shown for Pro subscribers |
+| `Icon` | Flame, Calendar | Streak display icons |
 | `AchievementBadge` | Custom component | Hexagonal or shield-shaped badge with icon + label. Color varies by achievement type. |
 | `Avatar` | size: "sm" | Gym logos next to each leaderboard entry |
-| `Card` / `View` | Leaderboard rows | Each enrolled competition shown as a row with gym logo, name, and rank |
+| `Card` / `View` | Leaderboard rows, activity items | Each enrolled competition shown as a row with gym logo, name, and rank |
 
 #### Interactions
 
 | Element | Action | Result |
 |---|---|---|
+| "Edit" button | Tap | Navigate to Edit Profile screen |
 | Avatar | Tap | Open avatar editor / photo picker (future) |
 | Achievement badge | Tap | Show achievement detail (name, description, date earned) in a modal or toast |
 | Leaderboard row | Tap | Navigate to that leaderboard |
+| Activity item | Tap | Navigate to route detail or session detail (if applicable) |
 | Pull down | Swipe | Refresh profile data |
 
 #### Navigation
 
 | Trigger | Destination |
 |---|---|
-| Tap leaderboard row | `app/leaderboard/[id].tsx` for that competition |
+| "Edit" button | `app/profile/edit.tsx` (Edit Profile) |
+| Tap leaderboard row | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` (Leaderboard Detail) |
 | Tap achievement | Achievement detail modal (future, Phase 8) |
-| Edit profile (implied) | Profile edit screen (future, Phase 16) |
+| Tap favorite gym | `app/gym/[id].tsx` (Gym Main Page) |
+
+---
+
+### 12. Enrolled Leaderboards
+
+**File:** `app/(tabs)/leaderboards.tsx`
+**Purpose:** Quick-access tab showing all leaderboards the user is currently participating in.
+This replaces the old Routes tab and gives competitive climbers a one-tap path to check
+their standings across all gyms.
+**Mockup:** Mockup: TBD
+
+#### Layout
+
+```
+Screen (SafeAreaView, bg-background, flex-1)
+  HeaderSection (px-4, pt-4)
+    Text ("My Leaderboards", text-2xl font-bold text-white)
+    Text ("Competitions you're enrolled in", text-sm text-secondary, mt-1)
+
+  LeaderboardList (FlatList, px-4, gap-3, mt-4)
+    LeaderboardCard (Card variant: "pressable", p-4)
+      Row (flex-row, items-center)
+        Avatar (size: "sm", source: gym logo)
+        ContentColumn (flex-1, ml-3)
+          Text (competitionName, text-base font-semibold text-white)
+            // "Sao Comp Dec 2025"
+          Text (gymName, text-sm text-secondary)
+            // "Sao Rock"
+        RankColumn (items-center)
+          Text (rank, text-xl font-bold font-mono text-accent-light)
+            // "#1"
+          Text (points, text-xs text-secondary)
+            // "57 pts"
+      StatusRow (flex-row, items-center, mt-2)
+        Badge (variant: "success", "Active")
+          // or variant: "warning", "Ending soon"
+          // or variant: "info", "Just ended"
+        Text (timeRemaining, text-xs text-muted, ml-2)
+          // "12 days left" or "Ended 2 days ago"
+
+    LeaderboardCard ...  (repeats for each enrolled leaderboard)
+
+    EmptyState (shown when user has no enrolled leaderboards)
+      Icon (Trophy, 48px, text-muted)
+      Text ("No leaderboards yet", text-lg text-secondary, mt-4)
+      Text ("Join a competition at your gym to see it here",
+            text-sm text-muted, mt-1)
+      Button (variant: "primary", "Find gyms", mt-4)
+
+  TabBar (fixed bottom, Leaderboards tab active)
+```
+
+#### Components Used
+
+| Component | Props / Config | Notes |
+|---|---|---|
+| `Card` | variant: "pressable" | Each enrolled leaderboard is a tappable card |
+| `Avatar` | size: "sm" | Gym logo for each leaderboard |
+| `Badge` | variant: "success" / "warning" / "info" | Status indicator for the leaderboard's lifecycle |
+| `Icon` | Trophy, 48px | Empty state illustration icon |
+| `Button` | variant: "primary" | CTA in empty state to discover gyms |
+
+#### Interactions
+
+| Element | Action | Result |
+|---|---|---|
+| Leaderboard card | Tap | Navigate to the Leaderboard Detail for that competition |
+| "Find gyms" (empty state) | Tap | Navigate to Map Browse to discover gyms with competitions |
+| Pull down | Swipe | Refresh leaderboard data |
+| Scroll | Swipe up/down | Scrolls through leaderboard list |
+
+#### Navigation
+
+| Trigger | Destination |
+|---|---|
+| Tap leaderboard card | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` (Leaderboard Detail) |
+| "Find gyms" (empty state) | `app/(tabs)/map.tsx` (Map Browse) |
+
+---
+
+### 13. Gym Leaderboards
+
+**File:** `app/gym/[id]/leaderboards.tsx`
+**Purpose:** List all leaderboards for a specific gym. By default shows active and recently
+ended leaderboards. A toggle reveals retired/archived leaderboards.
+**Mockup:** Mockup: TBD
+
+#### Layout
+
+```
+Screen (SafeAreaView, bg-background, flex-1)
+  HeaderSection (px-4, pt-4)
+    Row (flex-row, items-center, gap-2)
+      IconButton (ArrowLeft, back to Gym Main Page)
+      Text (gymName + " Leaderboards", text-xl font-bold text-white)
+        // e.g., "Sao Rock Leaderboards"
+
+  FilterSection (px-4, mt-4)
+    SegmentedControl (flex-row, bg-surface, rounded-lg, p-1)
+      Segment ("Active", selected by default)
+      Segment ("Just Ended")
+      Segment ("Retired")
+        // Retired segment is a toggle that shows archived/completed leaderboards
+
+  LeaderboardList (FlatList, px-4, gap-3, mt-4)
+    LeaderboardCard (Card variant: "pressable", p-4)
+      Row (flex-row, items-center)
+        Icon (Trophy, 24px, text-accent-light)
+        ContentColumn (flex-1, ml-3)
+          Text (leaderboardName, text-base font-semibold text-white)
+            // "Sao Comp Dec 2025"
+          Text (dateRange, text-sm text-secondary)
+            // "Nov 1 - Dec 31, 2025"
+        StatusColumn (items-end)
+          Badge (variant: "success", "Active")
+            // or "Ended" / "Retired"
+          Text (participantCount, text-xs text-muted, mt-1)
+            // "42 climbers"
+
+    LeaderboardCard ...  (repeats)
+
+    EmptyState (shown if no leaderboards match the selected filter)
+      Text ("No leaderboards found", text-base text-secondary)
+      Text ("Check back later for new competitions",
+            text-sm text-muted, mt-1)
+```
+
+#### Components Used
+
+| Component | Props / Config | Notes |
+|---|---|---|
+| `IconButton` | ArrowLeft | Back button navigating to Gym Main Page |
+| `SegmentedControl` | Custom component, 3 segments | Filter tabs for leaderboard lifecycle state |
+| `Card` | variant: "pressable" | Each leaderboard is a tappable card |
+| `Icon` | Trophy, 24px | Decorative icon for each leaderboard entry |
+| `Badge` | variant varies by status | Status indicator (Active, Ended, Retired) |
+
+#### Interactions
+
+| Element | Action | Result |
+|---|---|---|
+| Back button | Tap | Returns to Gym Main Page |
+| Segment ("Active") | Tap | Filters list to show only active leaderboards |
+| Segment ("Just Ended") | Tap | Filters to recently ended leaderboards (within last ~2 weeks) |
+| Segment ("Retired") | Tap | Shows archived/long-ended leaderboards |
+| Leaderboard card | Tap | Navigate to Leaderboard Detail for that competition |
+| Pull down | Swipe | Refresh leaderboard list |
+
+#### Navigation
+
+| Trigger | Destination |
+|---|---|
+| Tap leaderboard card | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` (Leaderboard Detail) |
+| Back button | `app/gym/[id].tsx` (Gym Main Page) |
+
+---
+
+### 14. Profile (Other User)
+
+**File:** `app/profile/[userId].tsx`
+**Purpose:** View another user's profile. Same layout as own profile but with a Follow button
+instead of an Edit button, and without editing capabilities.
+**Mockup:** Mockup: TBD
+
+#### Layout
+
+```
+Screen (SafeAreaView, bg-background, flex-1)
+  ScrollView (px-4, pt-4, items-center)
+    TopBar (flex-row, justify-between, w-full, mb-2)
+      IconButton (ArrowLeft, back)
+      Button (variant: "primary", "Follow", px-4, rounded-full)
+        // or "Following" with variant: "secondary" if already following
+
+    AvatarSection (items-center, mb-4)
+      Avatar (size: "xl", source: user photo, badge: crown/rank overlay)
+
+    InfoSection (items-center, mb-4)
+      Row (flex-row, items-center, gap-2)
+        Text (name, text-3xl font-bold text-white)
+        ProBadge (bg-accent, rounded-full, px-2, py-0.5)
+          Text ("PRO", text-xs font-bold text-white)
+          // Only shown if this user has Pro subscription
+      Text ("Age: 40", text-sm text-secondary, mt-1)
+      Text ("Favorite gym: Sao Rock", text-sm text-secondary, mt-1)
+
+    StreaksSection (w-full, mb-6)
+      Text ("Streaks", text-xl font-semibold text-white, mb-3)
+      StreakRow (flex-row, justify-around)
+        StreakItem (items-center)
+          Icon (Flame, 24px, text-warning)
+          Text (currentStreak, text-lg font-bold text-white)
+          Text ("Current", text-xs text-secondary)
+        StreakItem (items-center)
+          Icon (Flame, 24px, text-accent-light)
+          Text (longestStreak, text-lg font-bold text-white)
+          Text ("Longest", text-xs text-secondary)
+        StreakItem (items-center)
+          Icon (Calendar, 24px, text-secondary)
+          Text (totalDays, text-lg font-bold text-white)
+          Text ("Total days", text-xs text-secondary)
+
+    AchievementsSection (w-full, mb-6)
+      Text ("Achievements", text-xl font-semibold text-white, mb-4)
+      AchievementRow (flex-row, justify-around)
+        AchievementBadge (items-center)
+          View (achievement icon, ~64x64, styled badge shape)
+          Text (achievementName, text-xs text-secondary, mt-1)
+        AchievementBadge ...
+        AchievementBadge ...
+
+    LeaderboardsSection (w-full, mb-6)
+      Text ("Currently enrolled Leaderboards", text-xl font-semibold text-white, mb-4)
+      LeaderboardList (gap-3)
+        LeaderboardRow (flex-row, items-center, p-3)
+          Avatar (size: "sm", source: gym logo)
+          Text (competitionName, text-base text-white, flex-1, ml-3)
+          Text (rank, text-base font-bold font-mono text-accent-light)
+
+        LeaderboardRow ...
+
+    ActivityHistorySection (w-full, mb-6)
+      Text ("Activity History", text-xl font-semibold text-white, mb-4)
+      ActivityList (gap-3)
+        ActivityItem (flex-row, items-start, gap-3, bg-surface, rounded-lg, p-3)
+          DateColumn (items-center, w-10)
+            Text (day, text-lg font-bold text-muted)
+            Text (month, text-xs text-muted)
+          ContentColumn (flex-1)
+            Text (description, text-sm text-secondary)
+
+        ActivityItem ...
+```
+
+#### Components Used
+
+| Component | Props / Config | Notes |
+|---|---|---|
+| `IconButton` | ArrowLeft | Back button |
+| `Button` | variant: "primary" / "secondary" | "Follow" / "Following" toggle button |
+| `Avatar` | size: "xl", badge overlay | Large profile photo |
+| `ProBadge` | Custom inline badge | "PRO" pill, shown only for Pro subscribers |
+| `Icon` | Flame, Calendar | Streak display icons |
+| `AchievementBadge` | Custom component | Same as own profile |
+| `Avatar` | size: "sm" | Gym logos next to leaderboard entries |
+
+#### Interactions
+
+| Element | Action | Result |
+|---|---|---|
+| "Follow" button | Tap | Toggles follow state. Button changes from "Follow" (primary) to "Following" (secondary). Optimistic update. |
+| Achievement badge | Tap | Show achievement detail in a modal or toast |
+| Leaderboard row | Tap | Navigate to that leaderboard |
+| Favorite gym link | Tap | Navigate to that gym's main page |
+| Activity item | Tap | Navigate to route detail or session detail (if applicable) |
+| Back button | Tap | Return to previous screen |
+
+#### Navigation
+
+| Trigger | Destination |
+|---|---|
+| Tap leaderboard row | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` (Leaderboard Detail) |
+| Tap favorite gym | `app/gym/[id].tsx` (Gym Main Page) |
+| Back | Previous screen (leaderboard, home feed, etc.) |
+
+---
+
+### 15. Edit Profile
+
+**File:** `app/profile/edit.tsx`
+**Purpose:** Edit the current user's profile information -- name, age, avatar photo, favorite
+gym, and preferred grade system.
+**Mockup:** Mockup: TBD
+
+#### Layout
+
+```
+Screen (SafeAreaView, bg-background, flex-1)
+  HeaderBar (px-4, pt-4, flex-row, justify-between, items-center)
+    Button (variant: "ghost", "Cancel", text-secondary)
+    Text ("Edit Profile", text-lg font-semibold text-white)
+    Button (variant: "ghost", "Save", text-accent-light)
+
+  ScrollView (px-4, mt-4)
+    AvatarEditSection (items-center, mb-6)
+      Avatar (size: "xl", source: user photo)
+      Button (variant: "ghost", "Change Photo", text-accent-light, mt-2)
+
+    FormSection (gap-5)
+      TextInput (label: "Display Name", value: currentName,
+                 placeholder: "Your display name")
+      TextInput (label: "Username", value: currentUsername,
+                 leftIcon: AtSign, placeholder: "@username")
+      TextInput (label: "Age", value: currentAge,
+                 keyboardType: "numeric", placeholder: "Your age")
+      DropdownField
+        Text ("Favorite Gym", text-base font-semibold text-white, mb-2)
+        TextInput (variant: "dropdown", rightIcon: ChevronDown,
+                   value: currentFavoriteGym)
+      DropdownField
+        Text ("Preferred Grade System", text-base font-semibold text-white, mb-2)
+        TextInput (variant: "dropdown", rightIcon: ChevronDown,
+                   value: currentGradeSystem)
+          // Options: V-Scale, Font, YDS
+```
+
+#### Components Used
+
+| Component | Props / Config | Notes |
+|---|---|---|
+| `Button` | variant: "ghost" | "Cancel" and "Save" header buttons |
+| `Avatar` | size: "xl" | Editable profile photo |
+| `TextInput` | Various configs | Form fields for name, username, age |
+| `TextInput` | dropdown variant | Pickers for favorite gym and grade system |
+
+#### Interactions
+
+| Element | Action | Result |
+|---|---|---|
+| "Change Photo" | Tap | Opens camera/gallery picker for new avatar |
+| Display name input | Type | Updates display name |
+| Username input | Type | Updates username (validates uniqueness on blur) |
+| Age input | Type | Updates age (numeric keyboard) |
+| Favorite gym dropdown | Tap | Opens gym picker (list of all gyms) |
+| Grade system dropdown | Tap | Opens picker: V-Scale, Font, YDS |
+| "Save" button | Tap | Validates form -> updates profile via service -> navigates back to Profile |
+| "Cancel" button | Tap | Discards changes and returns to Profile (with confirmation if form is dirty) |
+
+#### Navigation
+
+| Trigger | Destination |
+|---|---|
+| "Save" (successful) | `app/(tabs)/profile.tsx` (Profile) -- data refreshed |
+| "Cancel" | `app/(tabs)/profile.tsx` (Profile) |
+| Camera/gallery picker | Native OS media picker (returns to form with selected media) |
 
 ---
 
@@ -984,45 +1402,69 @@ navigation between screens uses `router.push()`, `router.back()`, and `router.re
 ### Screen Relationship Diagram
 
 ```
-                        ┌─────────────────────┐
-                        │   Auth Gate          │
-                        │  (auth)/_layout.tsx  │
-                        └──────┬──────────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-              ┌─────▼─────┐       ┌───────▼───────┐
-              │   Login    │◄────►│    Sign Up     │
-              │  (auth)/   │      │   (auth)/      │
-              │ login.tsx  │      │  register.tsx  │
-              └─────┬──────┘      └───────┬────────┘
-                    │  (on auth success)  │
-                    └──────────┬──────────┘
-                               │
-                    ┌──────────▼──────────────┐
-                    │     Tab Navigator       │
-                    │   (tabs)/_layout.tsx     │
-                    └──────────┬──────────────┘
-                               │
-          ┌────────┬───────────┼───────────┬──────────┐
-          │        │           │           │          │
-    ┌─────▼──┐ ┌───▼────┐ ┌───▼────┐ ┌────▼────┐ ┌──▼──────┐
-    │  Home  │ │  Map   │ │Start   │ │ Routes  │ │ Profile │
-    │index   │ │map     │ │Activity│ │routes   │ │profile  │
-    └───┬────┘ └───┬────┘ └────────┘ └────┬────┘ └────┬────┘
-        │          │                      │           │
-        │     ┌────▼─────┐          ┌─────▼──────┐   │
-        │     │Gym Browse│◄─────────│Route Detail│   │
-        │     │gym/[id]  │          │route/[id]  │   │
-        │     └────┬─────┘          └─────┬──────┘   │
-        │          │                      │           │
-        │     ┌────▼────────┐       ┌─────▼──────┐   │
-        │     │Leaderboard  │◄──────│Ascent Form │   │
-        │     │leaderboard/ │       │route/[id]/ │   │
-        └────►│[id]         │◄──────│ascent      │   │
-              └─────────────┘       └────────────┘   │
-                    ▲                                 │
-                    └─────────────────────────────────┘
+                        +---------------------+
+                        |     Auth Gate        |
+                        |  (auth)/_layout.tsx  |
+                        +------+--------------+
+                               |
+                    +----------+----------+
+                    |                     |
+              +-----v-----+       +-------v-------+
+              |   Login    |<---->|    Sign Up     |
+              |  (auth)/   |      |   (auth)/      |
+              | login.tsx  |      |  register.tsx  |
+              +-----+------+      +-------+--------+
+                    |  (on auth success)  |
+                    +----------+----------+
+                               |
+                    +----------v--------------+
+                    |      Tab Navigator      |
+                    |    (tabs)/_layout.tsx    |
+                    +----------+--------------+
+                               |
+        +----------+-----------+-----------+----------+
+        |          |           |           |          |
+  +-----v--+ +----v-----+ +---v----+ +----v------+ +-v--------+
+  |  Home  | |Map Browse| | FAB:   | |Enrolled   | | Profile  |
+  | (Feed) | |          | |Start   | |Leaderb.   | | (Own)    |
+  |index   | |map       | |Session | |leaderb.   | |profile   |
+  +---+----+ +----+-----+ +---+----+ +----+------+ +----+-----+
+      |           |            |           |             |
+      |      +----v--------+  |      +----v--------+    |
+      |      |Gym Main Page|  |      |Leaderboard  |    |
+      |      |gym/[id]     |<-+      |Detail        |   |
+      |      +--+-+--+-----+        |gym/[gymId]/  |    |
+      |         | |  |              |leaderboard/  |    |
+      |         | |  |              |[lbId]        |<---+
+      |    +----+ |  +-----+        +------+-------+
+      |    |      |        |               |
+      | +--v-------+ +-----v--------+ +---v-----------+
+      | |Gym Routes | |Gym Leader-  | |Profile (Other)|
+      | |gym/[id]/  | |boards       | |profile/       |
+      | |routes     | |gym/[id]/    | |[userId]       |
+      | +--+--------+ |leaderboards | +---------------+
+      |    |           +-----+-------+
+      | +--v--------------+  |
+      | |Route Detail      |  |
+      | |gym/[gymId]/      |  |
+      | |route/[routeId]   |  |
+      | +--+--+------------+  |
+      |    |  |               |
+      | +--v--v--------+      |
+      | |Ascent Form   |      |
+      | |gym/[gymId]/   |     |
+      | |route/[rId]/   |     |
+      | |ascent         |     |
+      | +---------------+     |
+      |                       |
+      +--->  (Home feed links to Gym Main Page,
+              Leaderboard Detail, Profile Other User)
+
+  Additional screens:
+    +-- Edit Profile: app/profile/edit.tsx (from Profile Own)
+    +-- Gym Style Analysis: app/gym/[id]/style-analysis.tsx (from Gym Main Page)
+    +-- Route Style Analysis: app/gym/[gymId]/route/[routeId]/style-analysis.tsx (from Route Detail)
+    +-- Start Session modal: app/start-session.tsx (from FAB)
 ```
 
 ### Primary Navigation Paths
@@ -1032,50 +1474,84 @@ These are the most common user journeys through the app:
 #### Path 1: Browse and Log an Ascent
 
 ```
-Home → Routes tab → Tap route card → Route Details → "Add Ascent" → Ascent Form → Submit → Route Details (updated)
+Home -> Gym name in feed -> Gym Main Page -> "Routes" card -> Gym Routes -> Tap route card -> Route Details -> "Add Ascent" -> Ascent Form -> Submit -> Route Details (updated)
 ```
 
 This is the core loop of the app: find a route, climb it, log it.
 
-#### Path 2: Discover Gyms on Map
+#### Path 2: Quick-Start a Session
 
 ```
-Map tab → Tap pin marker → Gym Browse → "Routes" card → Route Browse (filtered) → Route Details
+FAB (+ button) -> Start Session modal -> "Yes, start session!" -> Gym Main Page (session active) -> Gym Routes -> Route Details -> "Add Ascent" -> Ascent Form
+```
+
+The FAB is always visible in the tab bar, providing a one-tap shortcut to start logging.
+Location detection eliminates the old Country -> City -> Gym cascade.
+
+#### Path 3: Discover Gyms on Map
+
+```
+Map Browse tab -> Tap pin marker -> Gym Main Page -> "Routes" card -> Gym Routes -> Route Details
 ```
 
 This path is for exploring new gyms while traveling or trying a new local gym.
 
-#### Path 3: Check Competitive Standing
+#### Path 4: Check Competitive Standing
 
 ```
-Home feed → "Check the leaderboard!" link → Leaderboard → Tap climber → Profile
+Enrolled Leaderboards tab -> Tap leaderboard -> Leaderboard Detail -> Tap climber -> Profile (Other User)
 ```
 
 or
 
 ```
-Profile tab → Tap enrolled leaderboard → Leaderboard
+Home feed -> "Check the leaderboard!" link -> Leaderboard Detail -> Tap climber -> Profile (Other User)
+```
+
+or
+
+```
+Profile tab -> Tap enrolled leaderboard -> Leaderboard Detail
 ```
 
 This path is for climbers tracking their ranking in competitions.
 
-#### Path 4: Start a Climbing Session
+#### Path 5: Browse Gym Leaderboards
 
 ```
-FAB (+ button) → Start Activity → Select gym → "Start Activity" → Route Browse (session active)
+Map Browse -> Gym Main Page -> "Leaderboards" card -> Gym Leaderboards list -> Tap leaderboard -> Leaderboard Detail
 ```
 
-The FAB is always visible in the tab bar, providing a one-tap shortcut to start logging.
+This path is for discovering new competitions at a gym.
+
+#### Path 6: View and Follow Other Climbers
+
+```
+Home feed -> Tap friend in feed -> Profile (Other User) -> "Follow" button
+```
+
+or
+
+```
+Leaderboard Detail -> Tap rank row -> Profile (Other User)
+```
+
+#### Path 7: Edit Own Profile
+
+```
+Profile tab -> "Edit" button -> Edit Profile -> "Save" -> Profile (updated)
+```
 
 ### Navigation Behavior Rules
 
 | Rule | Explanation |
 |---|---|
 | **Tab bar is persistent** | Visible on all `(tabs)/` screens. Tapping a tab resets that tab's navigation stack to the root screen. |
-| **Detail screens use stack navigation** | Screens outside `(tabs)/` (like `route/[id]`, `gym/[id]`, `leaderboard/[id]`) push onto the stack. The user can swipe right (iOS) or press the back button (Android) to return. |
+| **Detail screens use stack navigation** | Screens outside `(tabs)/` (like `gym/[id]`, `gym/[gymId]/route/[routeId]`, `gym/[gymId]/leaderboard/[leaderboardId]`) push onto the stack. The user can swipe right (iOS) or press the back button (Android) to return. |
 | **Auth screens are gated** | `(auth)/` screens are shown only when the user is not authenticated. After login/signup, they are replaced (not pushed) with the tab navigator, so the user cannot "go back" to the login screen. |
-| **Modals slide up** | Screens like the Ascent Form may be presented as modals (slide up from bottom) rather than stack pushes, depending on implementation. This gives a sense of "overlaying" the current context. |
-| **Deep links** | Each screen has a deterministic URL path (e.g., `/route/42`, `/gym/7`, `/leaderboard/3`). This enables sharing links and notification deep-linking in later phases. |
+| **Start Session is a modal** | The Start Session screen slides up from the bottom as a modal overlay. Dismissing it returns to the previous context. |
+| **Modals slide up** | Screens like the Ascent Form and Start Session may be presented as modals (slide up from bottom) rather than stack pushes, depending on implementation. This gives a sense of "overlaying" the current context. |
+| **Deep links** | Each screen has a deterministic URL path (e.g., `/gym/7/route/42`, `/gym/7/leaderboard/3`, `/profile/123`). This enables sharing links and notification deep-linking in later phases. |
 
 ---
 
@@ -1088,13 +1564,17 @@ This table maps each mockup file to its screen spec and Expo Router file path fo
 | `Login.png` | Login | `app/(auth)/login.tsx` | [1. Login](#1-login) |
 | `Sign Up.png` | Sign Up | `app/(auth)/register.tsx` | [2. Sign Up](#2-sign-up) |
 | `Home.png` | Home / Activity Feed | `app/(tabs)/index.tsx` | [3. Home / Activity Feed](#3-home--activity-feed) |
-| `Route Browse.png` | Route Browse | `app/(tabs)/routes.tsx` | [4. Route Browse](#4-route-browse) |
-| `Route Browse-1.png` | Route Browse (alt) | `app/(tabs)/routes.tsx` | [4. Route Browse](#4-route-browse) |
-| `Route Details.png` | Route Details | `app/route/[id].tsx` | [5. Route Details](#5-route-details) |
-| `Route Details-1.png` | Route Details (alt) | `app/route/[id].tsx` | [5. Route Details](#5-route-details) |
-| `Ascent.png` | Ascent Form | `app/route/[id]/ascent.tsx` | [6. Ascent Form](#6-ascent-form) |
-| `Start Activity.png` | Start Activity | `app/(tabs)/activity.tsx` | [7. Start Activity](#7-start-activity) |
-| `Gym Browse.png` | Gym Browse | `app/gym/[id].tsx` | [8. Gym Browse](#8-gym-browse) |
+| `Route Browse.png` | Gym Routes | `app/gym/[id]/routes.tsx` | [4. Gym Routes](#4-gym-routes) |
+| `Route Browse-1.png` | Gym Routes (alt) | `app/gym/[id]/routes.tsx` | [4. Gym Routes](#4-gym-routes) |
+| `Route Details.png` | Route Details | `app/gym/[gymId]/route/[routeId].tsx` | [5. Route Details](#5-route-details) |
+| `Route Details-1.png` | Route Details (alt) | `app/gym/[gymId]/route/[routeId].tsx` | [5. Route Details](#5-route-details) |
+| `Ascent.png` | Ascent Form | `app/gym/[gymId]/route/[routeId]/ascent.tsx` | [6. Ascent Form](#6-ascent-form) |
+| `Start Activity.png` | Start Session | `app/start-session.tsx` | [7. Start Session](#7-start-session) |
+| `Gym Browse.png` | Gym Main Page | `app/gym/[id].tsx` | [8. Gym Main Page](#8-gym-main-page) |
 | `Map Browse.png` | Map Browse | `app/(tabs)/map.tsx` | [9. Map Browse](#9-map-browse) |
-| `Leaderboard.png` | Leaderboard | `app/leaderboard/[id].tsx` | [10. Leaderboard](#10-leaderboard) |
-| `Profile.png` | Profile | `app/(tabs)/profile.tsx` | [11. Profile](#11-profile) |
+| `Leaderboard.png` | Leaderboard Detail | `app/gym/[gymId]/leaderboard/[leaderboardId].tsx` | [10. Leaderboard Detail](#10-leaderboard-detail) |
+| `Profile.png` | Profile (Own) | `app/(tabs)/profile.tsx` | [11. Profile (Own)](#11-profile-own) |
+| TBD | Enrolled Leaderboards | `app/(tabs)/leaderboards.tsx` | [12. Enrolled Leaderboards](#12-enrolled-leaderboards) |
+| TBD | Gym Leaderboards | `app/gym/[id]/leaderboards.tsx` | [13. Gym Leaderboards](#13-gym-leaderboards) |
+| TBD | Profile (Other User) | `app/profile/[userId].tsx` | [14. Profile (Other User)](#14-profile-other-user) |
+| TBD | Edit Profile | `app/profile/edit.tsx` | [15. Edit Profile](#15-edit-profile) |

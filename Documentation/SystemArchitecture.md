@@ -135,20 +135,25 @@ beta-breaker/
 │   │   ├── register.tsx
 │   │   └── forgot-password.tsx
 │   ├── (tabs)/                   # Main app (authenticated, tab navigator)
-│   │   ├── _layout.tsx           # Tab bar configuration
-│   │   ├── home/                 # Home / route feed
-│   │   │   ├── index.tsx
-│   │   │   └── [routeId].tsx     # Route detail (dynamic)
-│   │   ├── scan.tsx              # QR scanner entry point
-│   │   ├── logbook/              # Session history & stats
-│   │   │   ├── index.tsx
-│   │   │   └── [sessionId].tsx
-│   │   ├── social/               # Leaderboards & community
-│   │   │   ├── index.tsx
-│   │   │   └── [userId].tsx
-│   │   └── profile/              # User profile & settings
-│   │       ├── index.tsx
-│   │       └── settings.tsx
+│   │   ├── _layout.tsx           # Custom tab bar with FAB
+│   │   ├── index.tsx             # Home — activity feed (Strava-style)
+│   │   ├── map.tsx               # Map Browse — gym map + list
+│   │   ├── leaderboards.tsx      # Enrolled Leaderboards
+│   │   └── profile.tsx           # Profile (own) + activity history
+│   ├── gym/                      # Gym screens (detail + sub-screens)
+│   │   ├── [id].tsx              # Gym Main Page
+│   │   └── [id]/
+│   │       ├── routes.tsx        # Gym Routes (filtered list)
+│   │       ├── route/
+│   │       │   └── [routeId].tsx # Route Detail (video feed, ascent)
+│   │       ├── leaderboards.tsx  # Gym Leaderboards (list)
+│   │       ├── leaderboard/
+│   │       │   └── [leaderboardId].tsx  # Leaderboard Detail (rankings)
+│   │       └── style-analysis.tsx
+│   ├── profile/
+│   │   ├── [userId].tsx          # Profile (other user, with Follow)
+│   │   └── edit.tsx              # Edit own profile
+│   ├── start-session.tsx         # Start Session modal (FAB target)
 │   ├── (admin)/                  # Gym admin screens (role-gated)
 │   │   ├── _layout.tsx
 │   │   ├── dashboard.tsx
