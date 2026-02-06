@@ -18,3 +18,7 @@
 // UseAuthReturn — full return type of the useAuth hook.
 export { useAuth } from "./useAuth";
 export type { UserProfile, UseAuthReturn } from "./useAuth";
+
+// useRoutes — fetches filtered route lists via TanStack Query.
+// useRouteDetail — fetches a single route with setter info.
+export { useRoutes, useRouteDetail } from "./useRoutes";
