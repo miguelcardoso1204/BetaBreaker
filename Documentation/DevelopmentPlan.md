@@ -555,9 +555,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.7 — Notifications & Saved Routes Tables
+### Step 2.7 — Notifications & Saved Routes Tables ✅
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** FR-J1, FR-J2, FR-C4
 
 **What to test:**
@@ -580,6 +580,15 @@ Run `supabase db push`, then run test suite against local DB.
 - RLS: user reads/updates own notifications; user manages own saved routes and preferences.
 
 **Acceptance:** Tables exist, RLS correct, constraint tests pass.
+
+**Implementation notes:**
+- Migration: `supabase/migrations/20260206070000_notifications_saved.sql`
+- Tests: `supabase/__tests__/00007_notifications_saved.test.ts` (44 tests)
+- 4 tables: `notifications`, `push_tokens`, `notification_preferences`, `saved_routes`
+- 14 RLS policies: notifications (3: SELECT own, UPDATE own, no INSERT/DELETE), push_tokens (3: SELECT/INSERT/DELETE own), notification_preferences (4: full CRUD own), saved_routes (4: full CRUD own)
+- Indexes: `(user_id)` on all 4 tables, plus `(user_id, read)` composite on notifications for unread count queries
+- Key design: notifications has no INSERT policy for authenticated — only system (SECURITY DEFINER triggers / service_role) can create notifications
+- Total integration tests: 261 (44 new + 217 existing)
 
 ---
 
