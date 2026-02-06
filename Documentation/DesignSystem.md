@@ -224,17 +224,16 @@ Border radius choices communicate hierarchy: sharper corners feel more precise a
 |---|---|---|---|
 | `rounded-sm` | 4px | `rounded-sm` | Tags, small badges, inline chips |
 | `rounded` | 8px | `rounded` | Input fields, dropdown selectors |
-| `rounded-md` | 12px | `rounded-md` | Route cards, gym info cards, form containers |
-| `rounded-lg` | 16px | `rounded-lg` | Elevated cards, modals, bottom sheets |
-| `rounded-xl` | 24px | `rounded-xl` | Image thumbnails (route photos), avatars in lists |
-| `rounded-2xl` | 32px | `rounded-2xl` | Profile avatar, achievement badges |
-| `rounded-full` | 9999px | `rounded-full` | Buttons ("Sign in", "Start Activity"), FAB, circular icons |
+| `rounded-lg` | 12px | `rounded-lg` | Route cards, gym info cards, form containers |
+| `rounded-xl` | 16px | `rounded-xl` | Buttons ("Sign in", "Start Activity"), elevated cards, modals |
+| `rounded-2xl` | 20px | `rounded-2xl` | Image thumbnails (route photos), profile avatar |
+| `rounded-full` | 9999px | `rounded-full` | FAB, circular avatars, style tag pills |
 
 ### Radius Patterns from Mockups
 
 | Element | Radius | Example |
 |---|---|---|
-| Primary buttons | `rounded-full` | "Sign in", "Sign up", "Start Activity", "Add Ascent" |
+| Primary buttons | `rounded-xl` (16px) | "Sign in", "Sign up", "Start Activity", "Add Ascent" |
 | Input fields | `rounded` (8px) | Username, password, email inputs |
 | Route cards | `rounded-md` (12px) | Cards on Route Browse screen |
 | Route photo thumbnail | `rounded-xl` (24px) | Route image in Route Details |
@@ -495,7 +494,7 @@ These are the base UI components needed to build every screen in the mockups. Ea
 | Variant | Style | Usage |
 |---|---|---|
 | `primary` | `bg-accent rounded-full` with white text | Main CTAs: "Sign in", "Start Activity", "Add Ascent" |
-| `secondary` | `bg-surface border border-border rounded-full` | Secondary actions, cancel buttons |
+| `secondary` | `bg-surface border border-border rounded-xl` | Secondary actions, cancel buttons |
 | `ghost` | Transparent with `text-accent-light` | Inline text-like buttons, "Forgot Password?" |
 | `destructive` | `bg-error rounded-full` with white text | Delete, destructive confirmations |
 

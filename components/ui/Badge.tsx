@@ -135,10 +135,18 @@ export function Badge({
       style={useInlineColor ? { backgroundColor: color } : undefined}
     >
       {/* Badge text styling:
-          - text-white: white text ensures readability on all colored backgrounds
+          - text color depends on variant: warning uses dark text for contrast
+            (white on amber #F59E0B fails WCAG AA at ~2.1:1 ratio), all others
+            use white text which has adequate contrast on their backgrounds.
           - text-xs: small font size (12px) — badges should be compact
           - font-semibold: medium-bold weight for legibility at small sizes */}
-      <Text className="text-white text-xs font-semibold">{label}</Text>
+      <Text
+        className={`text-xs font-semibold ${
+          variant === "warning" ? "text-black" : "text-white"
+        }`}
+      >
+        {label}
+      </Text>
     </View>
   );
 }
