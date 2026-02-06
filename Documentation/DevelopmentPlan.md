@@ -893,10 +893,18 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.7 — AppTextInput Enhancements (Left Icons & Password Toggle)
+### Step 3.7 — AppTextInput Enhancements (Left Icons & Password Toggle) ✅
 
 **Depends on:** Step 3.4
 **Relevant requirements:** NFR-8, FR-A1
+
+> **Implementation notes (2026-02-06):**
+> - Extended `components/ui/TextInput.tsx` with `leftIcon`, `rightIcon` props and automatic Eye/EyeOff password toggle when `secureTextEntry` is true
+> - Added 5 new tests to `components/ui/__tests__/TextInput.test.tsx` (total: 13 component tests)
+> - Updated auth screens: `login.tsx` (Mail), `register.tsx` (Mail, User), `forgot-password.tsx` (Mail)
+> - Key decision: custom `rightIcon` takes priority over built-in password toggle
+> - Also fixed AuthGate infinite redirect loop (replaced `<Redirect>` with `useEffect` + `router.replace`, always renders `<Slot />`)
+> - Total unit tests: 235
 
 **What to test (`components/ui/__tests__/TextInput.test.tsx` — extend existing tests):**
 
