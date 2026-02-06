@@ -15,11 +15,15 @@
 // 3. FONT LOADING: Loads custom fonts (SpaceMono) and hides the splash
 //    screen once everything is ready.
 //
-// WHY REDIRECT INSTEAD OF CONDITIONAL RENDERING?
-// Expo Router's <Redirect> component triggers a client-side navigation.
-// This means the URL updates, back button works correctly, and deep links
-// can target auth screens directly. Manual conditional rendering would
-// break the URL-based navigation model.
+// WHY useEffect + router.replace INSTEAD OF <Redirect>?
+// The root layout must ALWAYS render <Slot /> so child routes have a
+// container to render in. If we conditionally return <Redirect> instead
+// of <Slot />, Expo Router has no outlet for the target screen, causing
+// the root layout to unmount/remount in an infinite loop.
+//
+// Instead, we always render <Slot /> and use useEffect + router.replace
+// to navigate. This way the navigation container stays stable and the
+// auth/tabs screens render correctly inside it.
 
 import "../global.css";
 
@@ -27,7 +31,7 @@ import { useEffect } from "react";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Redirect, Slot, Stack } from "expo-router";
+import { Slot, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
 
@@ -60,38 +64,52 @@ export const unstable_settings = {
 };
 
 /**
- * AuthGate — decides what to render based on auth state.
+ * AuthGate — handles auth-based routing via useEffect + router.replace.
  *
- * This is the core routing decision for the app:
- * - Loading → show nothing (splash screen covers)
- * - Not authenticated → redirect to login
- * - Authenticated → render child routes via <Slot />
+ * Key insight: we ALWAYS render <Slot /> so Expo Router has a stable
+ * navigation container. The redirect logic lives in a useEffect that
+ * watches auth state and the current route segment:
+ *
+ * - Not authenticated + not in (auth) group → navigate to login
+ * - Authenticated + still in (auth) group → navigate to tabs
+ * - Otherwise → do nothing (user is where they should be)
+ *
+ * This avoids the infinite remount loop caused by conditionally returning
+ * <Redirect> instead of <Slot />.
  *
  * WHY IS THIS EXPORTED?
  * We export it separately so it can be unit-tested without needing
- * the full Expo Router provider context. The tests mock useAuth()
- * and verify the three states above.
+ * the full Expo Router provider context.
  */
 export function AuthGate() {
   const { isAuthenticated, isLoading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
 
-  // While restoring session from SecureStore, show nothing.
-  // The splash screen is still visible, so the user sees the app icon
-  // instead of a blank white screen.
-  if (isLoading) {
-    return null;
-  }
+  useEffect(() => {
+    // Don't redirect while we're still restoring the session from
+    // SecureStore — we don't know the auth state yet.
+    if (isLoading) return;
 
-  // Not authenticated → send to login screen.
-  // <Redirect> is a component (not a function call) because Expo Router
-  // needs it in the render tree to trigger navigation properly.
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
-  }
+    // Check if the user is currently viewing an auth screen (login,
+    // register, forgot-password). segments[0] is the first path segment,
+    // e.g. "(auth)" or "(tabs)".
+    const inAuthGroup = segments[0] === "(auth)";
 
-  // Authenticated → render the current route (tabs, modal, etc.).
-  // <Slot /> is Expo Router's way of saying "render whatever child
-  // route matches the current URL." It's like React Router's <Outlet>.
+    if (!isAuthenticated && !inAuthGroup) {
+      // User is not logged in but is viewing a protected screen →
+      // send them to login.
+      router.replace("/(auth)/login");
+    } else if (isAuthenticated && inAuthGroup) {
+      // User just logged in but is still on the login/register screen →
+      // send them to the main app.
+      router.replace("/(tabs)");
+    }
+  }, [isAuthenticated, isLoading, segments]);
+
+  // Always render <Slot /> so child routes have a container.
+  // While isLoading is true, the splash screen is still visible
+  // (hidden only after fonts load), so the user sees the app icon.
   return <Slot />;
 }
 
