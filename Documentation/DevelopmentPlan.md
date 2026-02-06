@@ -700,9 +700,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.2 — Auth Service Layer
+### Step 3.2 — Auth Service Layer ✅
 
-**Depends on:** Step 3.1  
+**Depends on:** Step 3.1
 **Relevant requirements:** FR-A1, FR-A4
 
 **What to test (`services/__tests__/auth.service.test.ts`):**
@@ -731,6 +731,14 @@ Run `supabase db push`, then run test suite against local DB.
 - `onAuthStateChange(callback)`: wraps `supabase.auth.onAuthStateChange()`
 
 **Acceptance:** All auth service tests pass (using Supabase local or mocked client).
+
+**Implementation notes:**
+- `services/auth.service.ts` — 7 thin wrapper methods around `supabase.auth.*` (signUp, signIn, signInWithProvider, signOut, resetPassword, getSession, onAuthStateChange)
+- `services/__tests__/auth.service.test.ts` — 10 unit tests mocking `@/lib/supabase` via `jest.mock` with inline factory (avoids hoisting temporal dead zone issue)
+- `services/index.ts` — re-exports `authService`, `OAuthProvider`, `AuthChangeEvent`, `Session`
+- `OAuthProvider` type narrowed to `'google' | 'apple'` (only configured providers)
+- All methods return raw `{ data, error }` shape — no unwrapping or throwing
+- Total unit tests: 147 (137 existing + 10 new)
 
 ---
 

@@ -18,5 +18,7 @@
  * - Reusability: the same service can be called from hooks or offline sync
  */
 
-// Service exports will be added here as they are implemented in later phases.
-export {};
+// Auth service — wraps supabase.auth.* methods for sign-up, sign-in, sign-out, etc.
+// OAuthProvider type restricts OAuth to our configured providers (Google, Apple).
+export { authService } from "./auth.service";
+export type { OAuthProvider, AuthChangeEvent, Session } from "./auth.service";
