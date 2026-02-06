@@ -486,9 +486,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.5 — Social & Community Tables
+### Step 2.5 — Social & Community Tables ✅
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** FR-G2, FR-G3, FR-G5, FR-K1
 
 **What to test:**
@@ -512,6 +512,12 @@ Run `supabase db push`, then run test suite against local DB.
 - RLS: own inserts/deletes for follows; own inserts for feedback; authenticated reads.
 
 **Acceptance:** Social tables exist; RLS tests pass.
+
+**Implementation notes:**
+- Migration: `supabase/migrations/20260206050000_social_community.sql` — 5 tables, 6 indexes, 16 RLS policies
+- Tests: `supabase/__tests__/00005_social_community.test.ts` — 34 integration tests
+- Key decisions: polymorphic FK on content_reports.target_id (no DB constraint); no vote UPDATE policy (delete+re-insert); score denormalized (app-maintained, no trigger)
+- Total integration tests: 169 (135 existing + 34 new); unit tests: 134
 
 ---
 
