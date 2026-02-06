@@ -1000,10 +1000,18 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.3 — Gym Service & Hook
+### Step 4.3 — Gym Service & Hook ✅
 
-**Depends on:** Phase 3 (Step 3.1), Phase 2 (tables)  
+**Depends on:** Phase 3 (Step 3.1), Phase 2 (tables)
 **Relevant requirements:** FR-B1, FR-B4
+
+> **Implementation notes (2026-02-06):**
+> - Created `services/gyms.service.ts` with `getGyms()`, `getGymById(id)`, `setHomeGym(userId, gymId)`
+> - Created `hooks/useGyms.ts` with `useGyms()`, `useGym(id)`, `useSetHomeGym()`
+> - `useSetHomeGym` uses `useMutation` + invalidates `["auth"]` cache on success
+> - Added `jest.setup.ts` with TanStack Query `notifyManager.setScheduler` for sync mutation tests
+> - 3 service tests + 5 hook tests = 8 new tests
+> - Total unit tests: 254
 
 **What to test:**
 
