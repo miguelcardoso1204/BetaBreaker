@@ -1068,7 +1068,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.5 — Tab Bar Layout with FAB
+### Step 4.5 — Tab Bar Layout with FAB ✅
 
 **Depends on:** Phase 3 (Step 3.6 — root layout)
 **Relevant requirements:** NFR-8
@@ -1091,6 +1091,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Active/inactive colors: `accent` (#7C3AED) when active, `text-muted` when inactive.
 
 **Acceptance:** Custom tab bar renders; FAB elevated; navigation works for all tabs + FAB.
+
+**Implementation notes:**
+- Created `components/navigation/CustomTabBar.tsx` — 4 tabs + center FAB with haptic feedback
+- Tabs: Home (Home icon), Map (MapPin), Leaderboards (Trophy), Profile (User)
+- FAB: 56x56 accent circle, `router.push("/start-session")`, `expo-haptics` Medium impact on press
+- Platform-specific shadow via `Platform.select` for FAB glow effect (iOS shadow props + Android elevation)
+- Replaced `two.tsx` with `map.tsx`, `leaderboards.tsx`, `profile.tsx` placeholders
+- Created `app/start-session.tsx` modal placeholder (outside tabs group, no tab bar shown)
+- 5 tests in `components/navigation/__tests__/CustomTabBar.test.tsx`
+- 3 tests in `app/(tabs)/__tests__/_layout.test.tsx`
 
 ---
 
