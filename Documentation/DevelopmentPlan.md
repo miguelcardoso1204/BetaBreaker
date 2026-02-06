@@ -178,17 +178,10 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 > Pure TypeScript logic — no UI, no network. Perfect for TDD.
 
-### Step 1.1 — Grade Conversion System ✅
+### Step 1.1 — Grade Conversion System
 
-**Status:** Complete
-**Depends on:** Phase 0 (Step 0.3 for test infra)
+**Depends on:** Phase 0 (Step 0.3 for test infra)  
 **Relevant requirements:** FR-P1, FR-E4
-
-**Implementation notes:**
-- `utils/grades.ts`: GRADE_TABLE (31 entries, canonical 0–30), canonicalToDisplay, displayToCanonical (lazy reverse maps), compareGrades, getGradeRange
-- `utils/__tests__/grades.test.ts`: 25 tests across 6 describe blocks — 100% coverage
-- Unique grade counts: V-scale 13, Font 25, YDS 27 (plan estimated 24 for YDS; actual count is 27 due to the table having more unique YDS sub-grades than initially projected)
-- displayToCanonical returns first canonical index for shared display strings (round-trip collapse by design)
 
 **What to test (`utils/__tests__/grades.test.ts`):**
 
@@ -219,20 +212,10 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.2 — Streak Calculation Logic ✅
+### Step 1.2 — Streak Calculation Logic
 
-**Status:** Complete
-**Depends on:** Step 0.3
+**Depends on:** Step 0.3  
 **Relevant requirements:** FR-F2
-
-**Implementation notes:**
-- `utils/streaks.ts`: computeWeeklyStreak (public), groupByWeek (exported @internal), analyzeStreak (internal generic helper), deduplicateAndSort (internal)
-- `utils/__tests__/streaks.test.ts`: 22 tests across 8 describe blocks — 97.82% statement, 90.9% branch, 100% function/line coverage
-- Uses date-fns v4 `startOfISOWeek` and `differenceInCalendarISOWeeks` for year-boundary-safe week math
-- Recovery mechanic: gap of 2 (1 missed week) freezes the streak (continues growing); gap of 3+ breaks it entirely. `decayedFrom` records the freeze point for UI hints
-- `computeMonthlyStreak` deferred — analyzeStreak is generic and accepts a periodDiff callback, so monthly support can be added by passing `differenceInCalendarMonths` + `startOfMonth`
-- Optional `referenceDate` parameter enables deterministic testing without fake timers
-- All dates constructed with `new Date(year, monthIndex, day)` to avoid UTC parsing issues
 
 **What to test (`utils/__tests__/streaks.test.ts`):**
 
@@ -260,11 +243,10 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.3 — Leaderboard Scoring Logic ✅
+### Step 1.3 — Leaderboard Scoring Logic
 
-**Depends on:** Step 0.3
+**Depends on:** Step 0.3  
 **Relevant requirements:** FR-G1
-**Status:** Complete
 
 **What to test (`utils/__tests__/scoring.test.ts`):**
 
@@ -290,32 +272,12 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 **Acceptance:** All scoring tests green.
 
-**Implementation notes:**
-- 22 tests across 6 describe blocks: `computeScore` (11), `filterByPeriod` (4), `rankLeaderboard` (5), `getSuccessfulAscents` (1), integration (1).
-- Ascent status uses three-way enum (`'flash' | 'send' | 'attempt'`) — attempts excluded from all scoring models.
-- Flash rate stored as decimal (0.0–1.0), not percentage. UI layer formats for display.
-- Ranking uses standard competition ranking (1224 system): ties share rank, next rank skips.
-- Tiebreaker is optional on `LeaderboardEntry` — lower value wins (e.g., earlier timestamp).
-- `getSuccessfulAscents()` exported as `@internal` helper for testability.
-- No dependency on `grades.ts` — grades are opaque integers for scoring.
-- 100% code coverage (statements, branches, functions, lines).
-
 ---
 
-### Step 1.4 — Zod Validation Schemas ✅
+### Step 1.4 — Zod Validation Schemas
 
-**Status:** Complete
-**Depends on:** Step 0.3
+**Depends on:** Step 0.3  
 **Relevant requirements:** FR-D1, FR-A1, FR-C1
-
-**Implementation notes:**
-- `utils/validation.ts`: 7 Zod schemas (ascentLogSchema, registrationSchema, loginSchema, routeCreateSchema, profileUpdateSchema, eventCreateSchema, feedbackSchema) + 7 inferred TypeScript types
-- `utils/__tests__/validation.test.ts`: 52 tests across 8 describe blocks — 100% coverage (stmts, branches, functions, lines)
-- Uses Zod v4 top-level constructors: z.uuid(), z.email(), z.url(), z.int(), z.iso.datetime()
-- Enum values defined as local `as const` arrays to avoid cross-module imports
-- profileUpdateSchema uses .partial() for PATCH semantics (all fields optional)
-- eventCreateSchema uses .refine() for cross-field date ordering validation; type inferred from base (pre-refine) schema
-- loginSchema uses min(1) for password (not min(8)) — strength rules only at registration
 
 **What to test (`utils/__tests__/validation.test.ts`):**
 
@@ -347,21 +309,10 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.5 — Constants & Type Definitions ✅
+### Step 1.5 — Constants & Type Definitions
 
-**Status:** Complete
-**Depends on:** Step 0.3
+**Depends on:** Step 0.3  
 **Relevant requirements:** FR-L1, FR-L3, FR-C7
-
-**Implementation notes:**
-- `lib/constants.ts`: 7 `as const` arrays (ROLES, ROUTE_STATUSES, GRADE_SYSTEMS, SCORING_MODELS, ASCENT_STATUSES, NOTIFICATION_CATEGORIES, SAVE_TYPES) + 3 tier config objects (FREE_TIER, PRO_TIER, TIERS) + 8 derived TypeScript types
-- `lib/__tests__/constants.test.ts`: 13 tests across 12 describe blocks — 100% coverage (stmts, branches, functions, lines)
-- Uses `as const` arrays with `typeof X[number]` pattern for type derivation — simpler than TS enums, works with Array.includes() and z.enum()
-- Snake_case values (gym_admin, retiring_soon) to match future Postgres CHECK constraints
-- PRO_TIER uses `Infinity` for betaPerWeek enabling simple `count <= tier.betaPerWeek` comparisons
-- Tier type derived from `keyof typeof TIERS` rather than a separate const array
-- Types co-located in constants.ts (no separate lib/types/ file needed) — change the array, type updates automatically
-- Intentional duplication with utils/validation.ts by design: validation.ts is self-contained, constants.ts is the canonical app-wide reference
 
 **What to test (`lib/__tests__/constants.test.ts`):**
 
@@ -370,17 +321,17 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 | All roles defined | `ROLES` contains Climber, Setter, Judge, GymAdmin, SuperAdmin |
 | Free tier limits | `FREE_TIER.maxBadges === 1`, `FREE_TIER.betaPerWeek === 5` |
 | Pro tier limits | `PRO_TIER.maxBadges === 3`, unlimited beta |
-| Route statuses | `ROUTE_STATUSES` contains active, retiring_soon, archived |
+| Route statuses | `ROUTE_STATUS` contains Active, RetiringSoon, Archived |
 | Grade systems list | Contains v-scale, font, yds |
 | Scoring models list | Contains hardest_grade, flash_rate, volume |
 | Notification categories | Contains friends, routes, comps, achievements |
 | Save types | Contains project, wishlist, favorite |
 
-**What to implement (`lib/constants.ts`):**
+**What to implement (`lib/constants.ts`, `lib/types/`):**
 
-- `ROLES`, `TIERS`, `ROUTE_STATUSES`, `GRADE_SYSTEMS`, `SCORING_MODELS`, `NOTIFICATION_CATEGORIES`, `SAVE_TYPES` as const arrays.
-- `FREE_TIER`, `PRO_TIER`, `TIERS` tier config objects.
-- `UserRole`, `Tier`, `RouteStatus`, `AscentStatus`, `ScoringModel`, `GradeSystem`, `NotificationCategory`, `SaveType` types derived from constants.
+- `ROLES`, `TIERS`, `ROUTE_STATUS`, `GRADE_SYSTEMS`, `SCORING_MODELS`, `NOTIFICATION_CATEGORIES`, `SAVE_TYPES` as const objects.
+- TypeScript types/enums derived from constants.
+- `UserRole`, `Tier`, `RouteStatus`, `AscentStatus`, `ScoringModel`, `SaveType` types.
 
 **Acceptance:** Constants tests green, types compile with `tsc --noEmit`.
 
@@ -395,6 +346,11 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 **Depends on:** Phase 0 (Step 0.5 for Supabase local)
 **Relevant requirements:** FR-A1, FR-B1, FR-C1, FR-D1, FR-L1
 **Status:** Complete
+
+**Implementation notes:**
+- Created `supabase/migrations/20260205234337_core_tables.sql` — 7 tables (gyms, profiles, routes, style_tags, route_style_tags, route_ascents, user_gym_roles) with RLS enabled, CHECK constraints, CASCADE deletes, and indexes.
+- Created `supabase/__tests__/00001_core_tables.test.ts` — 33 integration tests covering table existence, column types, FK constraints, CHECK constraints, default values, UUID generation, and cascade deletes.
+- Tests connect via `pg` to local Supabase (port 54322), each wrapped in BEGIN/ROLLBACK for isolation.
 
 **What to test (SQL / integration test):**
 
@@ -425,8 +381,14 @@ Run `supabase db push`, then run test suite against local DB.
 
 ### Step 2.2 — Row Level Security Policies ✅
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** NFR-4, FR-L1
+**Status:** Complete
+
+**Implementation notes:**
+- Created `supabase/migrations/20260206000056_rls_policies.sql` — RLS policies for all 7 core tables + helper function `get_user_role(gym_id)`.
+- Created `supabase/__tests__/00002_rls_policies.test.ts` — 52 integration tests covering anon denial, authenticated reads, own-row writes, role-based access (setter, gym_admin), and cross-user isolation.
+- Tests use `SET LOCAL role = 'authenticated'` + `request.jwt.claims` to simulate PostgREST auth.
 
 **What to test (integration tests with multiple Supabase auth users):**
 
@@ -456,10 +418,16 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.3 — Database Functions & Triggers
+### Step 2.3 — Database Functions & Triggers ✅
 
-**Depends on:** Step 2.1  
+**Depends on:** Step 2.1
 **Relevant requirements:** FR-F1, FR-F2, FR-G1
+**Status:** Complete
+
+**Implementation notes:**
+- Created `supabase/migrations/20260206002102_functions_triggers.sql` — 4 gamification tables (badges, user_badges, user_streaks, leaderboard_entries), consensus_grade column on routes, 4 RLS policies, 7 SECURITY DEFINER functions, 3 triggers.
+- Created `supabase/__tests__/00003_functions_triggers.test.ts` — 35 integration tests covering handle_new_user trigger, streak tracking (consecutive, freeze, break), badge awards (first_grade, total_sends, idempotency, attempt rejection), grade consensus (median, threshold, delete), leaderboard (scoring, 1224 ranking, delete adjustment), and on_ascent_delete trigger.
+- Key decision: `on_ascent_delete()` checks profile existence before FK writes to prevent cascade errors.
 
 **What to test:**
 
@@ -484,10 +452,17 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.4 — Gamification Tables (Badges, Streaks, Leaderboards)
+### Step 2.4 — Gamification Tables (Badges, Streaks, Leaderboards) ✅
 
-**Depends on:** Step 2.3  
+**Depends on:** Step 2.3
 **Relevant requirements:** FR-F1, FR-F2, FR-G1
+**Status:** Complete
+
+**Implementation notes:**
+- Created `supabase/migrations/20260206003749_seed_badges.sql` — 18 default badge definitions (11 first_grade, 4 total_sends, 3 streak_weeks) with ON CONFLICT DO NOTHING for idempotency.
+- Created `supabase/__tests__/00004_gamification.test.ts` — 15 integration tests covering seed data verification, end-to-end grade/volume/streak badge awarding with seeded data, and RLS read access to gamification tables.
+- Updated `supabase/__tests__/00003_functions_triggers.test.ts` — Fixed 4 tests that used ad-hoc badge names conflicting with seeded data; now use unique names and filter by specific badge.
+- Total integration tests: 135 (33 + 52 + 35 + 15). Total unit tests: 134.
 
 **What to test:**
 

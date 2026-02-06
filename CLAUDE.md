@@ -24,6 +24,8 @@ Whenever a feature change, scope change, or design change occurs, immediately up
 - `Documentation/SystemArchitecture.md` — tech stack, data flows, architecture decisions
 - `Documentation/DevelopmentPlan.md` — TDD phases, steps, acceptance criteria
 
+After completing each step, mark it ✅ in `Documentation/DevelopmentPlan.md` and add implementation notes (files created, key decisions, test counts).
+
 ## Build & Development Commands
 
 ### Mobile App (Expo)
