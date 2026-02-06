@@ -930,10 +930,19 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 4 — Gym & Route Data Layer
 
-### Step 4.1 — Routes Service
+### Step 4.1 — Routes Service ✅
 
-**Depends on:** Phase 3 (Step 3.1 for Supabase client), Phase 2 (tables)  
+**Depends on:** Phase 3 (Step 3.1 for Supabase client), Phase 2 (tables)
 **Relevant requirements:** FR-C1, FR-C3, FR-C7
+
+> **Implementation notes (2026-02-06):**
+> - Created `services/routes.service.ts` with `getRoutes(filters)` and `getRouteById(id)`
+> - `RouteFilters` interface: gymId (required), gradeMin, gradeMax, status, sortBy, search
+> - Default filters: active + retiring_soon, newest first
+> - `getRouteById` joins setter profile via embedded select (`profiles!setter_id`)
+> - 6 unit tests in `services/__tests__/routes.service.test.ts`
+> - Exported from `services/index.ts` barrel
+> - Total unit tests: 241
 
 **What to test (`services/__tests__/routes.service.test.ts`):**
 
