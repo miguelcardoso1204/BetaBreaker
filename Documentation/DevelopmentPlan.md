@@ -671,9 +671,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 3 — Authentication & Session Management
 
-### Step 3.1 — Supabase Client Initialization
+### Step 3.1 — Supabase Client Initialization ✅
 
-**Depends on:** Phase 0 (Step 0.5)  
+**Depends on:** Phase 0 (Step 0.5)
 **Relevant requirements:** NFR-4
 
 **What to test (`lib/__tests__/supabase.test.ts`):**
@@ -691,6 +691,12 @@ Run `supabase db push`, then run test suite against local DB.
 - Export typed client using generated `database.types.ts`.
 
 **Acceptance:** Client initializes; tokens persist across app restarts (manual verification).
+
+**Implementation notes:**
+- `lib/supabase.ts` was implemented during Phase 0 scaffolding (ExpoSecureStoreAdapter, typed createClient, env var config, PKCE flow)
+- `lib/__tests__/supabase.test.ts` — 3 unit tests verifying instance type, secure storage adapter, and env var usage
+- Tests spy on `createClient` to capture args while delegating to the real implementation for instanceof checks
+- Total unit tests: 137 (134 existing + 3 new)
 
 ---
 
@@ -755,9 +761,49 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.4 — Auth Screens (Login, Register, Forgot Password)
+### Step 3.4 — Design System & UI Foundations
 
-**Depends on:** Step 3.3  
+**Depends on:** Step 3.3
+**Relevant requirements:** NFR-UX1, NFR-UX2
+**MCP servers:** `superpowers@superpowers-marketplace`, `frontend-design@claude-plugins-official`
+
+**Input:** User provides Figma mockup screenshots in `Documentation/mockups/`. These are the source of truth for design intent — colors, typography, layout, and visual hierarchy are extracted directly from them.
+
+**Reference:** [Anthropic's Prompting for Frontend Aesthetics cookbook](https://github.com/anthropics/claude-cookbooks/blob/main/coding/prompting_for_frontend_aesthetics.ipynb) — used to fill gaps the mockups don't cover (motion, micro-interactions, depth treatment) and to avoid falling back to generic defaults.
+
+**What to produce:**
+
+| Output | Description |
+|---|---|
+| `Documentation/DesignSystem.md` | Color palette (light + dark with CSS variables), typography scale, spacing tokens, border radii, shadows, motion/animation strategy, iconography guidelines, dark mode strategy — extracted from mockups |
+| `Documentation/Wireframes.md` | Per-screen layout specs, component hierarchy, interaction notes, navigation flow diagrams — derived from mockup analysis |
+| `tailwind.config.js` | Populated with actual design tokens extracted from the mockups (colors, fonts, spacing) — replaces the current empty/default config |
+| Base UI components in `components/ui/` | Button, Input, Card, Badge, IconButton, Divider — built with NativeWind, typed with TypeScript, matching the mockup designs |
+
+**What to clean up:**
+
+- Remove or replace legacy StyleSheet-based components (`Themed.tsx`, `EditScreenInfo.tsx`, `StyledText.tsx`) that will be superseded by NativeWind-based primitives.
+
+**Process (plugin-driven workflow):**
+
+1. **Analyze mockup screenshots.** User places Figma exports in `Documentation/mockups/`. Claude reads the images and extracts design tokens: colors (hex values, light/dark), fonts, spacing scale, border radii, shadows, and layout patterns.
+2. **Build an aesthetics prompt for gaps.** Using the Anthropic frontend aesthetics cookbook, craft a brief covering areas the static mockups don't show: motion strategy (page transitions, staggered reveals, micro-interactions), depth/background treatment, interaction feedback patterns, and loading/empty/error states. Tailored to the indoor climbing gym personality.
+3. **Brainstorm gaps with `/superpowers:brainstorm`.** Feed the extracted tokens, the aesthetics prompt, and the mockup screenshots. Focus on what the mockups don't cover — motion, transitions, edge-case states. Answer clarifying questions. Produces a supplemental design plan.
+4. **Generate design system with `/frontend-design:frontend-design`.** Feed the mockup screenshots and the combined design plan (extracted tokens + brainstorm output). Produces the component library and finalized token set.
+5. **Write `Documentation/DesignSystem.md`** documenting all finalized tokens, font choices, color variables, spacing scale, motion guidelines, and usage rules.
+6. **Write `Documentation/Wireframes.md`** with per-screen layout specs, component hierarchy, and interaction notes derived from the mockups.
+7. **Populate `tailwind.config.js`** with the real design tokens so NativeWind classes map to the design system.
+8. **Build base UI components** in `components/ui/` using NativeWind classes and the design tokens.
+9. **Remove legacy styled components** that are no longer needed.
+10. **Verify** all existing tests still pass (`npm test`, `npx tsc --noEmit`).
+
+**Acceptance:** Design docs complete and reviewed, `tailwind.config.js` has real tokens, base UI components type-check, all existing tests pass.
+
+---
+
+### Step 3.5 — Auth Screens (Login, Register, Forgot Password)
+
+**Depends on:** Step 3.4
 **Relevant requirements:** FR-A1, FR-A4
 
 **What to test (component tests):**
@@ -785,9 +831,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.5 — Root Layout & Auth Gate
+### Step 3.6 — Root Layout & Auth Gate
 
-**Depends on:** Step 3.4  
+**Depends on:** Step 3.5  
 **Relevant requirements:** FR-A1
 
 **What to test:**
