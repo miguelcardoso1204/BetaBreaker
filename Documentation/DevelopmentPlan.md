@@ -178,9 +178,9 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 > Pure TypeScript logic — no UI, no network. Perfect for TDD.
 
-### Step 1.1 — Grade Conversion System
+### Step 1.1 — Grade Conversion System ✅
 
-**Depends on:** Phase 0 (Step 0.3 for test infra)  
+**Depends on:** Phase 0 (Step 0.3 for test infra)
 **Relevant requirements:** FR-P1, FR-E4
 
 **What to test (`utils/__tests__/grades.test.ts`):**
@@ -212,9 +212,9 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.2 — Streak Calculation Logic
+### Step 1.2 — Streak Calculation Logic ✅
 
-**Depends on:** Step 0.3  
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-F2
 
 **What to test (`utils/__tests__/streaks.test.ts`):**
@@ -243,9 +243,9 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.3 — Leaderboard Scoring Logic
+### Step 1.3 — Leaderboard Scoring Logic ✅
 
-**Depends on:** Step 0.3  
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-G1
 
 **What to test (`utils/__tests__/scoring.test.ts`):**
@@ -274,9 +274,9 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.4 — Zod Validation Schemas
+### Step 1.4 — Zod Validation Schemas ✅
 
-**Depends on:** Step 0.3  
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-D1, FR-A1, FR-C1
 
 **What to test (`utils/__tests__/validation.test.ts`):**
@@ -309,9 +309,9 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 ---
 
-### Step 1.5 — Constants & Type Definitions
+### Step 1.5 — Constants & Type Definitions ✅
 
-**Depends on:** Step 0.3  
+**Depends on:** Step 0.3
 **Relevant requirements:** FR-L1, FR-L3, FR-C7
 
 **What to test (`lib/__tests__/constants.test.ts`):**
