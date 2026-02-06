@@ -423,7 +423,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.2 — Row Level Security Policies
+### Step 2.2 — Row Level Security Policies ✅
 
 **Depends on:** Step 2.1  
 **Relevant requirements:** NFR-4, FR-L1
