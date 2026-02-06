@@ -26,3 +26,8 @@ export type { OAuthProvider, AuthChangeEvent, Session } from "./auth.service";
 // Profile service — fetches user profiles and gym roles from Postgres.
 // Used by the useAuth hook to load profile data after session is established.
 export { profileService } from "./profile.service";
+
+// Routes service — fetches climbing routes with filtering, sorting, and detail views.
+// Used by useRoutes hook (Step 4.2) to populate route list and detail screens.
+export { routeService } from "./routes.service";
+export type { RouteFilters } from "./routes.service";
