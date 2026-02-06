@@ -266,9 +266,8 @@ describe('RLS policies exist', () => {
     { policy: 'ascents_insert_own', table: 'route_ascents' },
     { policy: 'ascents_update_own', table: 'route_ascents' },
     { policy: 'ascents_delete_own', table: 'route_ascents' },
-    // user_gym_roles (5 policies)
-    { policy: 'roles_select_own', table: 'user_gym_roles' },
-    { policy: 'roles_select_gym_admin', table: 'user_gym_roles' },
+    // user_gym_roles (4 policies — two SELECT policies merged into one)
+    { policy: 'roles_select_own_or_admin', table: 'user_gym_roles' },
     { policy: 'roles_insert_gym_admin', table: 'user_gym_roles' },
     { policy: 'roles_update_gym_admin', table: 'user_gym_roles' },
     { policy: 'roles_delete_gym_admin', table: 'user_gym_roles' },
@@ -277,7 +276,7 @@ describe('RLS policies exist', () => {
     // route_style_tags (4 policies)
     { policy: 'route_style_tags_select_authenticated', table: 'route_style_tags' },
     { policy: 'route_style_tags_insert_authenticated', table: 'route_style_tags' },
-    { policy: 'route_style_tags_update_authenticated', table: 'route_style_tags' },
+    { policy: 'route_style_tags_update_setter', table: 'route_style_tags' },
     { policy: 'route_style_tags_delete_setter', table: 'route_style_tags' },
   ])(
     'policy "$policy" exists on "$table"',
