@@ -34,9 +34,9 @@ Tasks are grouped into **Phases** (sequential) and **Steps** within each phase (
 | 0 | Project Scaffolding & CI | 2–3 days | — | NFR-7, NFR-14 |
 | 1 | Data Foundation (Utilities) | 3–4 days | Phase 0 | FR-P1, FR-E4, FR-F2, FR-G1, FR-D1, FR-L1, FR-L3, FR-C7 |
 | 2 | Database Schema & RLS | 5–7 days | Phase 0 | FR-A1, FR-B1, FR-C1, FR-D1, FR-L1, NFR-4, FR-F1, FR-G1–G5, FR-K1, FR-H1–H5, FR-J1–J2, FR-C4 |
-| 3 | Authentication & Session Mgmt | 4–5 days | Phases 1, 2 | FR-A1, FR-A4, FR-L1 |
-| 4 | Gym & Route Data Layer | 4–5 days | Phase 3 | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7 |
-| 5 | Tick-Logging & Sessions | 4–5 days | Phase 4 | FR-D1, FR-D2, FR-D4, FR-E5 |
+| 3 | Authentication & Session Mgmt | 4–5 days | Phases 1, 2 | FR-A1, FR-A4, FR-L1, NFR-8 |
+| 4 | Gym & Route Data Layer | 5–7 days | Phase 3 | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7, NFR-8 |
+| 5 | Tick-Logging & Sessions | 5–7 days | Phase 4 | FR-D1, FR-D2, FR-D4, FR-E5, FR-C2, FR-G2 |
 | 6 | Offline Support | 3–4 days | Phase 5 | FR-D3, NFR-3, NFR-9 |
 | 7 | QR/NFC Scanning | 2–3 days | Phases 4, 5 | FR-B3, FR-C5, FR-P3 |
 | 8 | Gamification | 3–4 days | Phases 2, 5 | FR-F1, FR-F2, FR-F3, FR-F4, FR-A2 |
@@ -893,6 +893,33 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
+### Step 3.7 — AppTextInput Enhancements (Left Icons & Password Toggle)
+
+**Depends on:** Step 3.4
+**Relevant requirements:** NFR-8, FR-A1
+
+**What to test (`components/ui/__tests__/TextInput.test.tsx` — extend existing tests):**
+
+| Test case | Description |
+|---|---|
+| Left icon renders | When `leftIcon` prop provided, icon appears to the left of input text |
+| Right icon renders | When `rightIcon` prop provided, icon appears to the right |
+| Password toggle | `secureTextEntry` field with eye icon toggles between visible/hidden text |
+| No icons by default | Without icon props, input renders as before (no regression) |
+
+**What to implement (`components/ui/TextInput.tsx` — extend):**
+
+- Add optional `leftIcon` prop (Lucide icon component) — renders icon inside the input container, left-aligned.
+- Add optional `rightIcon` prop — renders icon on the right side.
+- Add built-in password visibility toggle: when `secureTextEntry` is true, automatically show an `Eye`/`EyeOff` toggle icon as `rightIcon` (unless a custom `rightIcon` is provided).
+- Update `AppTextInput` styles: add `pl-10` padding when leftIcon is present so text doesn't overlap the icon.
+
+**Why:** The Login and Sign Up wireframes show text inputs with left icons (Mail, Lock, User) and a password visibility toggle (Eye/EyeOff). These are standard UX patterns that improve form usability — the icon provides a visual cue about what the field expects, and the eye toggle lets users verify their password without retyping.
+
+**Acceptance:** Extended component tests pass; existing tests still pass (backward-compatible).
+
+---
+
 ## Phase 4 — Gym & Route Data Layer
 
 ### Step 4.1 — Routes Service
@@ -1054,6 +1081,106 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
+### Step 4.7 — Tab Bar Layout with FAB
+
+**Depends on:** Phase 3 (Step 3.6 — root layout)
+**Relevant requirements:** NFR-8
+**Wireframe ref:** Tab Bar Layout section in `Documentation/Wireframes.md`
+
+**What to test (`app/(tabs)/__tests__/_layout.test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Renders 5 tab slots | Home, Map, center FAB, Routes, Profile tabs visible |
+| FAB button renders | Center slot is a 56x56 purple circle with Plus icon, elevated above tab bar |
+| Active tab highlighting | Tapping a tab changes its icon color to accent (#7C3AED) |
+| FAB navigates to activity | Pressing the FAB navigates to Start Activity screen |
+| Tab bar hidden on detail screens | Tab bar not visible on `route/[id]`, `gym/[id]`, `leaderboard/[id]` screens |
+
+**What to implement (`app/(tabs)/_layout.tsx`):**
+
+- Custom tab bar component using Expo Router's `Tabs` with `tabBar` prop for custom rendering.
+- 5 slots: Home (Home icon), Map (MapPin icon), center FAB (Plus icon in elevated circle), Routes (List icon), Profile (User icon).
+- FAB: 56x56px circle, `bg-accent`, elevated ~12px above tab bar with `accent-glow` shadow. Uses `expo-haptics` for tactile feedback on press.
+- Active/inactive icon colors: `accent` (#7C3AED) when active, `text-muted` (#6B6B80) when inactive.
+- Tab bar height: 56px (h-14) with `bg-background` and `border-t border-border`.
+
+**Why:** The wireframe specifies a custom tab bar with a prominent FAB center button — this is the primary entry point for starting a climbing session. Standard Expo Router tabs don't support a raised center button, so we need a custom `tabBar` renderer.
+
+**Acceptance:** Custom tab bar renders correctly; FAB elevated; haptic fires on press; navigation works for all 5 tabs.
+
+---
+
+### Step 4.8 — Gym Detail Screen
+
+**Depends on:** Step 4.3 (Gym Service & Hook)
+**Relevant requirements:** FR-B1, FR-B4
+**Wireframe ref:** Screen 8 (Gym Browse) in `Documentation/Wireframes.md`, `Documentation/mockups/Gym Browse.png`
+
+**What to test (`app/gym/__tests__/[id].test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Renders gym name | Gym name displayed in heading |
+| Renders gym address | MapPin icon + address text visible |
+| Renders operating hours | Clock icon + hours text visible |
+| Open/closed indicator | Red dot when closed, green when open (based on current time vs hours) |
+| Social media handle | Social handle displayed in accent-light color |
+| Favorite toggle | Star icon toggleable |
+| Routes navigation card | "Routes" card navigates to Route Browse filtered to this gym |
+| Leaderboards navigation card | "Leaderboards" card navigates to gym leaderboard |
+| Style Analysis navigation card | "Style Analysis" card present |
+| Loading state | Spinner shown while fetching gym data |
+
+**What to implement (`app/gym/[id].tsx`):**
+
+- Fetch gym via `useGym(id)` hook.
+- Header: gym logo (`Avatar` rounded square variant), gym name, star favorite button.
+- Metadata: MapPin + address, Clock + hours with open/closed dot indicator, social handle.
+- Three `Card` (variant: "pressable") navigation items: Routes, Leaderboards, Style Analysis — each with text and ChevronRight icon.
+- Open/closed logic: compare current time to gym's operating hours, show `bg-success` (open) or `bg-error` (closed) dot.
+
+**Why:** The wireframe shows a gym detail screen as the gateway from map discovery to gym-specific content (routes, leaderboards, style analysis). It's the main gym information hub.
+
+**Acceptance:** Gym detail renders with all metadata; navigation cards route correctly; open/closed indicator works.
+
+---
+
+### Step 4.9 — Map Browse Screen
+
+**Depends on:** Steps 4.3, 4.8
+**Relevant requirements:** FR-B1, NFR-8
+**Wireframe ref:** Screen 9 (Map Browse) in `Documentation/Wireframes.md`, `Documentation/mockups/Map Browse.png`
+
+**What to test (`app/(tabs)/__tests__/map.test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Map renders | MapView component visible |
+| Gym markers displayed | Pins shown at gym coordinates |
+| Search bar renders | Search input overlaid on map |
+| Star filter renders | Favorites filter icon visible |
+| Bottom sheet shows gym count | Collapsed bottom sheet shows "N gyms" text |
+| Bottom sheet expandable | Swiping up reveals full gym list |
+| Tap marker navigates | Tapping a gym marker navigates to Gym Detail |
+| Tap gym in list navigates | Tapping a gym row in bottom sheet navigates to Gym Detail |
+| Search filters markers | Typing in search filters visible gym markers and list |
+
+**What to implement (`app/(tabs)/map.tsx`):**
+
+- `react-native-maps` or Expo `MapView` — full-screen interactive map.
+- Gym markers: custom pin components at each gym's `latitude`/`longitude`.
+- Search bar: `AppTextInput` (search variant) positioned absolutely at top with `z-10`.
+- Star filter: `IconButton` to toggle favorites-only view.
+- Bottom sheet: draggable sheet (Reanimated + Gesture Handler) with collapsed state showing gym count, expanded state showing scrollable `FlatList` of gym entries.
+- Each gym entry: gym name, address, tap navigates to `app/gym/[id].tsx`.
+
+**Why:** The Map Browse screen is the primary gym discovery interface — climbers use it to find nearby gyms when traveling or exploring. The bottom sheet pattern (collapsed count → expanded list) is a standard maps UX that balances map visibility with list browsability.
+
+**Acceptance:** Map renders with pins; search filters work; bottom sheet expands/collapses; navigation to gym detail works.
+
+---
+
 ## Phase 5 — Tick-Logging & Sessions
 
 ### Step 5.1 — Session Store (Zustand)
@@ -1205,6 +1332,78 @@ Run `supabase db push`, then run test suite against local DB.
 - Saved routes section accessible from logbook (Project/Wishlist/Favorite tabs).
 
 **Acceptance:** Logbook shows session history and saved routes; drill-down works.
+
+---
+
+### Step 5.7 — Start Activity Screen
+
+**Depends on:** Steps 4.3 (Gym Service), 5.1 (Session Store)
+**Relevant requirements:** FR-D4, FR-B4
+**Wireframe ref:** Screen 7 (Start Activity) in `Documentation/Wireframes.md`, `Documentation/mockups/Start Activity.png`
+
+**What to test (`app/(tabs)/__tests__/activity.test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Renders country dropdown | Country selector visible with label |
+| Renders city dropdown | City selector visible with label |
+| Renders gym dropdown | Gym selector visible with label |
+| Cascading filter: country → city | Changing country updates city options |
+| Cascading filter: city → gym | Changing city updates gym options |
+| Start Activity button | Button present and enabled when gym selected |
+| Button disabled without gym | Button disabled/dimmed when no gym selected |
+| Starts session on press | Pressing "Start Activity" calls `sessionStore.startSession()` with selected gym |
+| Navigates after start | After starting, navigates to Route Browse filtered to selected gym |
+
+**What to implement (`app/(tabs)/activity.tsx`):**
+
+- Three cascading dropdown selectors (Country → City → Gym) using `AppTextInput` (dropdown variant) or a custom picker component.
+- Data flow: `useGyms()` hook fetches all gyms → group by country → filter cities by selected country → filter gyms by selected city.
+- "Start Activity" button: calls `sessionStore.startSession(gymId)`, then navigates to Route Browse.
+- Pre-select user's home gym (from `useAuth().user.homeGymId`) if set.
+- Layout: dropdowns stacked vertically with spacer pushing button to bottom of screen.
+
+**Why:** The Start Activity screen is the entry point for every climbing session. The cascading dropdown pattern prevents invalid combinations (e.g., gym in Porto but city set to Lisbon). Pre-selecting the home gym reduces friction for daily climbers.
+
+**Acceptance:** Cascading selectors work correctly; session starts; navigation to route browse works.
+
+---
+
+### Step 5.8 — Full Ascent Form Screen
+
+**Depends on:** Steps 5.3 (useSession), 4.6 (Route Detail)
+**Relevant requirements:** FR-D1, FR-C2, FR-G2
+**Wireframe ref:** Screen 6 (Ascent Form) in `Documentation/Wireframes.md`, `Documentation/mockups/Ascent.png`
+
+**What to test (`app/route/[id]/__tests__/ascent.test.tsx`):**
+
+| Test case | Description |
+|---|---|
+| Route header card renders | Route photo, ID, grade, rating, send status visible |
+| Star rating renders | 5 tappable stars visible |
+| Star rating interactive | Tapping star N fills stars 1–N with gold |
+| Video upload button renders | "Add Beta Video" button visible |
+| Comment textarea renders | Comment input with placeholder visible |
+| Character counter | Shows current/max character count (0/200) |
+| Style tags render | All climbing style tags displayed |
+| Style tags multi-select | Tapping tag toggles selection state |
+| Submit button renders | "Add Ascent" button visible |
+| Submit calls logAscent | Valid submission calls `useSession().logAscent()` with rating, tags, comment |
+| Submit navigates back | Successful submission navigates back to Route Detail |
+| Empty submit allowed | Rating, video, comment, tags are all optional |
+
+**What to implement (`app/route/[id]/ascent.tsx`):**
+
+- Route header card: `Card` with route photo, ID, grade, rating, send status (same metadata as Route Detail header).
+- Star rating: custom `StarRating` component — 5 `IconButton`s (Star icon), tappable, fill with `gold` color up to selected value.
+- Video upload: `Button` (variant: "secondary", dashed border) labeled "Add Beta Video" — opens camera/gallery picker (real upload logic in Phase 12, visual-only for now).
+- Comment section: multiline `TextInput` with `maxLength={200}`, character counter text below (`{length}/200`).
+- Style tags: `Badge` (variant: "tag") components in a `flex-row flex-wrap` grid. Multi-select — tapped tags get full color, unselected get muted/outline style. Tags: Power, Finger Strength, Footwork, Dynamic Movement, Core Strength, Technique.
+- Submit: `Button` (variant: "primary") calls `useSession().logAscent()` with assembled payload, then navigates back.
+
+**Why:** The wireframe shows a rich ascent form that goes beyond the QuickLog bottom sheet (Step 5.4). While QuickLog is for fast tap-and-go logging (Flash/Send/Attempt + attempts count), this full-screen form captures detailed feedback: how the user rates the route, which climbing styles were involved, beta comments, and video. This data feeds the gamification, social, and analytics systems.
+
+**Acceptance:** All form elements render; star rating interactive; tags multi-selectable; submission creates ascent with all metadata; navigation works.
 
 ---
 
@@ -2469,9 +2668,9 @@ Repeat for each test case in the step.
 | 0 — Scaffolding | NFR-7, NFR-14 |
 | 1 — Data Foundation | FR-P1, FR-E4, FR-F2, FR-G1, FR-D1, FR-A1, FR-L1, FR-L3, FR-C7 |
 | 2 — Database | FR-A1, FR-B1, FR-C1, FR-D1, FR-L1, NFR-4, FR-F1, FR-G1, FR-G2, FR-G3, FR-G5, FR-K1, FR-H1–H5, FR-J1, FR-J2, FR-C4, FR-O3, FR-I3, FR-I4 |
-| 3 — Auth | FR-A1, FR-A4, FR-L1 |
-| 4 — Gyms & Routes | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7, FR-C4 |
-| 5 — Logging | FR-D1, FR-D2, FR-D4, FR-E5 |
+| 3 — Auth | FR-A1, FR-A4, FR-L1, NFR-8 |
+| 4 — Gyms & Routes | FR-B1, FR-B4, FR-C1, FR-C3, FR-C7, FR-C4, NFR-8 |
+| 5 — Logging | FR-D1, FR-D2, FR-D4, FR-E5, FR-C2, FR-G2 |
 | 6 — Offline | FR-D3, NFR-3, NFR-9 |
 | 7 — QR/NFC | FR-B3, FR-C5, FR-P3 |
 | 8 — Gamification | FR-F1, FR-F2, FR-F3, FR-F4, FR-A2 |
