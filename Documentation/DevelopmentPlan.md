@@ -841,15 +841,18 @@ Run `supabase db push`, then run test suite against local DB.
 | Submit with invalid email | Shows email validation error |
 | Successful login | Calls `signIn`, navigates to home |
 | Failed login | Shows error message from service |
-| Register form renders | Email, password, confirm password fields |
-| Password mismatch | Shows error |
-| Forgot password renders | Email input + submit |
-| Social sign-in buttons | Google and Apple buttons visible, trigger OAuth |
+| Register form renders | Email, display name, password fields |
+| Short password | Shows min-length error (8 chars) |
+| Forgot password renders | Email input + submit, success message on send |
+| Social sign-in buttons | Google and Apple buttons visible (visual-only, OAuth in later phase) |
+| Auth gate loading | Returns null while isLoading (splash stays visible) |
+| Auth gate unauthenticated | Redirects to (auth)/login |
+| Auth gate authenticated | Renders Slot (main app) |
 
 **What to implement:**
 
 - `app/(auth)/login.tsx`: form with React Hook Form + Zod, calls `useAuth().signIn`
-- `app/(auth)/register.tsx`: form with password confirmation
+- `app/(auth)/register.tsx`: form with display name + password strength indicator
 - `app/(auth)/forgot-password.tsx`: email-only form
 - `app/(auth)/_layout.tsx`: stack navigator for auth flow
 
@@ -865,9 +868,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.6 — Root Layout & Auth Gate
+### ✅ Step 3.6 — Root Layout & Auth Gate
 
-**Depends on:** Step 3.5  
+**Depends on:** Step 3.5
 **Relevant requirements:** FR-A1
 
 **What to test:**
@@ -885,6 +888,8 @@ Run `supabase db push`, then run test suite against local DB.
 - Expo Router `<Slot />` or `<Stack />` at root.
 
 **Acceptance:** Navigation correctly gates authenticated vs unauthenticated users.
+
+**Implementation notes:** Fully implemented as part of Step 3.5. AuthGate component exported separately for testability, uses Redirect for URL-based navigation. 3 tests included in Step 3.5 test count.
 
 ---
 
