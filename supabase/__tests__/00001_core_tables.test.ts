@@ -202,10 +202,13 @@ describe('Foreign keys', () => {
       );
       const gymId = gymResult.rows[0].id;
 
-      // Step 3: Create a profile (route_ascents FK requires this)
+      // Step 3: Create a profile (route_ascents FK requires this).
+      // ON CONFLICT DO NOTHING: the handle_new_user trigger (Step 2.3) may
+      // have already created this profile — this prevents duplicate PK errors.
       await client.query(
         `INSERT INTO profiles (id, preferred_grade_system)
-         VALUES ($1, 'v-scale')`,
+         VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [userId]
       );
 
@@ -268,7 +271,8 @@ describe('Check constraints', () => {
       const gymId = gymResult.rows[0].id;
       await client.query(
         `INSERT INTO profiles (id, preferred_grade_system)
-         VALUES ($1, 'v-scale')`,
+         VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [userId]
       );
       const routeResult = await client.query(
@@ -304,7 +308,8 @@ describe('Check constraints', () => {
       const gymId = gymResult.rows[0].id;
       await client.query(
         `INSERT INTO profiles (id, preferred_grade_system)
-         VALUES ($1, 'v-scale')`,
+         VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [userId]
       );
       const routeResult = await client.query(
@@ -402,7 +407,8 @@ describe('Default values', () => {
       const gymId = gymResult.rows[0].id;
       await client.query(
         `INSERT INTO profiles (id, preferred_grade_system)
-         VALUES ($1, 'v-scale')`,
+         VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [userId]
       );
       const routeResult = await client.query(

@@ -172,10 +172,13 @@ async function createTestScenario(
   const user1Id = await createTestUser(txClient, 'user1-' + Date.now() + '@test.com');
   const user2Id = await createTestUser(txClient, 'user2-' + Date.now() + '@test.com');
 
-  // Create profiles for both users
+  // Create profiles for both users.
+  // ON CONFLICT DO NOTHING: the handle_new_user trigger (Step 2.3) may
+  // have already created these profiles — this prevents duplicate PK errors.
   await txClient.query(
     `INSERT INTO profiles (id, preferred_grade_system)
-     VALUES ($1, 'v-scale'), ($2, 'v-scale')`,
+     VALUES ($1, 'v-scale'), ($2, 'v-scale')
+     ON CONFLICT (id) DO NOTHING`,
     [user1Id, user2Id]
   );
 
@@ -634,9 +637,11 @@ describe('Profile access', () => {
       const user1Id = await createTestUser(client, 'profile-insert1-' + Date.now() + '@test.com');
       const user2Id = await createTestUser(client, 'profile-insert2-' + Date.now() + '@test.com');
 
-      // Create user1's own profile first (as superuser)
+      // Create user1's own profile first (as superuser).
+      // ON CONFLICT DO NOTHING: handle_new_user trigger may have already created it.
       await client.query(
-        `INSERT INTO profiles (id, preferred_grade_system) VALUES ($1, 'v-scale')`,
+        `INSERT INTO profiles (id, preferred_grade_system) VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [user1Id]
       );
 
@@ -993,7 +998,8 @@ describe('Gym management', () => {
     try {
       const user1Id = await createTestUser(client, 'gym-create-' + Date.now() + '@test.com');
       await client.query(
-        `INSERT INTO profiles (id, preferred_grade_system) VALUES ($1, 'v-scale')`,
+        `INSERT INTO profiles (id, preferred_grade_system) VALUES ($1, 'v-scale')
+         ON CONFLICT (id) DO NOTHING`,
         [user1Id]
       );
 
