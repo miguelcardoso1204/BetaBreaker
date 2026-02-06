@@ -37,9 +37,12 @@ module.exports = {
         '@testing-library/react-native/build/matchers/extend-expect',
       ],
 
-      // Mirror the @/* path alias from tsconfig.json so tests can use the same import paths
+      // Mirror the @/* path alias from tsconfig.json so tests can use the same import paths.
+      // Also map .css imports to an empty module — Jest runs in Node.js and can't
+      // parse CSS. Without this, `import "../global.css"` in _layout.tsx would crash.
       moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/$1',
+        '\\.(css)$': '<rootDir>/__mocks__/styleMock.js',
       },
 
       // Run all tests EXCEPT those in supabase/__tests__/ (those are integration tests)
