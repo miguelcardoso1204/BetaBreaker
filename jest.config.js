@@ -33,8 +33,11 @@ module.exports = {
 
       // Load built-in matchers from @testing-library/react-native
       // Gives us assertions like toBeOnTheScreen(), toHaveTextContent(), etc.
+      // Also load our custom setup that makes TanStack Query updates synchronous
+      // in tests (prevents flaky mutation error state assertions).
       setupFilesAfterEnv: [
         '@testing-library/react-native/build/matchers/extend-expect',
+        '<rootDir>/jest.setup.ts',
       ],
 
       // Mirror the @/* path alias from tsconfig.json so tests can use the same import paths.

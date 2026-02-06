@@ -22,3 +22,8 @@ export type { UserProfile, UseAuthReturn } from "./useAuth";
 // useRoutes — fetches filtered route lists via TanStack Query.
 // useRouteDetail — fetches a single route with setter info.
 export { useRoutes, useRouteDetail } from "./useRoutes";
+
+// useGyms — fetches gym directory via TanStack Query.
+// useGym — fetches a single gym's details.
+// useSetHomeGym — mutation to update the user's home gym.
+export { useGyms, useGym, useSetHomeGym } from "./useGyms";

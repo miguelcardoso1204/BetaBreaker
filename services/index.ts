@@ -31,3 +31,6 @@ export { profileService } from "./profile.service";
 // Used by useRoutes hook (Step 4.2) to populate route list and detail screens.
 export { routeService } from "./routes.service";
 export type { RouteFilters } from "./routes.service";
+
+// gymService — fetches gym directory, gym details, and sets home gym.
+export { gymService } from "./gyms.service";
