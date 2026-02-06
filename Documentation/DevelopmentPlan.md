@@ -630,9 +630,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 2.9 — Seed Data Script
+### ✅ Step 2.9 — Seed Data Script
 
-**Depends on:** Steps 2.1–2.8  
+**Depends on:** Steps 2.1–2.8
 **Relevant requirements:** Development workflow
 
 **What to test:**
@@ -656,6 +656,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Insert sample season.
 
 **Acceptance:** `supabase db reset` runs cleanly; seed verification tests pass.
+
+**Implementation notes (completed):**
+- Files created/updated: `supabase/seed.sql` (complete rewrite), `supabase/__tests__/00009_seed_data.test.ts` (new)
+- Seed has 11 sections: gym (1), auth users (3), gym roles (3), style tags (8), routes (18), route-tag links (14), ascents (12), season (1), saved routes (2), notifications (2), maintenance ticket (1)
+- Fixed UUIDs for all entities (gym: `10000000-...001`, users: `20000000-...00[1-3]`, routes: `30000000-...00[01-18]`)
+- Ascents fire `on_ascent_insert` trigger chain — auto-populates `user_badges`, `user_streaks`, and `leaderboard_entries` (no manual inserts needed)
+- Ascents spread across 4 consecutive weeks with `now() - interval 'X weeks'` to produce a 4-week streak → auto-earns "Weekly Warrior" badge
+- Alex earns 12+ badges automatically: 9 grade badges (V0–V8) + 2 volume badges (First Send, 10 Sends) + 1 streak badge (Weekly Warrior)
+- Total integration tests: 319 (17 new + 302 existing)
+- Total unit tests: 134 (unchanged)
 
 ---
 
