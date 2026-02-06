@@ -1031,10 +1031,20 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.4 — Route Card Component
+### Step 4.4 — Route Card Component ✅
 
-**Depends on:** Steps 4.2, 1.1 (grade conversion)  
+**Depends on:** Steps 4.2, 1.1 (grade conversion)
 **Relevant requirements:** FR-C1, FR-C7
+
+> **Implementation notes (2026-02-06):**
+> - Created `components/routes/RouteCard.tsx` — presentational card composing Card + Badge
+> - Props: `route` (RouteCardRoute), `userGradeSystem`, `onPress`, `isSent`
+> - Status dot: green (active), amber (retiring_soon), gray (archived)
+> - Color swatch: inline backgroundColor from route.color (conditional)
+> - Style tags: Badge chips with "tag" variant
+> - Grade via `canonicalToDisplay()`, null name fallback to "Unnamed Route"
+> - 13 component tests in `components/routes/__tests__/RouteCard.test.tsx`
+> - Total unit tests: 267
 
 **What to test (`components/__tests__/RouteCard.test.tsx`):**
 
