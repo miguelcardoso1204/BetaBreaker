@@ -742,9 +742,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.3 — useAuth Hook
+### Step 3.3 ✅ — useAuth Hook
 
-**Depends on:** Step 3.2  
+**Depends on:** Step 3.2
 **Relevant requirements:** FR-A1
 
 **What to test (`hooks/__tests__/useAuth.test.ts`):**
@@ -766,6 +766,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Fetches user profile + role on session change.
 
 **Acceptance:** Hook tests pass with mocked Supabase client.
+
+**Implementation notes:**
+- Created `services/profile.service.ts` — 2 methods (`getById`, `getRoles`) wrapping PostgREST queries
+- Created `hooks/useAuth.ts` — useState + useEffect hook with `onAuthStateChange` as single source of truth
+- `UserProfile` interface transforms snake_case DB columns to camelCase at the hook boundary
+- `isAuthenticated` is computed (`session !== null`), not stored as separate state
+- Role derivation uses `ROLES` array index from `lib/constants.ts` to pick highest privilege
+- `signIn`/`signUp`/`signOut` delegate to authService and do NOT update state — `onAuthStateChange` callback handles all state transitions
+- 8 new unit tests (2 profile service + 6 useAuth hook), 155 total unit tests
+- Files: `services/profile.service.ts`, `services/__tests__/profile.service.test.ts`, `hooks/useAuth.ts`, `hooks/__tests__/useAuth.test.ts`, updated `services/index.ts`, `hooks/index.ts`
 
 ---
 

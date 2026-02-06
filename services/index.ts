@@ -22,3 +22,7 @@
 // OAuthProvider type restricts OAuth to our configured providers (Google, Apple).
 export { authService } from "./auth.service";
 export type { OAuthProvider, AuthChangeEvent, Session } from "./auth.service";
+
+// Profile service — fetches user profiles and gym roles from Postgres.
+// Used by the useAuth hook to load profile data after session is established.
+export { profileService } from "./profile.service";

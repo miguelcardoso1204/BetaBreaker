@@ -13,5 +13,8 @@
  * services directly. This keeps network logic out of UI components.
  */
 
-// Hook exports will be added here as they are implemented in later phases.
-export {};
+// useAuth — manages auth state (session, profile, roles) via onAuthStateChange.
+// UserProfile — camelCase interface for the user's profile data.
+// UseAuthReturn — full return type of the useAuth hook.
+export { useAuth } from "./useAuth";
+export type { UserProfile, UseAuthReturn } from "./useAuth";
