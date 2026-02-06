@@ -40,6 +40,9 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# test coverage
+coverage/
+
 # Supabase local runtime (Docker state from `supabase start`)
 .supabase/
 
