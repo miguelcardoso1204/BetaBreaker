@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
+    "start:phone": "EXPO_PUBLIC_SUPABASE_URL=https://nuffoxarlcxnllatycdu.supabase.co EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51ZmZveGFybGN4bmxsYXR5Y2R1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzNTI1NzgsImV4cCI6MjA4NTkyODU3OH0.zi8vEsgwgxo70Run0JomncI7HOVyKFnfu4vi72mZx_c expo start --tunnel --clear",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
