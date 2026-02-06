@@ -827,7 +827,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 3.5 — Auth Screens (Login, Register, Forgot Password)
+### ✅ Step 3.5 — Auth Screens (Login, Register, Forgot Password)
 
 **Depends on:** Step 3.4
 **Relevant requirements:** FR-A1, FR-A4
@@ -854,6 +854,14 @@ Run `supabase db push`, then run test suite against local DB.
 - `app/(auth)/_layout.tsx`: stack navigator for auth flow
 
 **Acceptance:** Auth screens render correctly; form validation works; navigation flows complete.
+
+**Implementation notes:**
+- Files created: `app/(auth)/_layout.tsx`, `app/(auth)/login.tsx`, `app/(auth)/register.tsx`, `app/(auth)/forgot-password.tsx`, `app/_layout.tsx` (rewritten)
+- Tests: 30 new unit tests (11 login + 10 register + 6 forgot-password + 3 auth gate)
+- Total unit tests: 227
+- Key patterns: react-hook-form Controller + zodResolver, AuthGate with Redirect, QueryClientProvider in root layout
+- Password strength indicator (visual-only, 0-4 scale)
+- Social OAuth buttons rendered but non-functional (needs deep link config in later phase)
 
 ---
 
