@@ -1104,7 +1104,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.6 — Gym Routes Screen
+### Step 4.6 — Gym Routes Screen ✅
 
 **Depends on:** Steps 4.2, 4.4
 **Relevant requirements:** FR-C3
@@ -1129,6 +1129,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Pull-to-refresh wired to `refetch()`.
 
 **Acceptance:** Screen renders routes for a gym; filters work; navigation correct.
+
+**Implementation notes:**
+- Created `stores/routeFilterStore.ts` — Zustand store with per-gym grade range + sort filter persistence (keyed by gymId)
+- Created `components/routes/FilterBar.tsx` — horizontal pill buttons for min/max grade pickers (modal with scrollable grade list) and sort toggle
+- Created `app/gym/_layout.tsx` — Stack navigator for gym screens (outside tabs, provides back navigation)
+- Created `app/gym/[id]/routes.tsx` — FlatList of RouteCard components with FilterBar, loading/empty/error states, pull-to-refresh
+- Updated `stores/index.ts` barrel export
+- `style_tags` passed as `[]` to RouteCard (query join not yet implemented)
+- `userGradeSystem` hardcoded to `"v-scale"` (user preferences not yet implemented)
+- Tests: 4 store + 4 FilterBar + 6 screen = 14 new tests (289 unit total)
 
 ---
 

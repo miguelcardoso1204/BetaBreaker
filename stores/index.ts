@@ -18,5 +18,5 @@
  * NOT here. Zustand is only for client-side ephemeral data.
  */
 
-// Store exports will be added here as they are implemented in later phases.
-export {};
+// Store exports — each store manages one slice of client-side state.
+export { useRouteFilterStore } from "./routeFilterStore";
