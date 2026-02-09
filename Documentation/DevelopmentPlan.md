@@ -1291,7 +1291,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.11 — Start Session Modal
+### Step 4.11 — Start Session Modal ✅
 
 **Depends on:** Steps 4.3, 4.5
 **Relevant requirements:** FR-D4, FR-B5
@@ -1316,6 +1316,16 @@ Run `supabase db push`, then run test suite against local DB.
 - No → navigate to Map Browse to pick manually.
 
 **Acceptance:** Modal opens from FAB; location detection works; both paths navigate correctly.
+
+**Implementation notes:**
+- Created `utils/geo.ts` — Haversine distance function + `findNearestGym` helper (pure, no deps)
+- Created `utils/__tests__/geo.test.ts` — 7 tests (known distance, zero distance, antipodal, findNearestGym picks closest, empty list, null coords, mixed coords)
+- Replaced `app/start-session.tsx` — three-state modal (loading/prompt/error) using expo-location + useGyms + findNearestGym
+- Updated `app/_layout.tsx` — added `<Stack.Screen name="start-session" options={{ presentation: "modal" }} />`
+- Created `app/__tests__/start-session.test.tsx` — 5 tests covering all modal states and navigation paths
+- Updated `app/__tests__/_layout.test.tsx` — fixed Stack mock to support Stack.Screen children
+- Installed `expo-location` dependency
+- Unit tests: 341 total (336 → 341, +5 start-session + 7 geo = +12 new, -7 dedup = net +5 file-level)
 
 ---
 

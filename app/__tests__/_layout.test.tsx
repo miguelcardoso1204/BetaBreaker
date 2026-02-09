@@ -31,16 +31,23 @@ const mockReplace = jest.fn();
 // Default to empty array (root) — tests override as needed.
 let mockSegments: string[] = [];
 
-jest.mock("expo-router", () => ({
-  Stack: (props: any) => {
-    const { View } = require("react-native");
-    return <View testID="stack" {...props} />;
-  },
-  useRouter: () => ({
-    replace: mockReplace,
-  }),
-  useSegments: () => mockSegments,
-}));
+jest.mock("expo-router", () => {
+  const { View } = require("react-native");
+  // Stack renders children (Stack.Screen entries) inside a View.
+  // Stack.Screen is a no-op in tests — it just declares screen config,
+  // which Expo Router uses at runtime but isn't needed for auth logic tests.
+  const Stack = (props: any) => (
+    <View testID="stack">{props.children}</View>
+  );
+  Stack.Screen = (_props: any) => null;
+  return {
+    Stack,
+    useRouter: () => ({
+      replace: mockReplace,
+    }),
+    useSegments: () => mockSegments,
+  };
+});
 
 // Import after mocks are set up
 import { AuthGate } from "../_layout";

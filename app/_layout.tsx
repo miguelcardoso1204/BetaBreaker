@@ -113,8 +113,20 @@ export function AuthGate() {
   // manages its own header, so we hide the root-level header.
   // While isLoading is true, the splash screen is still visible
   // (hidden only after fonts load), so the user sees the app icon.
+  // Explicitly declare screen entries so we can configure start-session
+  // as a modal. Without this, it would render as a full push — losing
+  // the "overlay on top of current tab" UX we want. The other screens
+  // inherit the default headerShown: false from screenOptions.
   return (
-    <Stack screenOptions={{ headerShown: false }} />
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="gym" />
+      <Stack.Screen
+        name="start-session"
+        options={{ presentation: "modal" }}
+      />
+    </Stack>
   );
 }
 
