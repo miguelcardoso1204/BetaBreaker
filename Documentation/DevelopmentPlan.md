@@ -1426,9 +1426,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.4 — QuickLog Bottom Sheet
+### Step 5.4 — QuickLog Bottom Sheet ✅
 
-**Depends on:** Step 5.3  
+**Depends on:** Step 5.3
 **Relevant requirements:** FR-D1
 
 **What to test (`components/__tests__/QuickLogSheet.test.tsx`):**
@@ -1451,6 +1451,11 @@ Run `supabase db push`, then run test suite against local DB.
 - Confirm button → calls mutation → haptic → dismiss.
 
 **Acceptance:** QuickLog sheet works end-to-end; haptic fires on submit.
+
+**Implementation notes:**
+- Created `components/session/QuickLogSheet.tsx` — modal-based bottom sheet using RN `Modal` with `animationType="slide"` + `transparent` backdrop (avoids `@gorhom/bottom-sheet` dependency for a simple form). Internal state: status (`AscentStatus | null`), attempts (stepper 1–99, locked to 1 for flash), notes (free text). Uses `useSession().logAscent.mutate()` for fire-and-forget submission with `expo-haptics` notification on confirm. `useEffect` resets form when `visible` transitions to false.
+- Created `components/session/__tests__/QuickLogSheet.test.tsx` — 6 tests mocking useSession (logAscent.mutate), expo-haptics, and lucide-react-native. Tests use role-based queries (`getByRole("button", { name })`) to disambiguate title text from button label.
+- Unit tests: 362 total (6 new)
 
 ---
 
