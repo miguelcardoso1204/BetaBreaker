@@ -1459,9 +1459,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.5 — Session Timer & Summary
+### Step 5.5 — Session Timer & Summary ✅
 
-**Depends on:** Steps 5.1, 5.3  
+**Depends on:** Steps 5.1, 5.3
 **Relevant requirements:** FR-D4, FR-D2
 
 **What to test:**
@@ -1479,6 +1479,13 @@ Run `supabase db push`, then run test suite against local DB.
 - `components/session/SessionSummary.tsx`: summary card with stats.
 
 **Acceptance:** Full session lifecycle (start → log ascents → end → view summary) works.
+
+**Implementation notes:**
+- Created `utils/time.ts` with `formatElapsedTime(ms)` — clamps negatives, floors sub-seconds, pads HH:MM:SS (8 tests)
+- Created `components/session/SessionTimer.tsx` — reads `useSession()` for `isActive`/`startTime`, 1s `setInterval` with `Date.now() - startTime` per tick (4 tests)
+- Created `components/session/SessionSummary.tsx` — presentational props-only card with Card/Badge/Divider, optional grade distribution bars via percentage-width Views (7 tests)
+- Created `components/session/index.ts` — barrel export for QuickLogSheet, SessionTimer, SessionSummary
+- Total: 19 new unit tests, 381 unit tests total
 
 ---
 
