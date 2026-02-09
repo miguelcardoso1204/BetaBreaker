@@ -9,5 +9,5 @@ Tracking small tasks, reminders, and things to come back to.
 
 ## Tasks
 
-- [ ] Remove cloud Supabase anon key from `package.json` `start:phone` script — move to `.env.cloud` or similar before making repo public
+- [x] ~~Remove cloud Supabase anon key from `package.json` `start:phone` script — moved to `.env.local`~~
 <!-- Add new items here -->
