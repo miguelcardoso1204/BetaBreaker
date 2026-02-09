@@ -122,7 +122,7 @@ export function FilterBar({
           onPress={() => setActivePicker("min")}
           className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
         >
-          <Text className="text-secondary text-sm">{minLabel}</Text>
+          <Text className="text-text-secondary text-sm">{minLabel}</Text>
           <ChevronDown size={14} className="text-muted ml-1" />
         </Pressable>
 
@@ -132,7 +132,7 @@ export function FilterBar({
           onPress={() => setActivePicker("max")}
           className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
         >
-          <Text className="text-secondary text-sm">{maxLabel}</Text>
+          <Text className="text-text-secondary text-sm">{maxLabel}</Text>
           <ChevronDown size={14} className="text-muted ml-1" />
         </Pressable>
 
@@ -142,7 +142,7 @@ export function FilterBar({
           onPress={handleSortToggle}
           className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
         >
-          <Text className="text-secondary text-sm">{sortLabel}</Text>
+          <Text className="text-text-secondary text-sm">{sortLabel}</Text>
         </Pressable>
       </View>
 
@@ -164,7 +164,7 @@ export function FilterBar({
               testID="picker-close"
               onPress={() => setActivePicker(null)}
             >
-              <Text className="text-primary text-base">Close</Text>
+              <Text className="text-accent text-base">Close</Text>
             </Pressable>
           </View>
 

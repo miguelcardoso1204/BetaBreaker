@@ -114,7 +114,7 @@ export function RouteCard({
           </View>
 
           {/* Grade display */}
-          <Text className="text-secondary text-sm mt-0.5">
+          <Text className="text-text-secondary text-sm mt-0.5">
             {gradeDisplay}
           </Text>
 

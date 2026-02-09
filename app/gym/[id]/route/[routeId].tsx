@@ -153,7 +153,7 @@ export default function RouteDetailScreen() {
         <View className="flex-1 justify-center gap-1">
           {/* Name row with favorite toggle */}
           <View className="flex-row items-center justify-between">
-            <Text className="text-xl font-bold text-primary flex-1" numberOfLines={2}>
+            <Text className="text-xl font-bold text-text-primary flex-1" numberOfLines={2}>
               {route.name}
             </Text>
             {/* Star IconButton toggles the favorite state.
@@ -169,27 +169,27 @@ export default function RouteDetailScreen() {
           </View>
 
           {/* Grade — converted from canonical integer to display string */}
-          <Text className="text-secondary text-base">
+          <Text className="text-text-secondary text-base">
             Grade: {displayGrade}
           </Text>
 
           {/* Set date — when the route was created/set on the wall */}
           {setDate && (
-            <Text className="text-secondary text-sm">
+            <Text className="text-text-secondary text-sm">
               Set on: {setDate}
             </Text>
           )}
 
           {/* Wall section — helps climbers physically locate the route */}
           {route.wall_section && (
-            <Text className="text-secondary text-sm">
+            <Text className="text-text-secondary text-sm">
               Wall: {route.wall_section}
             </Text>
           )}
 
           {/* Setter name — who set (created) this route */}
           {route.setter?.display_name && (
-            <Text className="text-secondary text-sm">
+            <Text className="text-text-secondary text-sm">
               Setter: {route.setter.display_name}
             </Text>
           )}
@@ -246,11 +246,11 @@ export default function RouteDetailScreen() {
           render the section heading and an empty state message.
           Phase 12 will replace this with a FlatList of video thumbnails. */}
       <View className="px-4 mb-4">
-        <Text className="text-lg font-bold text-primary mb-2">
+        <Text className="text-lg font-bold text-text-primary mb-2">
           Video Submissions
         </Text>
         <View className="items-center py-8" testID="empty-videos">
-          <Text className="text-secondary text-center">
+          <Text className="text-text-secondary text-center">
             No beta videos yet — be the first to share!
           </Text>
         </View>

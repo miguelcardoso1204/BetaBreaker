@@ -138,7 +138,7 @@ export default function GymRoutesScreen() {
       {/* Empty state — no routes match the current filters */}
       {!isLoading && !error && routes?.length === 0 && (
         <View className="flex-1 items-center justify-center" testID="empty-state">
-          <Text className="text-secondary text-center">No routes found</Text>
+          <Text className="text-text-secondary text-center">No routes found</Text>
         </View>
       )}
 

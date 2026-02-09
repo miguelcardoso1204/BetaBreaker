@@ -2,8 +2,9 @@
 //
 // Tests for the root layout's AuthGate component.
 //
-// AuthGate always renders <Slot /> (so child routes have a container)
-// and uses useEffect + router.replace for auth-based navigation:
+// AuthGate always renders <Stack /> (so child routes have a container
+// with push/pop navigation between route groups like tabs → gym).
+// It uses useEffect + router.replace for auth-based navigation:
 // - Not authenticated + outside (auth) → replace to login
 // - Authenticated + inside (auth) → replace to tabs
 // - Loading → no navigation (splash screen stays visible)
@@ -31,9 +32,9 @@ const mockReplace = jest.fn();
 let mockSegments: string[] = [];
 
 jest.mock("expo-router", () => ({
-  Slot: () => {
-    const { Text } = require("react-native");
-    return <Text testID="slot">Slot</Text>;
+  Stack: (props: any) => {
+    const { View } = require("react-native");
+    return <View testID="stack" {...props} />;
   },
   useRouter: () => ({
     replace: mockReplace,
@@ -55,13 +56,14 @@ describe("AuthGate", () => {
     mockReplace.mockClear();
   });
 
-  it("always renders Slot so child routes have a container", () => {
-    // Regardless of auth state, <Slot /> should always be in the tree.
+  it("always renders Stack so child routes have a navigation container", () => {
+    // Regardless of auth state, <Stack /> should always be in the tree.
     // This prevents the infinite remount loop that happens when the root
-    // layout conditionally returns <Redirect> instead of <Slot />.
+    // layout conditionally returns <Redirect> instead of a navigator.
+    // Stack (vs Slot) also enables push/pop navigation between groups.
     mockAuthState = { isAuthenticated: false, isLoading: true };
     render(<AuthGate />);
-    expect(screen.getByTestId("slot")).toBeOnTheScreen();
+    expect(screen.getByTestId("stack")).toBeOnTheScreen();
   });
 
   it("does not navigate while auth is loading", () => {

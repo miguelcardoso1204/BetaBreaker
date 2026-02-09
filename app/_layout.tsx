@@ -31,7 +31,7 @@ import { useEffect } from "react";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
 
@@ -107,10 +107,15 @@ export function AuthGate() {
     }
   }, [isAuthenticated, isLoading, segments]);
 
-  // Always render <Slot /> so child routes have a container.
+  // Always render the navigator so child routes have a container.
+  // Using <Stack> (instead of <Slot>) gives us push/pop navigation
+  // between route groups (e.g., (tabs) → gym/[id]). Each group
+  // manages its own header, so we hide the root-level header.
   // While isLoading is true, the splash screen is still visible
   // (hidden only after fonts load), so the user sees the app icon.
-  return <Slot />;
+  return (
+    <Stack screenOptions={{ headerShown: false }} />
+  );
 }
 
 /**

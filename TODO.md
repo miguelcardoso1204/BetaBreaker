@@ -10,4 +10,5 @@ Tracking small tasks, reminders, and things to come back to.
 ## Tasks
 
 - [x] ~~Remove cloud Supabase anon key from `package.json` `start:phone` script — moved to `.env.local`~~
+- [ ] Delete test credentials (`Documentation/testcredentials.md`) before release
 <!-- Add new items here -->

@@ -109,7 +109,7 @@ export default function GymMainScreen() {
           {/* Name row with favorite star toggle */}
           <View className="flex-row items-center justify-between">
             <Text
-              className="text-xl font-bold text-primary flex-1"
+              className="text-xl font-bold text-text-primary flex-1"
               numberOfLines={2}
             >
               {gym.name}
@@ -131,7 +131,7 @@ export default function GymMainScreen() {
           {/* Address row — MapPin icon + gym address text */}
           <View className="flex-row items-center gap-2" testID="gym-address">
             <MapPin size={16} color="#9CA3AF" />
-            <Text className="text-secondary text-sm flex-1" numberOfLines={2}>
+            <Text className="text-text-secondary text-sm flex-1" numberOfLines={2}>
               {gym.address}
             </Text>
           </View>
@@ -142,7 +142,7 @@ export default function GymMainScreen() {
               will display actual hours and an open/closed indicator dot. */}
           <View className="flex-row items-center gap-2" testID="gym-hours">
             <Clock size={16} color="#9CA3AF" />
-            <Text className="text-secondary text-sm">
+            <Text className="text-text-secondary text-sm">
               Hours not available
             </Text>
           </View>
@@ -187,7 +187,7 @@ export default function GymMainScreen() {
           testID="routes-card"
         >
           <View className="flex-row items-center justify-between">
-            <Text className="text-primary text-base font-semibold">
+            <Text className="text-text-primary text-base font-semibold">
               Routes
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />
@@ -205,7 +205,7 @@ export default function GymMainScreen() {
           testID="leaderboards-card"
         >
           <View className="flex-row items-center justify-between">
-            <Text className="text-primary text-base font-semibold">
+            <Text className="text-text-primary text-base font-semibold">
               Leaderboards
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />
@@ -223,7 +223,7 @@ export default function GymMainScreen() {
           testID="style-analysis-card"
         >
           <View className="flex-row items-center justify-between">
-            <Text className="text-primary text-base font-semibold">
+            <Text className="text-text-primary text-base font-semibold">
               Style Analysis
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />

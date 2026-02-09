@@ -17,9 +17,13 @@
  */
 
 import React from "react";
-import { Stack } from "expo-router";
+import { Pressable } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
 
 export default function GymLayout() {
+  const router = useRouter();
+
   return (
     <Stack
       screenOptions={{
@@ -27,6 +31,15 @@ export default function GymLayout() {
         headerStyle: { backgroundColor: "#1a1a2e" },
         headerTintColor: "#ffffff",
         headerTitleStyle: { fontWeight: "bold" },
+        // Always show a back button. The gym Stack is nested inside the
+        // root Stack, so React Navigation doesn't automatically add one
+        // for the first screen. This ensures users can always navigate
+        // back to the tab they came from (map, home, etc.).
+        headerLeft: () => (
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <ChevronLeft size={28} color="#ffffff" />
+          </Pressable>
+        ),
       }}
     />
   );
