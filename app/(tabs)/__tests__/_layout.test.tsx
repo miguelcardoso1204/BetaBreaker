@@ -86,14 +86,16 @@ describe("TabLayout", () => {
     expect(typeof capturedTabsProps.tabBar).toBe("function");
   });
 
-  it("declares 4 tab screens: index, map, leaderboards, profile", () => {
-    // The tab navigator should have exactly these 4 screens, matching
-    // the file-based routes in app/(tabs)/.
+  it("declares 4 visible tab screens plus hidden logbook", () => {
+    // The tab navigator should have 4 visible screens (index, map,
+    // leaderboards, profile) plus the logbook screen which is hidden
+    // from the tab bar via href: null but still part of the tabs group.
     render(<TabLayout />);
 
     expect(screen.getByTestId("screen-index")).toBeOnTheScreen();
     expect(screen.getByTestId("screen-map")).toBeOnTheScreen();
     expect(screen.getByTestId("screen-leaderboards")).toBeOnTheScreen();
     expect(screen.getByTestId("screen-profile")).toBeOnTheScreen();
+    expect(screen.getByTestId("screen-logbook")).toBeOnTheScreen();
   });
 });

@@ -139,6 +139,22 @@ function extractDate(isoTimestamp: string): string {
   return isoTimestamp.substring(0, 10);
 }
 
+/**
+ * An ascent row with joined route info for display on the detail screen.
+ *
+ * When fetching raw ascents for a date (not aggregated), we need route
+ * metadata (name, grade, color) to render each ascent card. The nested
+ * `route` object comes from PostgREST resource embedding — it's a
+ * server-side LEFT JOIN that avoids N+1 queries.
+ */
+export interface AscentWithRoute extends Ascent {
+  route: {
+    name: string;
+    canonical_grade: number | null;
+    color: string | null;
+  } | null;
+}
+
 // ── Service ──────────────────────────────────────────────────────────
 
 export const sessionsService = {
@@ -331,5 +347,43 @@ export const sessionsService = {
     // Already sorted newest-first because the query was ORDER BY created_at DESC
     // and Map preserves insertion order.
     return history;
+  },
+
+  /**
+   * Fetch raw ascent rows for a user on a given date, with route info.
+   *
+   * Unlike getSessionSummary (which aggregates rows into counts),
+   * this returns the individual ascent records for rendering on the
+   * session detail screen. Each row includes joined route metadata
+   * (name, grade, color) via PostgREST resource embedding.
+   *
+   * @param userId - The user whose ascents to fetch
+   * @param date - The calendar date to query (only the date part is used)
+   * @returns Array of ascents with nested route info, ordered by creation time
+   */
+  async getSessionAscents(
+    userId: string,
+    date: Date
+  ): Promise<AscentWithRoute[]> {
+    // Compute date boundaries — same logic as getSessionSummary.
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+    const dayStart = `${dateStr}T00:00:00`;
+    const dayEnd = `${dateStr}T23:59:59`;
+
+    // Fetch ascents with route join — includes name, grade, and color
+    // for rendering on the detail screen's ascent list.
+    const { data, error } = await fromRouteAscents()
+      .select("*, route:routes(name, canonical_grade, color)")
+      .eq("user_id", userId)
+      .gte("created_at", dayStart)
+      .lte("created_at", dayEnd)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []) as AscentWithRoute[];
   },
 };

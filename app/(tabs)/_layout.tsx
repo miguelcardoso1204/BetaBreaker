@@ -46,6 +46,13 @@ export default function TabLayout() {
 
       {/* Profile tab — user profile and settings (placeholder for now) */}
       <Tabs.Screen name="profile" />
+
+      {/* Logbook — session history and saved routes. Hidden from the tab bar
+          (href: null) because it's accessed via direct navigation from the
+          home/session screens, not as a top-level tab. Registering it here
+          makes it part of the (tabs) group so it shares the tab navigator
+          context (important for back navigation to work correctly). */}
+      <Tabs.Screen name="logbook" options={{ href: null }} />
     </Tabs>
   );
 }

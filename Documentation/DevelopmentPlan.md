@@ -1489,9 +1489,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.6 — Logbook Screen
+### Step 5.6 — Logbook Screen ✅
 
-**Depends on:** Steps 5.2, 5.5  
+**Depends on:** Steps 5.2, 5.5
 **Relevant requirements:** FR-E5, FR-D2
 
 **What to test:**
@@ -1512,6 +1512,18 @@ Run `supabase db push`, then run test suite against local DB.
 - Saved routes section accessible from logbook (Project/Wishlist/Favorite tabs).
 
 **Acceptance:** Logbook shows session history and saved routes; drill-down works.
+
+**Implementation notes:**
+- Added `AscentWithRoute` type + `getSessionAscents()` to `services/sessions.service.ts`
+- Added `getUserSavedRoutes()` to `services/savedRoutes.service.ts`
+- Created `hooks/useSessions.ts` — `useSessionHistory()` + `useSessionDetail(date)` hooks (6 tests)
+- Added `useSavedRoutesList()` to `hooks/useSavedRoutes.ts` (3 new tests, 8 total)
+- Modified `app/(tabs)/_layout.tsx` — added logbook screen with `href: null` (hidden tab)
+- Created `app/(tabs)/logbook/_layout.tsx` — Stack navigator with dark header + back button
+- Created `app/(tabs)/logbook/index.tsx` — Sessions/Saved segmented control + FlatList (7 tests)
+- Created `app/(tabs)/logbook/[date].tsx` — SessionSummary card + inline ascent list (5 tests)
+- Used `[date]` instead of `[sessionId]` since sessions are implicit date groupings
+- Total: 21 new unit tests, 402 unit tests total
 
 ---
 

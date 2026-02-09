@@ -127,4 +127,22 @@ export const savedRoutesService = {
       .eq("route_id", routeId)
       .eq("save_type", saveType);
   },
+
+  /**
+   * Fetch all saved routes for a user, with joined route metadata.
+   *
+   * Used by the Logbook's "Saved" segment to list all bookmarked routes.
+   * The resource embedding join includes route name, grade, color, and
+   * status — enough info to render a meaningful card without a second query.
+   *
+   * Results are ordered newest-first (most recently saved at the top).
+   *
+   * @param userId - The authenticated user's ID
+   */
+  getUserSavedRoutes(userId: string) {
+    return fromSavedRoutes()
+      .select("*, route:routes(id, name, canonical_grade, color, status)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+  },
 };

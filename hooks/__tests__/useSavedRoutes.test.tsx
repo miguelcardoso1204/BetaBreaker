@@ -29,6 +29,7 @@ jest.mock("@/services/savedRoutes.service", () => ({
     getSavedRoute: jest.fn(),
     saveRoute: jest.fn(),
     unsaveRoute: jest.fn(),
+    getUserSavedRoutes: jest.fn(),
   },
 }));
 
@@ -42,13 +43,18 @@ jest.mock("@/hooks/useAuth", () => ({
   }),
 }));
 
-import { useIsFavorite, useToggleFavorite } from "../useSavedRoutes";
+import {
+  useIsFavorite,
+  useToggleFavorite,
+  useSavedRoutesList,
+} from "../useSavedRoutes";
 
 const { savedRoutesService } = jest.requireMock<{
   savedRoutesService: {
     getSavedRoute: jest.Mock;
     saveRoute: jest.Mock;
     unsaveRoute: jest.Mock;
+    getUserSavedRoutes: jest.Mock;
   };
 }>("@/services/savedRoutes.service");
 
@@ -235,5 +241,84 @@ describe("useToggleFavorite", () => {
       "favorite"
     );
     expect(savedRoutesService.saveRoute).not.toHaveBeenCalled();
+  });
+});
+
+// ── useSavedRoutesList tests ─────────────────────────────────────
+
+describe("useSavedRoutesList", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns isLoading true initially", () => {
+    // Before the query resolves, the hook should report loading state.
+    // The logbook "Saved" segment uses this to show a spinner.
+    savedRoutesService.getUserSavedRoutes.mockReturnValue(
+      new Promise(() => {})
+    );
+
+    const { result } = renderHook(() => useSavedRoutesList(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(true);
+  });
+
+  it("returns saved routes data", async () => {
+    // When the service resolves with saved route rows, the hook should
+    // expose the data array for the Saved segment FlatList.
+    const mockSavedRoutes = [
+      {
+        id: "saved-1",
+        user_id: "user-1",
+        route_id: "route-1",
+        save_type: "favorite",
+        created_at: "2026-02-09T00:00:00Z",
+        route: {
+          id: "route-1",
+          name: "Crimpy Arete",
+          canonical_grade: 10,
+          color: "#EF4444",
+          status: "active",
+        },
+      },
+    ];
+    savedRoutesService.getUserSavedRoutes.mockResolvedValueOnce({
+      data: mockSavedRoutes,
+      error: null,
+    });
+
+    const { result } = renderHook(() => useSavedRoutesList(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toEqual(mockSavedRoutes);
+    expect(savedRoutesService.getUserSavedRoutes).toHaveBeenCalledWith(
+      "user-1"
+    );
+  });
+
+  it("handles error from service", async () => {
+    // When the service returns an error, the hook should propagate it
+    // so the UI can show an error state.
+    savedRoutesService.getUserSavedRoutes.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Permission denied" },
+    });
+
+    const { result } = renderHook(() => useSavedRoutesList(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeTruthy();
   });
 });

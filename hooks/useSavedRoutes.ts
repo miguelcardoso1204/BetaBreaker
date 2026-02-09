@@ -33,6 +33,37 @@ import { savedRoutesService } from "@/services/savedRoutes.service";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
+ * Fetch all saved routes for the current user (logbook "Saved" tab).
+ *
+ * @returns TanStack Query result with saved route rows + joined route metadata
+ *
+ * Used by the Logbook index screen's "Saved" segment to render a list
+ * of all bookmarked routes (favorites, projects, wishlist items).
+ * Each row includes the route's name, grade, color, and status via
+ * the PostgREST resource embedding join in the service layer.
+ *
+ * QUERY KEY: ["saved_routes", "list", userId]
+ * Separated from the per-route favorite check keys (["saved_routes", "favorite", routeId])
+ * so invalidating one doesn't unnecessarily refetch the other.
+ */
+export function useSavedRoutesList() {
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  return useQuery({
+    queryKey: ["saved_routes", "list", userId],
+    queryFn: async () => {
+      // userId is guaranteed non-null when enabled is true (see below)
+      const result = await savedRoutesService.getUserSavedRoutes(userId!);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    // Only fetch when authenticated — unauthenticated users have no saved routes
+    enabled: !!userId,
+  });
+}
+
+/**
  * Check whether the current user has favorited a specific route.
  *
  * @param routeId - The route to check
