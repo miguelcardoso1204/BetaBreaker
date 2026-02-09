@@ -32,6 +32,12 @@
 -- ===========================================================================
 
 
+-- pgcrypto is needed for crypt()/gen_salt() when creating auth.users rows.
+-- On cloud Supabase, pgcrypto lives in the `extensions` schema.
+-- We use extensions.crypt()/extensions.gen_salt() below for portability.
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
+
 -- ===========================================================================
 -- Section 1: Gym
 -- ===========================================================================
@@ -71,7 +77,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000000',
   '20000000-0000-0000-0000-000000000001',
   'authenticated', 'authenticated', 'climber@seed.test',
-  crypt('password123', gen_salt('bf')),
+  extensions.crypt('password123', extensions.gen_salt('bf')),
   now(), now(), now(),
   '{"display_name": "Alex Climber"}'::jsonb,
   '', '', '', ''
@@ -88,7 +94,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000000',
   '20000000-0000-0000-0000-000000000002',
   'authenticated', 'authenticated', 'setter@seed.test',
-  crypt('password123', gen_salt('bf')),
+  extensions.crypt('password123', extensions.gen_salt('bf')),
   now(), now(), now(),
   '{"display_name": "Sam Setter"}'::jsonb,
   '', '', '', ''
@@ -105,7 +111,7 @@ INSERT INTO auth.users (
   '00000000-0000-0000-0000-000000000000',
   '20000000-0000-0000-0000-000000000003',
   'authenticated', 'authenticated', 'admin@seed.test',
-  crypt('password123', gen_salt('bf')),
+  extensions.crypt('password123', extensions.gen_salt('bf')),
   now(), now(), now(),
   '{"display_name": "Jordan Admin"}'::jsonb,
   '', '', '', ''
@@ -375,3 +381,211 @@ VALUES (
   'Spinning hold on move 3 — the left-hand crimp rotates when weighted.',
   'open'
 );
+
+
+-- ===========================================================================
+-- Section 12: Additional Gyms (for map testing)
+-- ===========================================================================
+-- The map screen needs multiple gym markers to test search, scroll, and
+-- the favorites filter. These gyms are spread across Portland and nearby
+-- cities so they cluster naturally when zoomed out and separate when zoomed in.
+--
+-- Each gym has a distinct default_grade_system to test grade display logic.
+
+INSERT INTO public.gyms (id, name, address, latitude, longitude, social_links, default_grade_system)
+VALUES
+  -- Portland gyms — spread across the city
+  ('10000000-0000-0000-0000-000000000002',
+   'Vertical World',
+   '456 Belmont St, Portland, OR 97214',
+   45.5165, -122.6270,
+   '{"instagram": "@verticalworldpdx", "website": "https://verticalworld.example.com"}'::jsonb,
+   'v-scale'),
+
+  ('10000000-0000-0000-0000-000000000003',
+   'The Circuit Bouldering Gym',
+   '789 NW 23rd Ave, Portland, OR 97210',
+   45.5335, -122.6990,
+   '{"instagram": "@thecircuitpdx"}'::jsonb,
+   'font'),
+
+  ('10000000-0000-0000-0000-000000000004',
+   'Portland Rock Gym',
+   '21 NE 12th Ave, Portland, OR 97232',
+   45.5244, -122.6544,
+   '{"instagram": "@pdxrockgym", "website": "https://pdxrockgym.example.com"}'::jsonb,
+   'v-scale'),
+
+  -- Nearby cities — tests map at wider zoom levels
+  ('10000000-0000-0000-0000-000000000005',
+   'Stoneworks Climbing',
+   '6775 SW 111th Ave, Beaverton, OR 97008',
+   45.4654, -122.7868,
+   '{"website": "https://stoneworks.example.com"}'::jsonb,
+   'v-scale'),
+
+  ('10000000-0000-0000-0000-000000000006',
+   'Crux Rock Gym',
+   '1500 SE Water Ave, Bend, OR 97702',
+   44.0582, -121.3153,
+   '{"instagram": "@cruxbend"}'::jsonb,
+   'yds')
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 13: Routes at Additional Gyms (6 routes each)
+-- ===========================================================================
+-- Each gym gets a spread of beginner → advanced routes so the route list
+-- screen has variety when filtering by grade. Sam Setter is used as the
+-- setter for simplicity (in production, each gym would have its own setters).
+
+-- Vertical World routes (gym 002) — bouldering focus
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000101', '10000000-0000-0000-0000-000000000002', 'Jug Haul',           0,  'green',  'main-floor',   '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000102', '10000000-0000-0000-0000-000000000002', 'Pinch Fest',         5,  'blue',   'boulder-cave',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000103', '10000000-0000-0000-0000-000000000002', 'The Prow',           8,  'orange', 'arete-wall',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000104', '10000000-0000-0000-0000-000000000002', 'Heel Hook Heaven',  13,  'red',    'overhang-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000105', '10000000-0000-0000-0000-000000000002', 'Compression Test',  18,  'purple', 'boulder-cave',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000106', '10000000-0000-0000-0000-000000000002', 'Limit Breaker',     25,  'black',  'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+-- The Circuit routes (gym 003) — comp-style, graded in Font scale
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000201', '10000000-0000-0000-0000-000000000003', 'Volume Cruise',      2,  'yellow', 'zone-a',       '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000202', '10000000-0000-0000-0000-000000000003', 'Coordination',       8,  'green',  'zone-b',       '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000203', '10000000-0000-0000-0000-000000000003', 'Paddle Dyno',       10,  'pink',   'zone-a',       '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000204', '10000000-0000-0000-0000-000000000003', 'Toe Hook Traverse',  15, 'white',  'zone-c',       '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000205', '10000000-0000-0000-0000-000000000003', 'Roof Problem',      20,  'red',    'zone-b',       '20000000-0000-0000-0000-000000000002', 'retiring_soon'),
+  ('30000000-0000-0000-0000-000000000206', '10000000-0000-0000-0000-000000000003', 'World Cup Final',   23,  'blue',   'comp-wall',    '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+-- Portland Rock Gym routes (gym 004) — traditional, mixed grades
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000301', '10000000-0000-0000-0000-000000000004', 'Warm Up',            0,  'green',  'beginner-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000302', '10000000-0000-0000-0000-000000000004', 'Layback Crack',      5,  'yellow', 'trad-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000303', '10000000-0000-0000-0000-000000000004', 'Smear Campaign',    10,  'orange', 'slab-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000304', '10000000-0000-0000-0000-000000000004', 'Undercling Alley',  13,  'red',    'overhang-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000305', '10000000-0000-0000-0000-000000000004', 'Campus Board King', 20,  'black',  'training-area', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000306', '10000000-0000-0000-0000-000000000004', 'The Eliminator',    25,  'purple', 'comp-wall',     '20000000-0000-0000-0000-000000000002', 'retiring_soon')
+ON CONFLICT (id) DO NOTHING;
+
+-- Stoneworks routes (gym 005) — family-friendly, skews easier
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000401', '10000000-0000-0000-0000-000000000005', 'Rainbow Jug',        0,  'rainbow', 'kids-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000402', '10000000-0000-0000-0000-000000000005', 'Frog Reach',         2,  'green',   'kids-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000403', '10000000-0000-0000-0000-000000000005', 'Slippery Slope',     5,  'blue',    'slab-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000404', '10000000-0000-0000-0000-000000000005', 'Monkey Bars',        8,  'yellow',  'overhang',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000405', '10000000-0000-0000-0000-000000000005', 'Iron Fingers',      15,  'red',     'main-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000406', '10000000-0000-0000-0000-000000000005', 'Stonecutter',       18,  'black',   'main-wall',   '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+-- Crux Rock Gym routes (gym 006, Bend) — YDS scale, sport climbing focus
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000501', '10000000-0000-0000-0000-000000000006', 'First Lead',         0,  'green',  'lead-wall-a',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000502', '10000000-0000-0000-0000-000000000006', 'Clip and Go',        5,  'blue',   'lead-wall-a',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000503', '10000000-0000-0000-0000-000000000006', 'Endurance Test',    10,  'yellow', 'lead-wall-b',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000504', '10000000-0000-0000-0000-000000000006', 'Pump Clock',        15,  'orange', 'lead-wall-b',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000505', '10000000-0000-0000-0000-000000000006', 'Red Point Project', 20,  'red',    'lead-wall-c',  '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000506', '10000000-0000-0000-0000-000000000006', 'Onsight or Bust',   23,  'white',  'lead-wall-c',  '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 14: Alex's Ascents at Other Gyms
+-- ===========================================================================
+-- Gives Alex a presence at multiple gyms so the app has ascent history
+-- beyond Summit. These fire the gamification triggers (streak, badges,
+-- leaderboards) for those gyms too.
+
+-- Vertical World — Alex visited last week
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000101',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000101',
+   'flash', 1, 0, now() - interval '5 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000102',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000103',
+   'send', 3, 8, now() - interval '5 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000103',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000104',
+   'send', 5, 13, now() - interval '5 days');
+
+-- The Circuit — Alex visited yesterday
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000201',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000201',
+   'flash', 1, 2, now() - interval '1 day');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000202',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000203',
+   'send', 2, 10, now() - interval '1 day');
+
+
+-- ===========================================================================
+-- Section 15: Saved Route Favorites
+-- ===========================================================================
+-- The Route Detail screen checks saved_routes with save_type = 'favorite'
+-- to show the star icon as filled/unfilled. These give Alex some pre-
+-- favorited routes so the toggle state is visible when testing.
+INSERT INTO public.saved_routes (user_id, route_id, save_type) VALUES
+  -- Summit favorites: Alex's go-to warm-up and project
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'favorite'),
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000008', 'favorite'),
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000013', 'favorite'),
+  -- Vertical World favorite
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000104', 'favorite'),
+  -- The Circuit favorite
+  ('20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000203', 'favorite')
+ON CONFLICT (user_id, route_id, save_type) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 16: Route Feedback (beta tips)
+-- ===========================================================================
+-- Route Detail will eventually show beta tips from other climbers.
+-- Seeding a few gives content for when that feature is wired up.
+INSERT INTO public.route_feedback (id, route_id, user_id, body, score) VALUES
+  ('70000000-0000-0000-0000-000000000001',
+   '30000000-0000-0000-0000-000000000004',
+   '20000000-0000-0000-0000-000000000002',
+   'Match on the second hold before reaching for the crimp — much more stable.',
+   3),
+  ('70000000-0000-0000-0000-000000000002',
+   '30000000-0000-0000-0000-000000000008',
+   '20000000-0000-0000-0000-000000000002',
+   'Drop knee on the left side to get the clip. Don''t campus it.',
+   5),
+  ('70000000-0000-0000-0000-000000000003',
+   '30000000-0000-0000-0000-000000000007',
+   '20000000-0000-0000-0000-000000000001',
+   'The dyno is shorter if you use the right foot chip — most people miss it.',
+   7),
+  ('70000000-0000-0000-0000-000000000004',
+   '30000000-0000-0000-0000-000000000013',
+   '20000000-0000-0000-0000-000000000003',
+   'Lock off hard on the undercling before committing to the throw. Feet are everything here.',
+   2)
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 17: Follows (social graph)
+-- ===========================================================================
+-- Wire up follow relationships between the three seed users.
+-- This data will be used when the Activity Feed and profile screens
+-- display follower/following counts and social activity.
+INSERT INTO public.follows (follower_id, following_id) VALUES
+  -- Alex follows Sam and Jordan
+  ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002'),
+  ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000003'),
+  -- Sam follows Alex
+  ('20000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001'),
+  -- Jordan follows Alex and Sam
+  ('20000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001'),
+  ('20000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002')
+ON CONFLICT (follower_id, following_id) DO NOTHING;
