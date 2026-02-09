@@ -1142,7 +1142,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.7 — Route Detail Screen
+### Step 4.7 — Route Detail Screen ✅
 
 **Depends on:** Steps 4.2, 4.4
 **Relevant requirements:** FR-C1, FR-C2, FR-C4, FR-C7, FR-G2
@@ -1167,6 +1167,15 @@ Run `supabase db push`, then run test suite against local DB.
 - "Add Ascent" → if active session, log ascent; if not, prompt to start session.
 
 **Acceptance:** Route detail screen renders fully with seeded data.
+
+**Implementation notes:**
+- Created `services/savedRoutes.service.ts` — thin Supabase wrapper for saved_routes CRUD (getSavedRoute, saveRoute, unsaveRoute) with manual `SavedRoute` type (database.types.ts not yet regenerated for this table)
+- Created `hooks/useSavedRoutes.ts` — `useIsFavorite(routeId)` query hook and `useToggleFavorite(routeId)` mutation hook using TanStack Query, reads current user from `useAuth()`
+- Created `app/gym/[id]/route/[routeId].tsx` — ScrollView layout with color swatch, metadata column (name, grade, set date, wall section, setter, status badge), star favorite toggle, "Add Ascent" placeholder button (Alert.alert until Phase 5), "Video Submissions" empty state section (until Phase 12), conditional "Retiring Soon" banner
+- Used `fromSavedRoutes()` helper with `any` cast to bypass TypeScript until `supabase gen types` is re-run
+- `userGradeSystem` hardcoded to `"v-scale"` (user preferences not yet implemented)
+- Color swatch used as visual identifier instead of route photo (no image column in routes table)
+- Tests: 4 service + 5 hook + 9 screen = 18 new tests (307 unit total)
 
 ---
 
