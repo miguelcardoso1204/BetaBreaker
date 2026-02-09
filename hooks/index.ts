@@ -27,3 +27,9 @@ export { useRoutes, useRouteDetail } from "./useRoutes";
 // useGym — fetches a single gym's details.
 // useSetHomeGym — mutation to update the user's home gym.
 export { useGyms, useGym, useSetHomeGym } from "./useGyms";
+
+// useSession — coordinates sessionStore (Zustand) + sessionsService (TanStack mutations)
+// for tick-logging: timer, pending logs, optimistic ascent logging, cache invalidation.
+// LogAscentInput — the input shape for the logAscent mutation (omits userId).
+export { useSession } from "./useSession";
+export type { LogAscentInput } from "./useSession";

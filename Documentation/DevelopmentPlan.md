@@ -1396,9 +1396,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.3 — useSession Hook
+### Step 5.3 — useSession Hook ✅
 
-**Depends on:** Steps 5.1, 5.2  
+**Depends on:** Steps 5.1, 5.2
 **Relevant requirements:** FR-D1, FR-D4
 
 **What to test:**
@@ -1417,6 +1417,12 @@ Run `supabase db push`, then run test suite against local DB.
 - Invalidates session summary, leaderboard, badge queries on success.
 
 **Acceptance:** Hook tests pass with mocked service.
+
+**Implementation notes:**
+- Created `hooks/useSession.ts` — coordinates Zustand sessionStore + sessionsService via TanStack mutations. Returns store state (isActive, pendingLogs, duration, etc.), store actions (startSession, endSession, reset), and mutations (logAscent, deleteAscent). logAscent uses optimistic updates via onMutate/onError, deleteAscent is simple. Both invalidate `["sessions"]` query key on settle.
+- Created `hooks/__tests__/useSession.test.tsx` — 4 tests using real Zustand store + mocked service/auth. Key learning: Date.now mock must use non-zero start time because store uses `startTime ?` (0 is falsy).
+- Updated `hooks/index.ts` — exported useSession and LogAscentInput type.
+- Unit tests: 356 total (4 new)
 
 ---
 
