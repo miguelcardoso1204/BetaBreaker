@@ -13,10 +13,47 @@
 //   3. Interaction — does onChangeText fire when the user types?
 //   4. Validation — does an error message appear when provided?
 //   5. Props — do secureTextEntry and editable pass through correctly?
+//   6. Icons — do leftIcon and rightIcon render correctly?
+//   7. Password toggle — does tapping the eye icon toggle visibility?
 
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { AppTextInput } from "../TextInput";
+
+// Mock the entire lucide-react-native module.
+// jest.mock() is "hoisted" — it runs before any imports — so the mock
+// is already in place when AppTextInput tries to render icon components.
+//
+// WHY MOCK ICONS?
+// Lucide icons are SVG-based components that require native rendering.
+// Jest runs in Node.js without native SVG support, so importing them
+// directly would crash. We replace each icon with a simple <Text> that
+// renders the icon's name — enough to verify the icon prop is used
+// without needing a full SVG rendering pipeline.
+//
+// WHY require() INSIDE THE FACTORY?
+// jest.mock() factories are hoisted above all imports by Babel. Any
+// variables defined outside (including imports) are in the "temporal
+// dead zone" when the factory runs. Using require() inside the factory
+// ensures React Native's Text component is available at mock creation time.
+jest.mock("lucide-react-native", () => ({
+  Mail: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text testID={props.testID}>MailIcon</Text>;
+  },
+  Lock: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text testID={props.testID}>LockIcon</Text>;
+  },
+  Eye: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text testID={props.testID}>EyeIcon</Text>;
+  },
+  EyeOff: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text testID={props.testID}>EyeOffIcon</Text>;
+  },
+}));
 
 describe("AppTextInput", () => {
   // -- Rendering --
@@ -137,5 +174,115 @@ describe("AppTextInput", () => {
       />
     );
     expect(screen.getByPlaceholderText("Locked")).toBeOnTheScreen();
+  });
+
+  // -- Icons --
+  // These tests verify leftIcon and rightIcon props, which allow forms
+  // to show contextual icons inside the input field (e.g., a mail icon
+  // for email, a lock icon for password). Icons improve scannability
+  // and help users identify fields at a glance.
+
+  it("renders left icon when leftIcon prop is provided", () => {
+    // The leftIcon prop accepts a Lucide icon component and renders it
+    // on the left side of the input field. Common use: email field with
+    // a mail icon, search field with a magnifying glass.
+    const { Mail } = require("lucide-react-native");
+    render(
+      <AppTextInput
+        label="Email"
+        value=""
+        onChangeText={() => {}}
+        leftIcon={Mail}
+      />
+    );
+    expect(screen.getByText("MailIcon")).toBeOnTheScreen();
+  });
+
+  it("renders right icon when rightIcon prop is provided", () => {
+    // The rightIcon prop renders an icon on the right side of the input.
+    // Useful for status indicators or action hints (e.g., a lock icon
+    // to indicate a secure field, a clear button, etc.).
+    const { Lock } = require("lucide-react-native");
+    render(
+      <AppTextInput
+        label="Code"
+        value=""
+        onChangeText={() => {}}
+        rightIcon={Lock}
+      />
+    );
+    expect(screen.getByText("LockIcon")).toBeOnTheScreen();
+  });
+
+  // -- Password toggle --
+  // Password fields need a "show/hide" toggle so users can verify what
+  // they typed. This is a standard UX pattern — an eye icon that switches
+  // between masked (dots) and plain text. The toggle is only shown when
+  // secureTextEntry is true, keeping the input clean for non-password fields.
+
+  it("shows password toggle when secureTextEntry is true", () => {
+    // When secureTextEntry is passed, the component should render a
+    // pressable toggle button (identified by testID="password-toggle").
+    // This button lets users reveal their password to check for typos.
+    render(
+      <AppTextInput
+        label="Password"
+        value="secret"
+        onChangeText={() => {}}
+        secureTextEntry
+      />
+    );
+    expect(screen.getByTestId("password-toggle")).toBeOnTheScreen();
+  });
+
+  it("toggles password visibility when eye icon is pressed", () => {
+    // The toggle should cycle between EyeOff (password hidden, the default)
+    // and Eye (password visible). This uses internal component state —
+    // one of the few places where local state is appropriate, because
+    // the parent doesn't need to know whether the password is currently
+    // visible or hidden.
+    render(
+      <AppTextInput
+        label="Password"
+        value="secret"
+        onChangeText={() => {}}
+        secureTextEntry
+        placeholder="Enter password"
+      />
+    );
+    const toggle = screen.getByTestId("password-toggle");
+
+    // Initially shows EyeOff — password is hidden (secure mode is on)
+    expect(screen.getByText("EyeOffIcon")).toBeOnTheScreen();
+
+    // Press to show password — icon switches to Eye (secure mode is off)
+    fireEvent.press(toggle);
+    expect(screen.getByText("EyeIcon")).toBeOnTheScreen();
+
+    // Press again to hide — icon switches back to EyeOff (secure mode on)
+    fireEvent.press(toggle);
+    expect(screen.getByText("EyeOffIcon")).toBeOnTheScreen();
+  });
+
+  // -- No regression --
+
+  it("renders without icons when no icon props provided", () => {
+    // When no icon props are passed, the input should be a clean text
+    // field with no icon elements in the tree. This ensures the icon
+    // feature is additive — it doesn't break existing inputs that
+    // don't need icons.
+    render(
+      <AppTextInput
+        label="Plain"
+        value=""
+        onChangeText={() => {}}
+        placeholder="No icons"
+      />
+    );
+    expect(screen.queryByText("MailIcon")).not.toBeOnTheScreen();
+    expect(screen.queryByText("LockIcon")).not.toBeOnTheScreen();
+    expect(screen.queryByText("EyeIcon")).not.toBeOnTheScreen();
+    expect(screen.queryByText("EyeOffIcon")).not.toBeOnTheScreen();
+    expect(screen.getByPlaceholderText("No icons")).toBeOnTheScreen();
   });
 });

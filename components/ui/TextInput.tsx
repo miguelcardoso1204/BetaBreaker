@@ -150,8 +150,8 @@ export function AppTextInput({
   // Icons are absolutely positioned inside the input's container, so we
   // need extra padding to prevent the typed text from rendering underneath
   // the icon. pl-10 ≈ 40px left padding, pr-10 ≈ 40px right padding.
-  const paddingLeft = LeftIcon ? "pl-10" : "px-4";
-  const paddingRight = RightIcon || showPasswordToggle ? "pr-10" : "";
+  const paddingLeft = LeftIcon ? "pl-10" : "pl-4";
+  const paddingRight = RightIcon || showPasswordToggle ? "pr-10" : "pr-4";
 
   return (
     // Outer wrapper — mb-4 adds bottom margin so stacked inputs don't
