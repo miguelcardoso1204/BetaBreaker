@@ -1362,9 +1362,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.2 — Sessions Service
+### Step 5.2 — Sessions Service ✅
 
-**Depends on:** Phase 3 (Step 3.1), Phase 2 (tables)  
+**Depends on:** Phase 3 (Step 3.1), Phase 2 (tables)
 **Relevant requirements:** FR-D1, FR-D2
 
 **What to test (`services/__tests__/sessions.service.test.ts`):**
@@ -1385,6 +1385,14 @@ Run `supabase db push`, then run test suite against local DB.
 - `getSessionHistory(userId: string): Promise<Session[]>`
 
 **Acceptance:** Service tests pass against Supabase local.
+
+**Implementation notes (Step 5.2):**
+- Created `services/sessions.service.ts` with 4 methods: `createAscent`, `deleteAscent`, `getSessionSummary`, `getSessionHistory`
+- `createAscent`/`deleteAscent` are thin PostgREST wrappers; `getSessionSummary`/`getSessionHistory` are async aggregation methods that fetch rows with route grade joins and reduce in JS
+- Exported types: `AscentLog`, `Ascent`, `SessionSummary`, `SessionHistoryEntry`
+- Created `services/__tests__/sessions.service.test.ts` — 5 tests passing
+- Updated `services/index.ts` with service and type exports
+- Unit tests: 352 total (5 new)
 
 ---
 

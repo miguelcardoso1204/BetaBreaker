@@ -34,3 +34,13 @@ export type { RouteFilters } from "./routes.service";
 
 // gymService — fetches gym directory, gym details, and sets home gym.
 export { gymService } from "./gyms.service";
+
+// Sessions service — persists ascent logs and aggregates session summaries.
+// Used by useSession hook (Step 5.3) to flush pending logs and fetch history.
+export { sessionsService } from "./sessions.service";
+export type {
+  AscentLog,
+  Ascent,
+  SessionSummary,
+  SessionHistoryEntry,
+} from "./sessions.service";
