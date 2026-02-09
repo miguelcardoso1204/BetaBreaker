@@ -1220,7 +1220,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.9 — Map Browse Screen
+### Step 4.9 — Map Browse Screen ✅
 
 **Depends on:** Steps 4.3, 4.8
 **Relevant requirements:** FR-B1, FR-B5, NFR-8
@@ -1246,6 +1246,15 @@ Run `supabase db push`, then run test suite against local DB.
 - Bottom sheet with gym list; tapping navigates to `app/gym/[id].tsx`.
 
 **Acceptance:** Map renders with pins; search filters work; navigation to Gym Main Page works.
+
+**Implementation notes:**
+- Installed `react-native-maps` via `npx expo install react-native-maps`
+- Replaced placeholder `app/(tabs)/map.tsx` with full MapView + Marker implementation
+- Filtering pipeline: useMemo with 3 stages (valid coords → search query → favorites toggle)
+- Uses `initialRegion` (not `region`) so users can pan/zoom freely after initial render
+- Plain RN `TextInput` for search overlay (not AppTextInput — no visible label needed on map)
+- `as any` cast on `router.push()` for typed routes compatibility (matching existing pattern)
+- Tests: 7 new screen tests (307 unit total, 625 total with integration)
 
 ---
 
