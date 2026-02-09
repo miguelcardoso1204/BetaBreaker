@@ -20,3 +20,4 @@
 
 // Store exports — each store manages one slice of client-side state.
 export { useRouteFilterStore } from "./routeFilterStore";
+export { useSessionStore } from "./sessionStore";

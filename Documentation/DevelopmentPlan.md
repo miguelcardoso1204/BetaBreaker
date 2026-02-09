@@ -1331,9 +1331,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 5 — Tick-Logging & Sessions
 
-### Step 5.1 — Session Store (Zustand)
+### Step 5.1 — Session Store (Zustand) ✅
 
-**Depends on:** Phase 0  
+**Depends on:** Phase 0
 **Relevant requirements:** FR-D4
 
 **What to test (`stores/__tests__/sessionStore.test.ts`):**
@@ -1353,6 +1353,12 @@ Run `supabase db push`, then run test suite against local DB.
 - Actions: `startSession()`, `endSession()`, `addPendingLog(log)`, `removePendingLog(id)`, `reset()`.
 
 **Acceptance:** Store tests pass.
+
+**Implementation notes:**
+- Created `stores/sessionStore.ts` — Zustand store with `SessionState` interface, `PendingLog` type (reuses `AscentStatus` from `@/lib/constants`), `INITIAL_STATE` constant for reset, `gymId` field for per-gym sessions
+- Created `stores/__tests__/sessionStore.test.ts` — 6 tests covering all actions, uses `jest.spyOn(Date, 'now')` for deterministic duration assertions
+- Updated `stores/index.ts` — added `useSessionStore` export
+- Unit tests: 347 total (341 → 347, +6 session store tests)
 
 ---
 
