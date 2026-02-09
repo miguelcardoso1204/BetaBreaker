@@ -1179,7 +1179,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.8 — Gym Main Page
+### Step 4.8 — Gym Main Page ✅
 
 **Depends on:** Step 4.3 (Gym Service & Hook)
 **Relevant requirements:** FR-B1, FR-B4
@@ -1210,6 +1210,13 @@ Run `supabase db push`, then run test suite against local DB.
 - Big "Start Session" button (primary CTA).
 
 **Acceptance:** Gym Main Page renders with all metadata; navigation cards route correctly.
+
+**Implementation notes (2026-02-09):**
+- Created `app/gym/[id]/__tests__/index.test.tsx` — 11 tests covering gym name, address with MapPin, hours placeholder with Clock, no open/closed dot (no hours data), social handle from social_links JSONB, favorite toggle calling useSetHomeGym, gold star when home gym, Routes card navigation, Leaderboards/Style Analysis coming soon alerts, loading spinner
+- Created `app/gym/[id]/index.tsx` — ScrollView layout with Avatar initials fallback (no logo_url column), gym name + Star IconButton (gold when home gym), MapPin + address, Clock + "Hours not available" placeholder, Instagram handle from social_links, "Start Session" Button (Alert placeholder for Phase 5), three Card navigation tiles (Routes navigates, Leaderboards/Style Analysis show Alert.alert)
+- Data gaps noted: no `operating_hours` column → "Hours not available"; no `logo_url` → Avatar initials; no `saved_gyms` table → reuses `home_gym_id` from profiles via `useSetHomeGym()`
+- Test 4 adjusted from dev plan's "red/green dot" spec: since no `operating_hours` column exists, we verify the dot is absent rather than testing its color
+- Tests: 11 new screen tests (300 unit total, 636 total with integration)
 
 ---
 
