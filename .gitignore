@@ -49,6 +49,9 @@ coverage/
 # Figma mockup screenshots (large binary files, not for version control)
 Documentation/mockups/
 
+# local planning docs
+docs/plans/
+
 # generated native folders
 /ios
 /android

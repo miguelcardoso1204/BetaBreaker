@@ -1258,7 +1258,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 4.10 — Enrolled Leaderboards Tab
+### Step 4.10 — Enrolled Leaderboards Tab ✅
 
 **Depends on:** Steps 4.5 (tab bar)
 **Relevant requirements:** FR-G1
@@ -1279,6 +1279,15 @@ Run `supabase db push`, then run test suite against local DB.
 - Empty state with trophy icon and "Find gyms" button.
 
 **Acceptance:** Tab renders placeholder or real data; navigation to leaderboard detail works.
+
+**Implementation notes:**
+- Created `hooks/useEnrolledLeaderboards.ts` — stub hook returning empty data (Phase 9 replaces with TanStack Query)
+- Exported `EnrolledLeaderboard` interface with id, gym_id, gym_name, period, rank, score, total_participants
+- Replaced placeholder in `app/(tabs)/leaderboards.tsx` with three-state screen (loading, empty, data)
+- Data state uses FlatList with Pressable cards showing rank badge, gym name, period, formatted score, chevron
+- Empty state shows Trophy icon, "No enrolled leaderboards" message, and "Find Gyms" Button CTA
+- Created `app/(tabs)/__tests__/leaderboards.test.tsx` — 4 tests using __mockData pattern
+- Tests: 4 new screen tests (311 unit total)
 
 ---
 
