@@ -10,7 +10,7 @@
  *   - Avatar with initials fallback (no logo_url column exists yet)
  *   - Social media handle from gym.social_links
  *   - Favorite star toggle (sets home gym via useSetHomeGym)
- *   - "Start Session" button (placeholder until Phase 5)
+ *   - "Start Session" button (starts session via useSession + navigates to routes)
  *   - Navigation cards: Routes (navigates), Leaderboards/Style Analysis (coming soon)
  *
  * Mock strategy (matching [routeId].test.tsx patterns):
@@ -61,6 +61,17 @@ const mockUser = {
 };
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: mockUser }),
+}));
+
+// Mock useSession — provides startSession action and isActive state.
+// We track startSession calls and control isActive per-test.
+const mockStartSession = jest.fn();
+let mockIsActive = false;
+jest.mock("@/hooks/useSession", () => ({
+  useSession: () => ({
+    startSession: mockStartSession,
+    isActive: mockIsActive,
+  }),
 }));
 
 // Mock lucide-react-native — replace SVG icons with simple Views that have
@@ -126,6 +137,7 @@ function resetMocks() {
   __mockData.error = null;
   mockUser.id = "user-1";
   mockUser.homeGymId = null;
+  mockIsActive = false;
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -270,6 +282,42 @@ describe("GymMainScreen", () => {
       "Coming Soon",
       expect.any(String)
     );
+  });
+
+  // ── Start Session button ────────────────────────────────────────
+
+  it("calls startSession and navigates to routes when Start Session is pressed", () => {
+    // The Start Session button should activate the Zustand session store
+    // with this gymId and navigate to the routes list so the user can
+    // browse and log ascents.
+    __mockData.data = mockGym;
+
+    render(<GymMainScreen />);
+
+    const button = screen.getByTestId("start-session-button");
+    expect(screen.getByText("Start Session")).toBeOnTheScreen();
+
+    fireEvent.press(button);
+
+    expect(mockStartSession).toHaveBeenCalledWith("gym-1");
+    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/routes");
+  });
+
+  it("shows 'View Routes' and skips startSession when session is already active", () => {
+    // If a session is already running (e.g., user navigated back from
+    // routes), the button should say "View Routes" and just navigate
+    // without calling startSession again.
+    __mockData.data = mockGym;
+    mockIsActive = true;
+
+    render(<GymMainScreen />);
+
+    expect(screen.getByText("View Routes")).toBeOnTheScreen();
+
+    fireEvent.press(screen.getByTestId("start-session-button"));
+
+    expect(mockStartSession).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/routes");
   });
 
   // ── Loading state ────────────────────────────────────────────────

@@ -35,6 +35,7 @@ import { MapPin } from "lucide-react-native";
 
 import { Button } from "@/components/ui/Button";
 import { useGyms } from "@/hooks/useGyms";
+import { useSession } from "@/hooks/useSession";
 import { findNearestGym } from "@/utils/geo";
 
 /**
@@ -51,6 +52,7 @@ type ModalState =
 export default function StartSessionScreen() {
   const router = useRouter();
   const { data: gyms } = useGyms();
+  const { startSession } = useSession();
   const [state, setState] = useState<ModalState>({ status: "loading" });
 
   useEffect(() => {
@@ -164,11 +166,15 @@ export default function StartSessionScreen() {
             </Text>
           )}
 
-          {/* Primary CTA — confirm this gym and navigate to its page */}
+          {/* Primary CTA — start the session in Zustand store and navigate
+              to the gym page where the user can browse routes and log ascents. */}
           <View className="w-full mt-8">
             <Button
               label="Yes, start session!"
-              onPress={() => router.replace(`/gym/${state.gym.id}`)}
+              onPress={() => {
+                startSession(state.gym.id);
+                router.replace(`/gym/${state.gym.id}`);
+              }}
               size="lg"
             />
           </View>

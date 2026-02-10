@@ -68,6 +68,15 @@ jest.mock("@/hooks/useGyms", () => {
   };
 });
 
+// Mock useSession — provides startSession action for the "Yes" button.
+const mockStartSession = jest.fn();
+jest.mock("@/hooks/useSession", () => ({
+  useSession: () => ({
+    startSession: mockStartSession,
+    isActive: false,
+  }),
+}));
+
 // Mock lucide-react-native — MapPin as a simple View with testID.
 // Jest can't process SVG transforms from the real lucide package.
 jest.mock("lucide-react-native", () => {
@@ -182,11 +191,12 @@ describe("StartSessionScreen", () => {
     expect(screen.getByText("123 Boulder Ave, Portland, OR 97201")).toBeOnTheScreen();
   });
 
-  // ── 3. "Yes" button navigates to gym page ────────────────────
+  // ── 3. "Yes" button starts session and navigates to gym page ──
 
-  it("navigates to gym page when 'Yes, start session!' is pressed", async () => {
-    // The primary CTA should replace the modal with the gym detail page.
-    // router.replace (not push) removes the modal from the nav stack.
+  it("starts session and navigates to gym page when 'Yes, start session!' is pressed", async () => {
+    // The primary CTA should start the session in Zustand store (so
+    // the app knows a climbing session is active) and then replace
+    // the modal with the gym detail page.
     __mockData.data = mockGyms;
 
     render(<StartSessionScreen />);
@@ -197,6 +207,7 @@ describe("StartSessionScreen", () => {
 
     fireEvent.press(screen.getByText("Yes, start session!"));
 
+    expect(mockStartSession).toHaveBeenCalledWith("gym-1");
     expect(mockReplace).toHaveBeenCalledWith("/gym/gym-1");
   });
 

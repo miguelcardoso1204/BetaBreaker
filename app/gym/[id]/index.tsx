@@ -42,6 +42,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Star, MapPin, Clock, ChevronRight } from "lucide-react-native";
 import { useGym, useSetHomeGym } from "@/hooks/useGyms";
 import { useAuth } from "@/hooks/useAuth";
+import { useSession } from "@/hooks/useSession";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -64,6 +65,10 @@ export default function GymMainScreen() {
   // Mutation to set/unset the user's home gym. After success, the "auth"
   // query cache is invalidated so useAuth().user.homeGymId updates.
   const { mutate: setHomeGym } = useSetHomeGym();
+
+  // Session hook — startSession sets isActive=true in Zustand store with
+  // this gymId, so the app knows a climbing session is in progress.
+  const { startSession, isActive } = useSession();
 
   // Determine if this gym is the user's home gym — controls star color.
   const isHomeGym = user?.homeGymId === gymId;
@@ -159,17 +164,20 @@ export default function GymMainScreen() {
 
       {/* ── Start Session Button ──────────────────────────────────── */}
       {/* Primary CTA for starting a climbing session at this gym.
-          Phase 5 (Tick-Logging) will wire this to real session management.
-          For now, it shows a placeholder Alert explaining the feature. */}
+          Calls startSession(gymId) on the Zustand store (sets isActive=true,
+          records startTime and gymId), then navigates to the routes list
+          where the user can browse routes and log ascents via QuickLog or
+          the Full Ascent Form. If a session is already active, the button
+          label changes to indicate they can continue browsing routes. */}
       <View className="px-4 mt-2">
         <Button
-          label="Start Session"
+          label={isActive ? "View Routes" : "Start Session"}
           size="lg"
           onPress={() => {
-            Alert.alert(
-              "Coming Soon",
-              "Session management will be available in a future update."
-            );
+            if (!isActive) {
+              startSession(gymId);
+            }
+            router.push(`/gym/${gymId}/routes` as any);
           }}
           testID="start-session-button"
         />
