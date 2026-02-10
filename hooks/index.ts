@@ -33,3 +33,11 @@ export { useGyms, useGym, useSetHomeGym } from "./useGyms";
 // LogAscentInput — the input shape for the logAscent mutation (omits userId).
 export { useSession } from "./useSession";
 export type { LogAscentInput } from "./useSession";
+
+// useBadges — fetches all badge definitions for the badge gallery.
+// useUserBadges — fetches badges earned by a specific user (profile/trophy case).
+// useUserStreak — fetches a user's weekly climbing streak.
+export { useBadges, useUserBadges, useUserStreak } from "./useBadges";
+
+// useLeaderboard — fetches ranked leaderboard entries for a gym + time period.
+export { useLeaderboard } from "./useLeaderboard";

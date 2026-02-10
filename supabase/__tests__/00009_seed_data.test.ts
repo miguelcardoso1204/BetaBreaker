@@ -175,15 +175,14 @@ describe('Seed data: ascents', () => {
 // ===========================================================================
 
 describe('Seed data: badges', () => {
-  it('should have 18 badge definitions from the migration', async () => {
-    // Badge definitions come from migration 20260206003749_seed_badges.sql,
-    // not from seed.sql. This test verifies they survived the db reset
-    // and are available for the trigger system.
-    // 11 first_grade + 4 total_sends + 3 streak_weeks = 18 total
+  it('should have 19 badge definitions from the migrations', async () => {
+    // Badge definitions come from migration 20260206003749_seed_badges.sql (18)
+    // plus 20260210113100_add_first_flash_badge.sql (1 "First Flash").
+    // 11 first_grade + 4 total_sends + 3 streak_weeks + 1 first_flash = 19 total
     const result = await client.query(
       `SELECT count(*)::int AS cnt FROM public.badges`
     );
-    expect(result.rows[0].cnt).toBe(18);
+    expect(result.rows[0].cnt).toBe(19);
   });
 });
 

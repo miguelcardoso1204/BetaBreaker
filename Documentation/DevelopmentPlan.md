@@ -1791,9 +1791,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 8 — Gamification
 
-### Step 8.1 — Badge Award Engine
+### Step 8.1 — Badge Award Engine ✅
 
-**Depends on:** Phase 2 (Steps 2.3, 2.4), Phase 5  
+**Depends on:** Phase 2 (Steps 2.3, 2.4), Phase 5
 **Relevant requirements:** FR-F1
 
 **What to test:**
@@ -1814,6 +1814,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Insert into `user_badges` if not already awarded.
 
 **Acceptance:** Inserting specific ascents via tests triggers correct badge awards.
+
+**Implementation notes (Step 8.1):**
+- Migration `20260210113100_add_first_flash_badge.sql`: expanded `badges.criteria_type` CHECK constraint to include `'first_flash'`, replaced `check_and_award_badges()` with new `first_flash` ELSIF branch, seeded "First Flash" badge (19 total badges)
+- `services/gamification.service.ts`: thin Supabase wrappers for `getBadges`, `getUserBadges`, `getUserStreak`, `getLeaderboard`
+- `hooks/useBadges.ts`: `useBadges()`, `useUserBadges(userId)`, `useUserStreak(userId)` TanStack Query hooks
+- `hooks/useLeaderboard.ts`: `useLeaderboard(gymId, period)` TanStack Query hook
+- Regenerated `lib/types/database.types.ts` with gamification table types
+- Updated barrel exports: `services/index.ts`, `hooks/index.ts`
+- Tests: +4 integration (00004: 15→19), +7 service unit, +10 badge hook unit, +3 leaderboard hook unit = +24 new tests
+- Updated 00009 seed data badge count assertion (18→19)
 
 ---
 

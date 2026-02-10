@@ -44,3 +44,7 @@ export type {
   SessionSummary,
   SessionHistoryEntry,
 } from "./sessions.service";
+
+// Gamification service — reads badges, user badges, streaks, and leaderboard data.
+// All gamification tables are populated by DB triggers; this service is read-only.
+export { gamificationService } from "./gamification.service";

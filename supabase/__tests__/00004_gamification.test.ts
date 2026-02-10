@@ -2,8 +2,9 @@
  * Integration tests for gamification seed data and end-to-end badge awarding (Step 2.4).
  *
  * These tests verify:
- *   - 18 default badge definitions seeded by migration (11 grade, 4 volume, 3 streak)
+ *   - 19 default badge definitions seeded by migration (11 grade, 4 volume, 3 streak, 1 flash)
  *   - End-to-end badge awarding through the trigger system using seeded badges
+ *   - The first_flash criteria type awards badges only on flash ascents
  *   - RLS read access to gamification tables for authenticated users
  *
  * Why seed badges in a migration instead of seed.sql?
@@ -181,12 +182,12 @@ function mondayOfWeek(weekNumber: number): Date {
  * no badges would ever be awarded (the function loops over the badges table).
  */
 describe('Badge seed data', () => {
-  it('18 badge definitions exist in badges table', async () => {
-    // Count all rows in the badges table — should be exactly 18
+  it('19 badge definitions exist in badges table', async () => {
+    // Count all rows — 18 original + 1 "First Flash" from Step 8.1
     const result = await client.query(
       `SELECT count(*) AS cnt FROM badges`
     );
-    expect(Number(result.rows[0].cnt)).toBe(18);
+    expect(Number(result.rows[0].cnt)).toBe(19);
   });
 
   it('all 11 first_grade badges have correct criteria_values', async () => {
@@ -544,6 +545,100 @@ describe('End-to-end: streak badges with seeded data', () => {
 });
 
 // ===========================================================================
+// Test Suite: End-to-end first_flash badge (Step 8.1)
+// ===========================================================================
+
+/**
+ * The first_flash criteria type awards a badge when a user logs an ascent
+ * with status 'flash' — completing a route on their first attempt. Unlike
+ * first_grade (which checks the route's grade), first_flash only checks
+ * the ascent status. ON CONFLICT DO NOTHING prevents duplicate awards.
+ */
+describe('End-to-end: first_flash badge', () => {
+  it('"First Flash" badge has correct criteria (first_flash, value=1)', async () => {
+    // Verify the seeded badge exists with the right criteria_type and value
+    const result = await client.query(
+      `SELECT criteria_type, criteria_value, icon_key FROM badges WHERE name = 'First Flash'`
+    );
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].criteria_type).toBe('first_flash');
+    expect(result.rows[0].criteria_value).toBe(1);
+    expect(result.rows[0].icon_key).toBe('badge-flash');
+  });
+
+  it('flash ascent awards "First Flash" badge', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'e2e-flash@test.com');
+      const gymId = await createTestGym(client, 'E2E Flash Gym');
+      const routeId = await createTestRoute(client, gymId, 10);
+
+      // Log a flash ascent — should trigger the first_flash badge
+      await insertAscent(client, userId, routeId, 'flash', mondayOfWeek(1));
+
+      const result = await client.query(
+        `SELECT b.name FROM user_badges ub
+         JOIN badges b ON b.id = ub.badge_id
+         WHERE ub.user_id = $1 AND b.name = 'First Flash'`,
+        [userId]
+      );
+      expect(result.rows).toHaveLength(1);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('send ascent does NOT award "First Flash" badge', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'e2e-send-no-flash@test.com');
+      const gymId = await createTestGym(client, 'E2E No Flash Gym');
+      const routeId = await createTestRoute(client, gymId, 10);
+
+      // Log a regular send — should NOT trigger the first_flash badge
+      // because the criteria requires status = 'flash', not 'send'
+      await insertAscent(client, userId, routeId, 'send', mondayOfWeek(1));
+
+      const result = await client.query(
+        `SELECT b.name FROM user_badges ub
+         JOIN badges b ON b.id = ub.badge_id
+         WHERE ub.user_id = $1 AND b.name = 'First Flash'`,
+        [userId]
+      );
+      expect(result.rows).toHaveLength(0);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('duplicate flash does not re-award "First Flash" badge', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'e2e-dup-flash@test.com');
+      const gymId = await createTestGym(client, 'E2E Dup Flash Gym');
+      const route1 = await createTestRoute(client, gymId, 10);
+      const route2 = await createTestRoute(client, gymId, 15);
+
+      // Log two flash ascents — the badge should only appear once
+      // thanks to ON CONFLICT (user_id, badge_id) DO NOTHING
+      await insertAscent(client, userId, route1, 'flash', mondayOfWeek(1));
+      await insertAscent(client, userId, route2, 'flash', mondayOfWeek(2));
+
+      const result = await client.query(
+        `SELECT b.name FROM user_badges ub
+         JOIN badges b ON b.id = ub.badge_id
+         WHERE ub.user_id = $1 AND b.name = 'First Flash'`,
+        [userId]
+      );
+      // Still just one — ON CONFLICT prevented duplicate
+      expect(result.rows).toHaveLength(1);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+});
+
+// ===========================================================================
 // Test Suite: Gamification state reads via RLS
 // ===========================================================================
 
@@ -569,11 +664,11 @@ describe('Gamification state reads via RLS', () => {
       // Switch to authenticated role — RLS now applies
       await setAuthenticatedUser(client, userId);
 
-      // Read badge definitions — should see all 18 seeded badges
+      // Read badge definitions — should see all 19 seeded badges (18 original + 1 flash)
       const result = await client.query(
         `SELECT count(*) AS cnt FROM badges`
       );
-      expect(Number(result.rows[0].cnt)).toBe(18);
+      expect(Number(result.rows[0].cnt)).toBe(19);
 
       await resetToSuperuser(client);
     } finally {
