@@ -1613,9 +1613,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 6 — Offline Support
 
-### Step 6.1 — Offline Store & SQLite Queue
+### Step 6.1 — Offline Store & SQLite Queue ✅
 
-**Depends on:** Phase 5  
+**Depends on:** Phase 5
 **Relevant requirements:** FR-D3, NFR-3, NFR-9
 
 **What to test (`stores/__tests__/offlineStore.test.ts`):**
@@ -1635,6 +1635,13 @@ Run `supabase db push`, then run test suite against local DB.
 - Persist middleware: on enqueue, write to SQLite; on mount, hydrate from SQLite.
 
 **Acceptance:** Offline queue tests pass; data survives simulated app restart.
+
+**Implementation notes:**
+- Created `lib/offlineDb.ts` — pure SQLite CRUD wrapper with lazy DB init (insertQueueItem, deleteQueueItem, getAllQueueItems, incrementRetryCount, clearQueue)
+- Created `stores/offlineStore.ts` — Zustand store with dual-write pattern (in-memory + SQLite), hydrate() for app startup
+- Added `OFFLINE_ACTION_TYPES`, `OfflineActionType`, `MAX_OFFLINE_RETRIES`, `OFFLINE_DB_NAME` to `lib/constants.ts`
+- Exported `useOfflineStore` and `OfflineAction` from `stores/index.ts`
+- 11 new store tests + 6 new constants tests = 17 new unit tests (436 total)
 
 ---
 

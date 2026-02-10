@@ -24,6 +24,9 @@ import {
   TIERS,
   APP_NAME,
   STYLE_TAGS,
+  OFFLINE_ACTION_TYPES,
+  MAX_OFFLINE_RETRIES,
+  OFFLINE_DB_NAME,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -38,6 +41,7 @@ import type {
   NotificationCategory,
   SaveType,
   StyleTagKey,
+  OfflineActionType,
 } from '../constants';
 
 /* ── ROLES ──────────────────────────────────────────────────────────────── */
@@ -240,5 +244,51 @@ describe('STYLE_TAGS', () => {
 describe('APP_NAME', () => {
   it('is the correct app name string', () => {
     expect(APP_NAME).toBe('Beta Breaker');
+  });
+});
+
+/* ── OFFLINE_ACTION_TYPES ──────────────────────────────────────────────── */
+
+describe('OFFLINE_ACTION_TYPES', () => {
+  it('contains exactly 2 supported offline action types', () => {
+    // These are the write operations that can be queued while offline.
+    // The sync engine replays them in FIFO order when connectivity returns.
+    expect(OFFLINE_ACTION_TYPES).toHaveLength(2);
+    expect(OFFLINE_ACTION_TYPES).toContain('log_ascent');
+    expect(OFFLINE_ACTION_TYPES).toContain('delete_ascent');
+  });
+});
+
+/* ── MAX_OFFLINE_RETRIES ───────────────────────────────────────────────── */
+
+describe('MAX_OFFLINE_RETRIES', () => {
+  it('is 3 — the maximum retry attempts before giving up', () => {
+    // After 3 failed attempts, the action stays in the queue but won't
+    // be retried automatically (user can manually retry or discard).
+    expect(MAX_OFFLINE_RETRIES).toBe(3);
+  });
+});
+
+/* ── OFFLINE_DB_NAME ───────────────────────────────────────────────────── */
+
+describe('OFFLINE_DB_NAME', () => {
+  it('is the correct SQLite database filename', () => {
+    // expo-sqlite uses this filename to open/create the DB in the app's
+    // sandboxed documents directory. Must match what offlineDb.ts uses.
+    expect(OFFLINE_DB_NAME).toBe('betabreaker_offline.db');
+  });
+});
+
+/* ── OfflineActionType (type inference) ────────────────────────────────── */
+
+describe('OfflineActionType type inference', () => {
+  it('accepts valid offline action types', () => {
+    // Compile-time check: OfflineActionType should accept exactly the
+    // values in OFFLINE_ACTION_TYPES. Invalid values would cause tsc errors.
+    const logAscent: OfflineActionType = 'log_ascent';
+    const deleteAscent: OfflineActionType = 'delete_ascent';
+
+    expect(logAscent).toBe('log_ascent');
+    expect(deleteAscent).toBe('delete_ascent');
   });
 });

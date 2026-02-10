@@ -21,3 +21,5 @@
 // Store exports — each store manages one slice of client-side state.
 export { useRouteFilterStore } from "./routeFilterStore";
 export { useSessionStore } from "./sessionStore";
+export { useOfflineStore } from "./offlineStore";
+export type { OfflineAction } from "./offlineStore";

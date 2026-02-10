@@ -225,3 +225,46 @@ export const STYLE_TAGS = [
  * e.g., 'power' | 'finger_strength' | 'footwork' | 'dynamic' | 'core' | 'technique'
  */
 export type StyleTagKey = typeof STYLE_TAGS[number]['key'];
+
+/* ── Offline Queue ─────────────────────────────────────────────────────── */
+
+/**
+ * Action types that can be queued for offline execution.
+ *
+ * When the user performs a write operation while offline (no network), the
+ * action is serialized and stored in a local SQLite queue. When connectivity
+ * returns, the sync engine (Step 6.3) drains the queue in FIFO order,
+ * replaying each action against the Supabase API.
+ *
+ * Currently supported offline actions:
+ *   log_ascent    — user logged a climb while offline
+ *   delete_ascent — user removed a logged ascent while offline
+ *
+ * New action types should be added here as offline support expands.
+ */
+export const OFFLINE_ACTION_TYPES = ['log_ascent', 'delete_ascent'] as const;
+
+/**
+ * Union type of valid offline action types, derived from the array.
+ * e.g., 'log_ascent' | 'delete_ascent'
+ */
+export type OfflineActionType = typeof OFFLINE_ACTION_TYPES[number];
+
+/**
+ * Maximum number of retry attempts for a queued offline action before
+ * the sync engine gives up and marks it as permanently failed.
+ *
+ * After MAX_OFFLINE_RETRIES failures (e.g., server 500s), the action stays
+ * in the queue but won't be retried automatically — the user can manually
+ * retry or discard it from the sync UI.
+ */
+export const MAX_OFFLINE_RETRIES = 3;
+
+/**
+ * SQLite database filename for the offline queue.
+ *
+ * expo-sqlite stores this in the app's sandboxed documents directory.
+ * Centralized here so both the offlineDb module and tests reference
+ * the same filename.
+ */
+export const OFFLINE_DB_NAME = 'betabreaker_offline.db';
