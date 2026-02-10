@@ -28,6 +28,7 @@ import {
   MAX_OFFLINE_RETRIES,
   OFFLINE_DB_NAME,
   ROUTE_CACHE_TTL_MS,
+  SYNC_BACKOFF_DELAYS,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -303,5 +304,16 @@ describe('OfflineActionType type inference', () => {
 
     expect(logAscent).toBe('log_ascent');
     expect(deleteAscent).toBe('delete_ascent');
+  });
+});
+
+/* ── SYNC_BACKOFF_DELAYS ─────────────────────────────────────────────── */
+
+describe('SYNC_BACKOFF_DELAYS', () => {
+  it('is [1000, 4000, 16000] — exponential backoff delays for sync retries', () => {
+    // When the sync engine fails to replay an action, it retries with
+    // increasing delays: 1s → 4s → 16s (4^n * 1000ms). This prevents
+    // hammering the server when it's temporarily unavailable.
+    expect(SYNC_BACKOFF_DELAYS).toEqual([1000, 4000, 16000]);
   });
 });

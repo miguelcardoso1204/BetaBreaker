@@ -1677,9 +1677,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 6.3 — Sync Engine
+### Step 6.3 — Sync Engine ✅
 
-**Depends on:** Steps 6.1, 6.2  
+**Depends on:** Steps 6.1, 6.2
 **Relevant requirements:** FR-D3, NFR-9
 
 **What to test (`hooks/__tests__/useOfflineSync.test.ts`):**
@@ -1703,6 +1703,16 @@ Run `supabase db push`, then run test suite against local DB.
 - On permanent failure: mark action, show in-app toast.
 
 **Acceptance:** Full offline → online cycle tested: log offline, reconnect, verify sync.
+
+**Implementation notes (Step 6.3):**
+- Installed `@react-native-community/netinfo` for event-driven network status
+- Created `lib/syncEngine.ts` — pure async `drainQueue()` with dependency injection for testability; `replayAction()` maps `log_ascent` → `createAscent`, `delete_ascent` → `deleteAscent`
+- Created `lib/__tests__/syncEngine.test.ts` — 8 tests covering FIFO order, dequeue on success, retry on failure, skip at MAX_OFFLINE_RETRIES, action mapping, idempotent deletes, accurate SyncResult counts
+- Created `hooks/useOfflineSync.ts` — subscribes to NetInfo, triggers drain on offline→online transition, invalidates `["sessions"]` query key, schedules exponential backoff retries via SYNC_BACKOFF_DELAYS
+- Created `hooks/__tests__/useOfflineSync.test.ts` — 7 tests using captured-callback pattern (same as useAuth tests)
+- Added `SYNC_BACKOFF_DELAYS = [1000, 4000, 16000]` to `lib/constants.ts` + 1 test
+- Updated `app/_layout.tsx`: imports shared `queryClient` from `lib/queryClient.ts` (replaces local `new QueryClient()`), added `<SyncManager />` component, added `hydrate()` call in useEffect
+- Total: 16 new tests (8 syncEngine + 7 useOfflineSync + 1 constant), 463 unit tests total
 
 ---
 

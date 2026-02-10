@@ -29,26 +29,23 @@ import "../global.css";
 
 import { useEffect } from "react";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { useColorScheme } from "@/components/useColorScheme";
+import { queryClient } from "@/lib/queryClient";
+import { useOfflineStore } from "@/stores/offlineStore";
 
 // Keep the splash screen visible while we load fonts and check auth state.
 // preventAutoHideAsync() is called at module scope (not inside a component)
 // because it needs to run BEFORE any component renders — otherwise the
 // splash screen might flash away during the first render cycle.
 SplashScreen.preventAutoHideAsync();
-
-// Create a single QueryClient instance for the entire app.
-// This lives outside the component so it persists across re-renders.
-// If we created it inside RootLayout, every re-render would create a new
-// client and throw away all cached data — defeating the purpose of caching.
-const queryClient = new QueryClient();
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -131,12 +128,32 @@ export function AuthGate() {
 }
 
 /**
+ * SyncManager — invisible component that runs the offline sync engine.
+ *
+ * This must be rendered INSIDE QueryClientProvider so it can invalidate
+ * TanStack Query caches after syncing. It subscribes to NetInfo for
+ * connectivity changes and drains the offline queue on reconnect.
+ *
+ * Why a separate component instead of calling useOfflineSync in RootLayout?
+ * Hooks can only be called inside function components, and we want the
+ * sync logic isolated so it doesn't re-render the entire layout tree
+ * when isSyncing changes. React only re-renders the component that owns
+ * the state — keeping it in SyncManager prevents unnecessary re-renders
+ * of ThemeProvider, AuthGate, and all child routes.
+ */
+function SyncManager() {
+  useOfflineSync();
+  return null;
+}
+
+/**
  * RootLayout — the default export that Expo Router mounts as the root.
  *
  * This wraps the entire app in providers and handles font loading.
  * The provider order matters:
  * - QueryClientProvider must be outermost so any component can use queries
  * - ThemeProvider provides dark/light theme to React Navigation components
+ * - SyncManager runs the offline sync engine (subscribes to NetInfo)
  * - AuthGate is the innermost — it reads auth state and picks the route
  */
 export default function RootLayout() {
@@ -153,6 +170,16 @@ export default function RootLayout() {
   useEffect(() => {
     if (error) throw error;
   }, [error]);
+
+  // Hydrate the offline queue from SQLite on app startup.
+  // This restores any pending actions that were queued while the app was
+  // offline and persisted across app restarts. The sync engine (SyncManager)
+  // will then replay these when connectivity returns.
+  // Using getState().hydrate() instead of the hook selector avoids
+  // subscribing to queue changes — we just need the one-time load.
+  useEffect(() => {
+    useOfflineStore.getState().hydrate();
+  }, []);
 
   // Hide splash screen once fonts are loaded.
   // We don't wait for auth — the AuthGate handles that by returning null
@@ -171,10 +198,12 @@ export default function RootLayout() {
 
   // Wrap the app in providers and render the auth gate.
   // QueryClientProvider → enables useQuery/useMutation in any child component
+  // SyncManager → subscribes to NetInfo, drains offline queue on reconnect
   // ThemeProvider → provides dark/light colors to React Navigation's UI
   // AuthGate → decides which route group (auth vs tabs) to show
   return (
     <QueryClientProvider client={queryClient}>
+      <SyncManager />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <AuthGate />
       </ThemeProvider>

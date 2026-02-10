@@ -269,6 +269,27 @@ export const MAX_OFFLINE_RETRIES = 3;
  */
 export const OFFLINE_DB_NAME = 'betabreaker_offline.db';
 
+/* ── Sync Engine ─────────────────────────────────────────────────────── */
+
+/**
+ * Backoff delays (in ms) for sync engine retries after failed replays.
+ *
+ * When the sync engine tries to replay a queued offline action and fails
+ * (e.g., the server returns a 500), it doesn't retry immediately — that
+ * would just hammer a potentially struggling server. Instead, it waits
+ * progressively longer between attempts:
+ *
+ *   Attempt 0: wait 1 second   (4^0 × 1000)
+ *   Attempt 1: wait 4 seconds  (4^1 × 1000)
+ *   Attempt 2: wait 16 seconds (4^2 × 1000)
+ *
+ * After exhausting all delays, the engine stops retrying until the next
+ * reconnection event. The base-4 exponential backoff grows faster than
+ * base-2, which is better for mobile where "server is down" typically
+ * lasts longer than "brief network blip."
+ */
+export const SYNC_BACKOFF_DELAYS = [1000, 4000, 16000] as const;
+
 /* ── Route Cache ──────────────────────────────────────────────────────── */
 
 /**
