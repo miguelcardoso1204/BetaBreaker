@@ -52,7 +52,10 @@ const mockStreak = {
   streak_type: "weekly",
   current_streak: 5,
   longest_streak: 8,
-  last_active_week: "2026-02-03",
+  // last_active_date (not last_active_week) — matches the DB column name.
+  // Set to Mon Feb 2, 2026 (same ISO week as the fake system time below)
+  // so deriveStreakStatus() computes "active" by default.
+  last_active_date: "2026-02-02",
 };
 
 // Mock useAuth — controls whether the user is authenticated and their profile
@@ -119,6 +122,11 @@ import ProfileScreen from "../profile";
 describe("ProfileScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Fix system time so deriveStreakStatus() produces deterministic results.
+    // Thu Feb 5, 2026 → ISO week starting Mon Feb 2. When last_active_date
+    // is "2026-02-02" (the default mock), gap = 0 → status = "active".
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 5));
     // Reset all mock return values to defaults
     mockUseAuthReturn = {
       user: mockUser,
@@ -145,6 +153,10 @@ describe("ProfileScreen", () => {
       isLoading: false,
       error: null,
     };
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("shows loading state while data loads", () => {
@@ -233,5 +245,50 @@ describe("ProfileScreen", () => {
 
     render(<ProfileScreen />);
     expect(screen.getByText("Please sign in")).toBeOnTheScreen();
+  });
+
+  // ── Streak status tests ──────────────────────────────────────────
+  // These verify that the profile screen correctly derives streak status
+  // from the DB values and renders the appropriate StreakCard + banner.
+
+  it('shows "Active" badge when streak is in the current week', () => {
+    // Default mock has last_active_date "2026-02-02" (same ISO week as
+    // the fake system time Feb 5). deriveStreakStatus → active.
+    render(<ProfileScreen />);
+    expect(screen.getByText("Active")).toBeOnTheScreen();
+  });
+
+  it("shows at-risk banner when streak is 1-2 weeks old", () => {
+    // last_active_date set to Mon Jan 26 — 1 ISO week before the
+    // reference week (Feb 2). deriveStreakStatus → at_risk.
+    mockUseUserStreakReturn = {
+      data: { ...mockStreak, last_active_date: "2026-01-26" },
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.getByText("At Risk")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Climb this week to keep your streak alive!"),
+    ).toBeOnTheScreen();
+  });
+
+  it('shows "Broken" badge and banner when streak has expired', () => {
+    // last_active_date set to Mon Jan 12 — 3 ISO weeks before the
+    // reference week (Feb 2). deriveStreakStatus → broken, displayStreak = 0.
+    mockUseUserStreakReturn = {
+      data: { ...mockStreak, last_active_date: "2026-01-12" },
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.getByText("Broken")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Your streak has ended. Start a new one today!"),
+    ).toBeOnTheScreen();
+    // displayStreak should be 0 when broken (overrides stale DB value of 5)
+    expect(screen.getByText("0")).toBeOnTheScreen();
   });
 });

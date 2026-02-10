@@ -1865,9 +1865,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 8.3 — Streak UI & Notifications
+### Step 8.3 — Streak UI & Notifications ✅
 
-**Depends on:** Steps 1.2, 8.1  
+**Depends on:** Steps 1.2, 8.1
 **Relevant requirements:** FR-F2
 
 **What to test:**
@@ -1886,6 +1886,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Integration with push notifications (Phase 10) for "streak at risk" reminders.
 
 **Acceptance:** Streak UI reflects actual streak state from DB.
+
+**Implementation notes (2026-02-10):**
+- Created `utils/streakStatus.ts` — `deriveStreakStatus()` computes real-time streak status from stale DB data by comparing `last_active_date` against current date using ISO week gaps
+- Created `components/streaks/StreakCard.tsx` — presentational component showing current + longest streaks with status badge (Active/At Risk/Broken/No Streak)
+- Created `components/streaks/StreakStatusBanner.tsx` — contextual warning/recovery banner (returns null when not applicable)
+- Created `components/streaks/index.ts` — barrel export
+- Updated `app/(tabs)/profile.tsx` — replaced inline streak numbers with `StreakCard` + `StreakStatusBanner`, added `deriveStreakStatus()` via `useMemo`
+- Fixed profile test mock: renamed `last_active_week` → `last_active_date` to match DB column
+- Push notifications deferred to Phase 10
+- New tests: 8 (streakStatus) + 5 (StreakCard) + 5 (StreakStatusBanner) + 3 (profile) = **+21 tests** → **547 total unit tests**
 
 ---
 

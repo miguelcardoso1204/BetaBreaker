@@ -33,6 +33,8 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileBadges } from "@/components/badges/ProfileBadges";
 import { BadgePicker } from "@/components/badges/BadgePicker";
+import { StreakCard, StreakStatusBanner } from "@/components/streaks";
+import { deriveStreakStatus } from "@/utils/streakStatus";
 
 export default function ProfileScreen() {
   const { user, isLoading: authLoading } = useAuth();
@@ -57,6 +59,20 @@ export default function ProfileScreen() {
       pinnedBadgeIds.includes(ub.badge_id)
     );
   }, [earnedBadges, pinnedBadgeIds]);
+
+  // Derive real-time streak status from the DB's (possibly stale) values.
+  // The DB only updates current_streak when a trigger fires (on ascent
+  // insert/delete). If the user goes inactive, the value becomes stale.
+  // deriveStreakStatus() compares last_active_date against "now" using
+  // ISO week gaps to determine the actual status.
+  const derivedStreak = useMemo(
+    () =>
+      deriveStreakStatus(
+        streak?.current_streak ?? 0,
+        streak?.last_active_date ?? null,
+      ),
+    [streak?.current_streak, streak?.last_active_date],
+  );
 
   // Determine max pinned badges based on tier
   const maxPins = user?.tier === "pro" ? 3 : 1;
@@ -118,23 +134,18 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Streak section: current streak + longest streak side by side */}
-      <View className="flex-row justify-center gap-8 py-4 mx-4 border-b border-surface">
-        <View className="items-center">
-          <Text className="text-text-primary text-2xl font-bold">
-            {streak?.current_streak ?? 0}
-          </Text>
-          <Text className="text-text-secondary text-sm">Current Streak</Text>
-          <Text className="text-text-secondary text-xs">weeks</Text>
-        </View>
-        <View className="items-center">
-          <Text className="text-text-primary text-2xl font-bold">
-            {streak?.longest_streak ?? 0}
-          </Text>
-          <Text className="text-text-secondary text-sm">Longest Streak</Text>
-          <Text className="text-text-secondary text-xs">weeks</Text>
-        </View>
-      </View>
+      {/* Streak section: status-aware card with recovery banner */}
+      <StreakCard
+        currentStreak={derivedStreak.displayStreak}
+        longestStreak={streak?.longest_streak ?? 0}
+        status={derivedStreak.status}
+        testID="streak-card"
+      />
+      <StreakStatusBanner
+        status={derivedStreak.status}
+        decayedFrom={derivedStreak.decayedFrom}
+        testID="streak-banner"
+      />
 
       {/* Pinned badges section (or empty state) */}
       {earnedBadges && earnedBadges.length > 0 ? (
