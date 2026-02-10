@@ -26,7 +26,7 @@
  * ScrollView
  *   RouteHeader: color swatch + metadata column (name, grade, setter, etc.)
  *   StatusBanner: conditional "Retiring Soon" warning
- *   ActionSection: "Add Ascent" button (placeholder until Phase 5)
+ *   ActionSection: "Add Ascent" button → navigates to Full Ascent Form
  *   VideoSubmissionsSection: heading + empty state (until Phase 12)
  */
 
@@ -36,9 +36,8 @@ import {
   Text,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Star } from "lucide-react-native";
 import { useRouteDetail } from "@/hooks/useRoutes";
 import { useIsFavorite, useToggleFavorite } from "@/hooks/useSavedRoutes";
@@ -80,10 +79,13 @@ export default function RouteDetailScreen() {
   // Extract both the gymId (id) and routeId from the URL path.
   // Expo Router's file-based routing maps /gym/[id]/route/[routeId]
   // to this component with both params available.
-  const { routeId } = useLocalSearchParams<{
+  const { id, routeId } = useLocalSearchParams<{
     id: string;
     routeId: string;
   }>();
+
+  // Router for navigating to the Full Ascent Form sub-route.
+  const router = useRouter();
 
   // Fetch route data with setter profile info via TanStack Query.
   // This is the same hook used by any component needing route detail —
@@ -222,18 +224,16 @@ export default function RouteDetailScreen() {
       )}
 
       {/* ── Action Section ───────────────────────────────────────── */}
-      {/* "Add Ascent" button — the primary CTA for logging a send.
-          Phase 5 (Tick-Logging) will wire this to real session management.
-          For now, it shows a placeholder Alert explaining the feature. */}
+      {/* "Add Ascent" button navigates to the Full Ascent Form screen.
+          The form is a sub-route at /gym/[id]/route/[routeId]/ascent,
+          which provides star rating, style tags, comments, and video
+          upload (placeholder) in addition to the basic status/attempts. */}
       <View className="px-4 mb-4">
         <Button
           label="Add Ascent"
           variant="outline"
           onPress={() => {
-            Alert.alert(
-              "Coming Soon",
-              "Start a session first to log ascents. Session management will be available in a future update."
-            );
+            router.push(`/gym/${id}/route/${routeId}/ascent`);
           }}
           testID="add-ascent-button"
         />

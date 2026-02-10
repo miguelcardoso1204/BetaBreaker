@@ -1527,7 +1527,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.7 — Start Activity Screen
+### Step 5.7 — Start Activity Screen ⏭️ SKIPPED
+
+**Skipped:** The `gyms` table has no `country`/`city` columns, so cascading country → city → gym dropdowns aren't feasible. The existing `app/start-session.tsx` (Step 5.5) already satisfies the "Start Activity" requirement — it renders nearby gyms using `useGyms()` and starts a session via `sessionStore.startSession(gymId)`.
 
 **Depends on:** Steps 4.3 (Gym Service), 5.1 (Session Store)
 **Relevant requirements:** FR-D4, FR-B4
@@ -1561,7 +1563,7 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 5.8 — Full Ascent Form Screen
+### Step 5.8 — Full Ascent Form Screen ✅
 
 **Depends on:** Steps 5.3 (useSession), 4.6 (Route Detail)
 **Relevant requirements:** FR-D1, FR-C2, FR-G2
@@ -1596,6 +1598,16 @@ Run `supabase db push`, then run test suite against local DB.
 **Why:** The wireframe shows a rich ascent form that goes beyond the QuickLog bottom sheet (Step 5.4). While QuickLog is for fast tap-and-go logging (Flash/Send/Attempt + attempts count), this full-screen form captures detailed feedback: how the user rates the route, which climbing styles were involved, beta comments, and video. This data feeds the gamification, social, and analytics systems.
 
 **Acceptance:** All form elements render; star rating interactive; tags multi-selectable; submission creates ascent with all metadata; navigation works.
+
+**Implementation notes:**
+- Files created: `components/ui/StarRating.tsx`, `app/gym/[id]/route/[routeId]/ascent.tsx`, `app/gym/[id]/route/[routeId]/_layout.tsx`
+- Files modified: `lib/constants.ts` (added `STYLE_TAGS` + `StyleTagKey`), `lib/__tests__/constants.test.ts` (1 new test), `app/gym/[id]/route/[routeId]/index.tsx` (renamed from `[routeId].tsx`, updated "Add Ascent" to navigate to `/ascent` sub-route)
+- Route directory restructured: `[routeId].tsx` → `[routeId]/index.tsx` + `_layout.tsx` to support sub-routes
+- Test files: `components/ui/__tests__/StarRating.test.tsx` (4 tests), `app/gym/[id]/route/[routeId]/__tests__/ascent.test.tsx` (12 tests), `app/gym/[id]/route/[routeId]/__tests__/index.test.tsx` (moved + updated)
+- Style tags are UI-only (tracked in component state, not persisted — no DB column yet)
+- Star rating maps to `perceivedGrade` field (1–5 scale, stored directly)
+- Video upload is a placeholder (Phase 12) — shows Alert on press
+- Total unit tests: 419
 
 ---
 

@@ -23,6 +23,7 @@ import {
   PRO_TIER,
   TIERS,
   APP_NAME,
+  STYLE_TAGS,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -36,6 +37,7 @@ import type {
   GradeSystem,
   NotificationCategory,
   SaveType,
+  StyleTagKey,
 } from '../constants';
 
 /* ── ROLES ──────────────────────────────────────────────────────────────── */
@@ -183,7 +185,7 @@ describe('TIERS', () => {
 /* ── Type Inference ─────────────────────────────────────────────────────── */
 
 describe('type inference', () => {
-  it('all 8 derived types exist and are assignable', () => {
+  it('all 9 derived types exist and are assignable', () => {
     // This test verifies at compile time that each type is correctly derived
     // from its `as const` array using `typeof X[number]`. If any type is
     // missing or incorrectly defined, TypeScript will error during `tsc --noEmit`.
@@ -198,6 +200,7 @@ describe('type inference', () => {
     const gradeSystem: GradeSystem = 'font';
     const notificationCategory: NotificationCategory = 'friends';
     const saveType: SaveType = 'project';
+    const styleTag: StyleTagKey = 'power';
 
     // Use the variables so TypeScript doesn't warn about unused locals
     expect(role).toBe('climber');
@@ -208,6 +211,27 @@ describe('type inference', () => {
     expect(gradeSystem).toBe('font');
     expect(notificationCategory).toBe('friends');
     expect(saveType).toBe('project');
+    expect(styleTag).toBe('power');
+  });
+});
+
+/* ── STYLE_TAGS ────────────────────────────────────────────────────────── */
+
+describe('STYLE_TAGS', () => {
+  it('contains 6 entries, each with key, label, and color', () => {
+    // Style tags categorize the skills a climbing route demands.
+    // Each tag needs a unique key (for state tracking), a display label,
+    // and a hex color (for the Badge component's "tag" variant).
+    expect(STYLE_TAGS).toHaveLength(6);
+
+    // Verify every entry has the required shape
+    STYLE_TAGS.forEach((tag) => {
+      expect(tag).toHaveProperty('key');
+      expect(tag).toHaveProperty('label');
+      expect(tag).toHaveProperty('color');
+      // Color should be a hex string (e.g., "#EF4444")
+      expect(tag.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    });
   });
 });
 

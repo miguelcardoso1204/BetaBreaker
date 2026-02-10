@@ -194,3 +194,34 @@ export const TIERS = {
  * Derived from the keys of the TIERS object: 'free' | 'pro'
  */
 export type Tier = keyof typeof TIERS;
+
+/* ── Style Tags ────────────────────────────────────────────────────── */
+
+/**
+ * Climbing style tags used on the Full Ascent Form to categorize what
+ * skills/strengths a route demands. Climbers can multi-select these
+ * when logging an ascent to build a rich profile of route characteristics.
+ *
+ * Each tag has:
+ *   - `key`:   snake_case identifier (matches future DB column values)
+ *   - `label`: human-readable display text for the UI
+ *   - `color`: hex color for the Badge component's `variant="tag"` prop
+ *
+ * These are currently UI-only — selected tags are tracked in component
+ * state but not persisted to the database. A future phase (analytics)
+ * will add a `style_tags` column to `route_ascents` and store them.
+ */
+export const STYLE_TAGS = [
+  { key: 'power', label: 'Power', color: '#EF4444' },
+  { key: 'finger_strength', label: 'Finger Strength', color: '#F59E0B' },
+  { key: 'footwork', label: 'Footwork', color: '#22C55E' },
+  { key: 'dynamic', label: 'Dynamic Movement', color: '#3B82F6' },
+  { key: 'core', label: 'Core Strength', color: '#7C3AED' },
+  { key: 'technique', label: 'Technique', color: '#14B8A6' },
+] as const;
+
+/**
+ * Union type of valid style tag keys, derived from the STYLE_TAGS array.
+ * e.g., 'power' | 'finger_strength' | 'footwork' | 'dynamic' | 'core' | 'technique'
+ */
+export type StyleTagKey = typeof STYLE_TAGS[number]['key'];

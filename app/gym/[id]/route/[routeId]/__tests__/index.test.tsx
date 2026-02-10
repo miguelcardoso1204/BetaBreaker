@@ -27,9 +27,10 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 
 // Mock expo-router — provide gymId and routeId via useLocalSearchParams.
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "gym-1", routeId: "route-1" }),
-  useRouter: () => ({ back: mockBack }),
+  useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
 
 // Mock useRouteDetail — control the route data returned to the screen.
@@ -79,12 +80,10 @@ jest.mock("lucide-react-native", () => {
   };
 });
 
-// Mock Alert to capture "Add Ascent" placeholder behavior.
-// We spy on Alert.alert to verify the screen shows a placeholder dialog.
-import { Alert } from "react-native";
-jest.spyOn(Alert, "alert");
+// Alert import removed — the Add Ascent button now navigates to the
+// Full Ascent Form instead of showing a placeholder dialog.
 
-import RouteDetailScreen from "../[routeId]";
+import RouteDetailScreen from "../index";
 import { canonicalToDisplay } from "@/utils/grades";
 
 const { __mockData } = jest.requireMock<{
@@ -219,10 +218,9 @@ describe("RouteDetailScreen", () => {
 
   // ── Add Ascent button ──────────────────────────────────────────
 
-  it("renders Add Ascent button and shows placeholder alert on press", () => {
-    // The "Add Ascent" button is a placeholder until Phase 5 wires it
-    // to real session management. For now it shows an Alert explaining
-    // the feature isn't ready yet.
+  it("renders Add Ascent button and navigates to ascent form on press", () => {
+    // The "Add Ascent" button navigates to the Full Ascent Form
+    // sub-route at /gym/[id]/route/[routeId]/ascent.
     __mockData.data = mockRoute;
 
     render(<RouteDetailScreen />);
@@ -232,7 +230,7 @@ describe("RouteDetailScreen", () => {
 
     fireEvent.press(addAscentButton);
 
-    expect(Alert.alert).toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/route/route-1/ascent");
   });
 
   // ── Status banner ──────────────────────────────────────────────
