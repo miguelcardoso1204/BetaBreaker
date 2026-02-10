@@ -29,6 +29,7 @@ import {
   OFFLINE_DB_NAME,
   ROUTE_CACHE_TTL_MS,
   SYNC_BACKOFF_DELAYS,
+  QR_PUBLIC_KEY,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -315,5 +316,28 @@ describe('SYNC_BACKOFF_DELAYS', () => {
     // increasing delays: 1s → 4s → 16s (4^n * 1000ms). This prevents
     // hammering the server when it's temporarily unavailable.
     expect(SYNC_BACKOFF_DELAYS).toEqual([1000, 4000, 16000]);
+  });
+});
+
+/* ── QR_PUBLIC_KEY ──────────────────────────────────────────────────── */
+
+describe('QR_PUBLIC_KEY', () => {
+  it('has the required JWK fields for an EC P-256 public key', () => {
+    // The QR public key is used by jose's `importJWK` to verify JWT
+    // signatures on scanned QR codes. JWK format requires these four
+    // fields for an EC P-256 key:
+    //   kty: "EC" — key type (Elliptic Curve)
+    //   crv: "P-256" — the specific curve used
+    //   x: base64url-encoded x coordinate of the public point
+    //   y: base64url-encoded y coordinate of the public point
+    expect(QR_PUBLIC_KEY).toHaveProperty('kty', 'EC');
+    expect(QR_PUBLIC_KEY).toHaveProperty('crv', 'P-256');
+    expect(QR_PUBLIC_KEY).toHaveProperty('x');
+    expect(QR_PUBLIC_KEY).toHaveProperty('y');
+    // x and y should be non-empty base64url strings
+    expect(typeof QR_PUBLIC_KEY.x).toBe('string');
+    expect(typeof QR_PUBLIC_KEY.y).toBe('string');
+    expect(QR_PUBLIC_KEY.x.length).toBeGreaterThan(0);
+    expect(QR_PUBLIC_KEY.y.length).toBeGreaterThan(0);
   });
 });

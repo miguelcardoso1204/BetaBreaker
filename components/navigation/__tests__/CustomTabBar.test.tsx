@@ -48,6 +48,10 @@ jest.mock("lucide-react-native", () => ({
     const { Text } = require("react-native");
     return <Text {...props} testID="icon-User">User</Text>;
   },
+  ScanLine: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text {...props} testID="icon-ScanLine">ScanLine</Text>;
+  },
 }));
 
 // Mock expo-haptics so we can verify the FAB triggers haptic feedback
@@ -245,5 +249,38 @@ describe("CustomTabBar", () => {
 
     // Since our mock returns { defaultPrevented: false }, navigation proceeds
     expect(props.navigation.navigate).toHaveBeenCalledWith("leaderboards");
+  });
+
+  it("FAB long press opens action menu with Scan QR Code option", () => {
+    // Long-pressing the FAB should reveal an action menu overlay with a
+    // "Scan QR Code" option. This is how climbers access the QR scanner
+    // without it taking up a permanent tab bar slot. Short press still
+    // opens the session modal — long press is the "power user" gesture.
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    const fab = screen.getByTestId("fab-button");
+    fireEvent(fab, "longPress");
+
+    // The action menu should now be visible with the QR scan option
+    expect(screen.getByText("Scan QR Code")).toBeOnTheScreen();
+  });
+
+  it("menu 'Scan QR Code' navigates to the scan screen", () => {
+    // Tapping the "Scan QR Code" menu item should navigate to the hidden
+    // scan tab screen and close the menu. The scan screen is registered
+    // in the (tabs) group with href: null so it works with tab navigation.
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    // Open the action menu via long press
+    const fab = screen.getByTestId("fab-button");
+    fireEvent(fab, "longPress");
+
+    // Tap the scan menu item
+    fireEvent.press(screen.getByText("Scan QR Code"));
+
+    // Should navigate to the scan screen
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/scan");
   });
 });

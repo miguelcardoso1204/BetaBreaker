@@ -25,9 +25,9 @@
 // system (iOS uses shadow* props, Android uses elevation). We use
 // Platform.select to apply the correct shadow implementation per OS.
 
-import React from "react";
-import { View, Text, Pressable, Platform } from "react-native";
-import { Home, MapPin, Plus, Trophy, User } from "lucide-react-native";
+import React, { useState } from "react";
+import { View, Text, Pressable, Platform, Modal } from "react-native";
+import { Home, MapPin, Plus, Trophy, User, ScanLine } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
@@ -105,6 +105,11 @@ const FAB_SHADOW = Platform.select({
 export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const router = useRouter();
 
+  // Tracks whether the FAB action menu is visible (opened via long press).
+  // The menu appears as a card above the FAB with additional actions like
+  // "Scan QR Code" — actions that are useful but don't warrant a tab slot.
+  const [showMenu, setShowMenu] = useState(false);
+
   /**
    * Handle FAB press: trigger haptic feedback + navigate to session modal.
    *
@@ -117,6 +122,29 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const handleFabPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push("/start-session");
+  };
+
+  /**
+   * Handle FAB long press: show the action menu above the FAB.
+   *
+   * Long press is a "power user" gesture that reveals less-common actions.
+   * This keeps the primary FAB interaction (short press → Start Session)
+   * fast and uncluttered while still providing quick access to features
+   * like the QR scanner.
+   */
+  const handleFabLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowMenu(true);
+  };
+
+  /**
+   * Handle "Scan QR Code" menu item press: navigate to the scan screen.
+   * The scan screen is a hidden tab (href: null) so it integrates with
+   * tab navigation for seamless back-button behavior.
+   */
+  const handleScanPress = () => {
+    setShowMenu(false);
+    router.push("/(tabs)/scan");
   };
 
   /**
@@ -201,6 +229,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
       <View className="flex-1 items-center justify-center py-2">
         <Pressable
           onPress={handleFabPress}
+          onLongPress={handleFabLongPress}
           testID="fab-button"
           // accessibilityRole="button" (not "tab") because the FAB
           // isn't a tab — it's an action button that opens a modal.
@@ -223,6 +252,58 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
       {/* Tabs 2 and 3 (Leaderboards, Profile) — right side of the FAB */}
       {renderTab(state.routes[2], 2)}
       {renderTab(state.routes[3], 3)}
+
+      {/* FAB Action Menu — appears above the FAB on long press.
+          Uses a transparent Modal so tapping the backdrop closes the menu.
+          The menu is intentionally extensible — more items (e.g., "View
+          Logbook", "Quick Settings") can be added to the list later. */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        {/* Backdrop — tapping anywhere outside the menu closes it */}
+        <Pressable
+          className="flex-1"
+          onPress={() => setShowMenu(false)}
+        >
+          {/* Menu card — positioned near the bottom, above the tab bar.
+              We use absolute positioning from the bottom to place it
+              just above where the FAB sits. */}
+          <View
+            className="absolute left-1/2 bg-background rounded-xl border border-border"
+            style={{
+              bottom: 90 + insets.bottom,
+              // Center horizontally: translate left by half the menu width.
+              // The menu is ~180px wide, so -90 centers it on the FAB.
+              transform: [{ translateX: -90 }],
+              width: 180,
+              ...Platform.select({
+                ios: {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: -2 },
+                  shadowOpacity: 0.15,
+                  shadowRadius: 8,
+                },
+                android: { elevation: 8 },
+              }),
+            }}
+          >
+            {/* Scan QR Code menu item */}
+            <Pressable
+              onPress={handleScanPress}
+              className="flex-row items-center gap-3 px-4 py-3"
+              accessibilityRole="button"
+            >
+              <ScanLine size={20} color={ACTIVE_COLOR} strokeWidth={2} />
+              <Text className="text-foreground text-sm font-medium">
+                Scan QR Code
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

@@ -31,6 +31,15 @@ module.exports = {
       // jest-expo/jest-preset configures the test environment for React Native + Expo
       preset: 'jest-expo',
 
+      // Override jest-expo's default transformIgnorePatterns to also transform
+      // `jose` (JWT library). jose ships only ESM — Node/Jest can't run ESM
+      // syntax directly, so Babel must transpile it. We add `jose` to the
+      // allow-list alongside the other ESM-only packages from the preset.
+      transformIgnorePatterns: [
+        '/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|jose))',
+        '/node_modules/react-native-reanimated/plugin/',
+      ],
+
       // Load built-in matchers from @testing-library/react-native
       // Gives us assertions like toBeOnTheScreen(), toHaveTextContent(), etc.
       // Also load our custom setup that makes TanStack Query updates synchronous

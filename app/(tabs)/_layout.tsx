@@ -53,6 +53,11 @@ export default function TabLayout() {
           makes it part of the (tabs) group so it shares the tab navigator
           context (important for back navigation to work correctly). */}
       <Tabs.Screen name="logbook" options={{ href: null }} />
+
+      {/* Scan — QR code scanner. Hidden from the tab bar (accessed via FAB
+          long press). Registering it here makes it part of the (tabs) group
+          so back navigation returns to the previous tab. */}
+      <Tabs.Screen name="scan" options={{ href: null }} />
     </Tabs>
   );
 }

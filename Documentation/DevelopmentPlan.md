@@ -1718,9 +1718,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 7 — QR/NFC Scanning
 
-### Step 7.1 — QR Scanner Screen
+### Step 7.1 — QR Scanner Screen ✅
 
-**Depends on:** Phase 4 (route detail), Phase 5 (QuickLog)  
+**Depends on:** Phase 4 (route detail), Phase 5 (QuickLog)
 **Relevant requirements:** FR-B3, FR-D1
 
 **What to test:**
@@ -1742,6 +1742,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Option: show QuickLogSheet directly after scan.
 
 **Acceptance:** Scanning a test QR (generated from seed) navigates to correct route.
+
+**Implementation notes:**
+- Installed `jose` (isomorphic JWT library) for JWT verification without Node.js crypto
+- Added `jose` to jest.config.js `transformIgnorePatterns` allow-list (ESM-only package)
+- Created `utils/qr.ts` — `verifyQrToken()` with `QrPayload` and `QrResult` types
+- Created `app/(tabs)/scan.tsx` — camera permission flow, CameraView with QR scanning, success/error overlays with View Route + Quick Log actions
+- Added `QR_PUBLIC_KEY` (EC P-256 JWK placeholder) to `lib/constants.ts`
+- Registered scan screen in `app/(tabs)/_layout.tsx` with `href: null` (hidden tab)
+- Added FAB long-press action menu to `CustomTabBar.tsx` with "Scan QR Code" option
+- Total: 15 new unit tests (6 qr.ts + 6 scan.tsx + 2 CustomTabBar + 1 constants), 478 unit tests total
 
 ---
 

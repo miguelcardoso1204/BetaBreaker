@@ -306,3 +306,33 @@ export const SYNC_BACKOFF_DELAYS = [1000, 4000, 16000] as const;
  * where half the routes might have been archived or replaced.
  */
 export const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/* ── QR Code Verification ─────────────────────────────────────────── */
+
+/**
+ * EC P-256 public key (JWK format) for verifying QR code JWT signatures.
+ *
+ * When a climber scans a QR code at the gym, the scanned data is a JWT
+ * signed with an EC P-256 private key that lives in the sign-qr Edge
+ * Function (Step 7.2). This public key is the other half of that keypair —
+ * it can verify the JWT's signature but can't create new signed tokens.
+ *
+ * WHY JWK FORMAT?
+ * JSON Web Key (JWK) is the standard format for representing crypto keys
+ * in JSON. The `jose` library's `importJWK()` can directly consume this
+ * object to create a CryptoKey for JWT verification — no parsing needed.
+ *
+ * WHY EC P-256?
+ * Elliptic Curve keys are much smaller than RSA keys at equivalent security
+ * levels. A P-256 key gives ~128-bit security with a ~64-byte public key,
+ * vs ~256 bytes for a 2048-bit RSA key. Smaller keys = smaller QR codes.
+ *
+ * NOTE: This is a development placeholder key. Replace with the production
+ * key when the sign-qr Edge Function is deployed (Step 7.2).
+ */
+export const QR_PUBLIC_KEY = {
+  kty: 'EC',
+  crv: 'P-256',
+  x: 'nOz2wzHGQ58n4_ZuAdcfoJxZd7wW8_77fqbJ4xzNUDY',
+  y: 'A9PXmHQO1GXdl4KCSwOA0bcXorauCxs-2M3cSa_cgmA',
+} as const;
