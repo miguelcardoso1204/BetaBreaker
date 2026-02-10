@@ -96,6 +96,7 @@ const mockProfileRow = {
   home_gym_id: "gym-456",
   onboarding_completed: false,
   tier: "free",
+  pinned_badge_ids: [],
   created_at: "2026-01-01T00:00:00Z",
 };
 
@@ -108,6 +109,7 @@ const expectedCamelProfile = {
   homeGymId: "gym-456",
   onboardingCompleted: false,
   tier: "free",
+  pinnedBadgeIds: [],
   createdAt: "2026-01-01T00:00:00Z",
 };
 

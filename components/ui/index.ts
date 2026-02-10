@@ -28,6 +28,9 @@ export type { DividerProps } from "./Divider";
 export { Avatar } from "./Avatar";
 export type { AvatarProps } from "./Avatar";
 
+export { BadgeIcon } from "./BadgeIcon";
+export type { BadgeIconProps } from "./BadgeIcon";
+
 // Legacy component kept for compatibility (used by expo-router links).
 // Will be removed once all screens are rebuilt with NativeWind components.
 export { ExternalLink } from "./ExternalLink";

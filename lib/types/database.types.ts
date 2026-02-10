@@ -592,6 +592,7 @@ export type Database = {
           home_gym_id: string | null
           id: string
           onboarding_completed: boolean
+          pinned_badge_ids: string[]
           preferred_grade_system: string
           tier: string
         }
@@ -602,6 +603,7 @@ export type Database = {
           home_gym_id?: string | null
           id: string
           onboarding_completed?: boolean
+          pinned_badge_ids?: string[]
           preferred_grade_system?: string
           tier?: string
         }
@@ -612,6 +614,7 @@ export type Database = {
           home_gym_id?: string | null
           id?: string
           onboarding_completed?: boolean
+          pinned_badge_ids?: string[]
           preferred_grade_system?: string
           tier?: string
         }

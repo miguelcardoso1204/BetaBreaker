@@ -5,11 +5,12 @@
  * Supabase PostgREST query chains for fetching badges, user badges,
  * streaks, and leaderboard data.
  *
- * The gamification system has four main reads:
+ * The gamification system has four main reads and one write:
  *   - Badge definitions (what badges exist)
  *   - User badges (which badges a user has earned)
  *   - User streak (current weekly climbing streak)
  *   - Leaderboard (ranked scores for a gym in a time period)
+ *   - Pinned badges (read/write the user's pinned badge IDs on their profile)
  *
  * Mock strategy: Same as routes.service.test.ts — mock `@/lib/supabase`
  * and verify the PostgREST query chain is built correctly.
@@ -239,6 +240,61 @@ describe("gamificationService", () => {
       const result = await gamificationService.getLeaderboard("gym-1", "monthly");
 
       expect(result.data).toEqual([]);
+      expect(result.error).toBeNull();
+    });
+  });
+
+  // ── getPinnedBadges ──────────────────────────────────────────────
+
+  describe("getPinnedBadges", () => {
+    it("queries profile by userId with single()", async () => {
+      // getPinnedBadges fetches the pinned_badge_ids array from the
+      // user's profile row. Uses single() because each user has exactly
+      // one profile — missing profiles would indicate a data integrity issue.
+      const mockProfile = { pinned_badge_ids: ["badge-uuid-1", "badge-uuid-2"] };
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockResolvedValueOnce({
+          data: mockProfile,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await gamificationService.getPinnedBadges("user-1");
+
+      expect(supabase.from).toHaveBeenCalledWith("profiles");
+      expect(chainMock.select).toHaveBeenCalledWith("pinned_badge_ids");
+      expect(chainMock.eq).toHaveBeenCalledWith("id", "user-1");
+      expect(chainMock.single).toHaveBeenCalledTimes(1);
+      expect(result.data).toEqual(mockProfile);
+    });
+  });
+
+  // ── setPinnedBadges ──────────────────────────────────────────────
+
+  describe("setPinnedBadges", () => {
+    it("updates profile with badge ID array", async () => {
+      // setPinnedBadges writes the pinned_badge_ids array to the user's
+      // profile. The DB trigger enforces tier-based limits (free: 1, pro: 3).
+      const badgeIds = ["badge-uuid-1"];
+
+      const chainMock = {
+        update: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await gamificationService.setPinnedBadges("user-1", badgeIds);
+
+      expect(supabase.from).toHaveBeenCalledWith("profiles");
+      expect(chainMock.update).toHaveBeenCalledWith({ pinned_badge_ids: badgeIds });
+      expect(chainMock.eq).toHaveBeenCalledWith("id", "user-1");
       expect(result.error).toBeNull();
     });
   });

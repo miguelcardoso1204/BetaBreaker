@@ -9,6 +9,7 @@
  * QUERY KEYS:
  *   ["badges"]                — all badge definitions (badge gallery)
  *   ["badges", "user", id]   — badges earned by a specific user
+ *   ["badges", "pinned", id] — pinned badge IDs from a user's profile
  *   ["streaks", id]          — a user's weekly climbing streak
  *
  * Why separate keys for badges vs user badges?
@@ -19,7 +20,7 @@
  * catalog.
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { gamificationService } from "@/services/gamification.service";
 
 /**
@@ -89,5 +90,66 @@ export function useUserStreak(userId: string | undefined) {
       return result.data;
     },
     enabled: !!userId,
+  });
+}
+
+/**
+ * Fetch a user's pinned badge IDs from their profile.
+ *
+ * The pinned_badge_ids column stores an array of badge UUIDs that the user
+ * has chosen to display prominently on their profile. The UI resolves these
+ * IDs against the earned badges list to get full badge objects (name, icon, etc.).
+ *
+ * Disabled when userId is undefined — same guard as other user hooks.
+ *
+ * @param userId - The UUID of the user, or undefined if not yet known
+ */
+export function usePinnedBadges(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["badges", "pinned", userId],
+    queryFn: async () => {
+      const result = await gamificationService.getPinnedBadges(userId!);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: !!userId,
+  });
+}
+
+/**
+ * Mutation to update a user's pinned badge IDs.
+ *
+ * On success, invalidates the pinned badges cache so the profile screen
+ * immediately reflects the new selection. The DB trigger enforces tier
+ * limits (free: 1, pro: 3) — if the mutation tries to exceed the limit,
+ * the Supabase response will contain an error from the trigger.
+ *
+ * Usage:
+ * ```tsx
+ * const { mutateAsync } = useSetPinnedBadges();
+ * await mutateAsync({ userId: user.id, badgeIds: ["uuid-1", "uuid-2"] });
+ * ```
+ */
+export function useSetPinnedBadges() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      badgeIds,
+    }: {
+      userId: string;
+      badgeIds: string[];
+    }) => {
+      const result = await gamificationService.setPinnedBadges(userId, badgeIds);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      // Invalidate pinned badges cache so the profile screen refetches
+      // with the updated selection. Using a partial key ["badges", "pinned"]
+      // invalidates all user-specific pinned badge queries.
+      queryClient.invalidateQueries({ queryKey: ["badges", "pinned"] });
+    },
   });
 }

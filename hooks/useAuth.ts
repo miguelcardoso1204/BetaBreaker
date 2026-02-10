@@ -56,6 +56,8 @@ export interface UserProfile {
   homeGymId: string | null;
   onboardingCompleted: boolean;
   tier: string;
+  /** Badge UUIDs the user has pinned to their profile (max depends on tier). */
+  pinnedBadgeIds: string[];
   createdAt: string;
 }
 
@@ -96,6 +98,7 @@ function toUserProfile(row: {
   home_gym_id: string | null;
   onboarding_completed: boolean;
   tier: string;
+  pinned_badge_ids: string[];
   created_at: string;
 }): UserProfile {
   return {
@@ -106,6 +109,7 @@ function toUserProfile(row: {
     homeGymId: row.home_gym_id,
     onboardingCompleted: row.onboarding_completed,
     tier: row.tier,
+    pinnedBadgeIds: row.pinned_badge_ids,
     createdAt: row.created_at,
   };
 }

@@ -24,16 +24,26 @@ jest.mock("@/services/gamification.service", () => ({
     getBadges: jest.fn(),
     getUserBadges: jest.fn(),
     getUserStreak: jest.fn(),
+    getPinnedBadges: jest.fn(),
+    setPinnedBadges: jest.fn(),
   },
 }));
 
-import { useBadges, useUserBadges, useUserStreak } from "../useBadges";
+import {
+  useBadges,
+  useUserBadges,
+  useUserStreak,
+  usePinnedBadges,
+  useSetPinnedBadges,
+} from "../useBadges";
 
 const { gamificationService } = jest.requireMock<{
   gamificationService: {
     getBadges: jest.Mock;
     getUserBadges: jest.Mock;
     getUserStreak: jest.Mock;
+    getPinnedBadges: jest.Mock;
+    setPinnedBadges: jest.Mock;
   };
 }>("@/services/gamification.service");
 
@@ -259,5 +269,129 @@ describe("useUserStreak", () => {
 
     expect(result.current.fetchStatus).toBe("idle");
     expect(gamificationService.getUserStreak).not.toHaveBeenCalled();
+  });
+});
+
+// ── usePinnedBadges ────────────────────────────────────────────────
+
+describe("usePinnedBadges", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns pinned badge IDs on success", async () => {
+    // usePinnedBadges fetches the pinned_badge_ids array from the user's
+    // profile. The UI uses these IDs to resolve full badge objects from
+    // the user's earned badges.
+    gamificationService.getPinnedBadges.mockResolvedValueOnce({
+      data: { pinned_badge_ids: ["badge-uuid-1", "badge-uuid-2"] },
+      error: null,
+    });
+
+    const { result } = renderHook(() => usePinnedBadges("user-1"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toEqual({
+      pinned_badge_ids: ["badge-uuid-1", "badge-uuid-2"],
+    });
+    expect(gamificationService.getPinnedBadges).toHaveBeenCalledWith("user-1");
+  });
+
+  it("is disabled when userId is undefined", () => {
+    // Same guard as other user-specific hooks — prevents fetching before
+    // the user is authenticated.
+    const { result } = renderHook(() => usePinnedBadges(undefined), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.fetchStatus).toBe("idle");
+    expect(gamificationService.getPinnedBadges).not.toHaveBeenCalled();
+  });
+});
+
+// ── useSetPinnedBadges ────────────────────────────────────────────
+
+describe("useSetPinnedBadges", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("calls service with userId and badgeIds", async () => {
+    // useSetPinnedBadges wraps a mutation that updates the pinned badge
+    // IDs on the user's profile. The DB trigger enforces tier limits.
+    gamificationService.setPinnedBadges.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const { result } = renderHook(() => useSetPinnedBadges(), {
+      wrapper: createWrapper(),
+    });
+
+    // Fire the mutation with userId and badge IDs
+    await result.current.mutateAsync({
+      userId: "user-1",
+      badgeIds: ["badge-uuid-1"],
+    });
+
+    expect(gamificationService.setPinnedBadges).toHaveBeenCalledWith(
+      "user-1",
+      ["badge-uuid-1"]
+    );
+  });
+
+  it("invalidates pinned badges cache on success", async () => {
+    // After successfully updating pinned badges, the query cache for
+    // pinned badges should be invalidated so the UI reflects the change.
+    gamificationService.setPinnedBadges.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    // Pre-populate the cache with stale data
+    gamificationService.getPinnedBadges.mockResolvedValueOnce({
+      data: { pinned_badge_ids: [] },
+      error: null,
+    });
+
+    const wrapper = createWrapper();
+    const { result: pinnedResult } = renderHook(
+      () => usePinnedBadges("user-1"),
+      { wrapper }
+    );
+
+    // Wait for initial query to resolve
+    await waitFor(() => {
+      expect(pinnedResult.current.isLoading).toBe(false);
+    });
+
+    // Now render the mutation hook in the same QueryClient context
+    const { result: mutationResult } = renderHook(
+      () => useSetPinnedBadges(),
+      { wrapper }
+    );
+
+    // Set up the refetch mock to return updated data
+    gamificationService.getPinnedBadges.mockResolvedValueOnce({
+      data: { pinned_badge_ids: ["badge-uuid-1"] },
+      error: null,
+    });
+
+    // Fire the mutation
+    await mutationResult.current.mutateAsync({
+      userId: "user-1",
+      badgeIds: ["badge-uuid-1"],
+    });
+
+    // After mutation success, the pinned badges cache is invalidated and
+    // re-fetched — verify the service was called again
+    await waitFor(() => {
+      expect(gamificationService.getPinnedBadges).toHaveBeenCalledTimes(2);
+    });
   });
 });

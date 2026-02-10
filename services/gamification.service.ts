@@ -101,4 +101,42 @@ export const gamificationService = {
       .eq("period", period)
       .order("rank");
   },
+
+  /**
+   * Fetch a user's pinned badge IDs from their profile.
+   *
+   * Returns only the `pinned_badge_ids` column — a uuid[] array of badge IDs
+   * that the user has chosen to display on their profile. The UI resolves
+   * these IDs against the user's earned badges to get full badge objects.
+   *
+   * Uses single() because every authenticated user has exactly one profile
+   * row (created by the handle_new_user trigger on registration).
+   *
+   * @param userId - The UUID of the user whose pinned badges to fetch
+   */
+  getPinnedBadges(userId: string) {
+    return supabase
+      .from("profiles")
+      .select("pinned_badge_ids")
+      .eq("id", userId)
+      .single();
+  },
+
+  /**
+   * Update the user's pinned badge IDs.
+   *
+   * Writes the array of badge UUIDs to the profiles table. The
+   * enforce_pinned_badge_limit trigger validates that the array doesn't
+   * exceed the tier limit (free: 1, pro: 3) — if it does, the DB rejects
+   * the update with a check_violation error.
+   *
+   * @param userId - The UUID of the user to update
+   * @param badgeIds - Array of badge UUIDs to pin (may be empty)
+   */
+  setPinnedBadges(userId: string, badgeIds: string[]) {
+    return supabase
+      .from("profiles")
+      .update({ pinned_badge_ids: badgeIds })
+      .eq("id", userId);
+  },
 };

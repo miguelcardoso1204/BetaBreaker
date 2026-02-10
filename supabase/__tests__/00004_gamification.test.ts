@@ -1,11 +1,12 @@
 /**
- * Integration tests for gamification seed data and end-to-end badge awarding (Step 2.4).
+ * Integration tests for gamification seed data, badge awarding, and pinned badges (Steps 2.4, 8.1, 8.2).
  *
  * These tests verify:
  *   - 19 default badge definitions seeded by migration (11 grade, 4 volume, 3 streak, 1 flash)
  *   - End-to-end badge awarding through the trigger system using seeded badges
  *   - The first_flash criteria type awards badges only on flash ascents
  *   - RLS read access to gamification tables for authenticated users
+ *   - Pinned badge tier enforcement (free: max 1, pro: max 3)
  *
  * Why seed badges in a migration instead of seed.sql?
  * ────────────────────────────────────────────────────
@@ -712,6 +713,120 @@ describe('Gamification state reads via RLS', () => {
       expect(badgeNames).toContain('First Send');
 
       await resetToSuperuser(client);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+});
+
+// ===========================================================================
+// Test Suite: Pinned badge tier enforcement (Step 8.2)
+// ===========================================================================
+
+/**
+ * The `enforce_pinned_badge_limit` trigger runs BEFORE INSERT/UPDATE on profiles.
+ * It checks the user's subscription tier against the number of pinned badge IDs:
+ *   - Free tier: max 1 pinned badge
+ *   - Pro tier: max 3 pinned badges
+ *
+ * We use random UUIDs as badge IDs in pinned_badge_ids — the trigger only checks
+ * array length, not whether the UUIDs reference real badges. Referential integrity
+ * for pinned badges is an application-level concern, not a DB constraint, because
+ * the array column doesn't have a foreign key (Postgres doesn't support FK on arrays).
+ */
+describe('Pinned badge tier enforcement', () => {
+  it('free user can pin 1 badge', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'pin-free-1@test.com');
+
+      // Free users (default tier) can pin exactly 1 badge
+      const result = await client.query(
+        `UPDATE profiles
+         SET pinned_badge_ids = ARRAY[gen_random_uuid()]
+         WHERE id = $1
+         RETURNING pinned_badge_ids`,
+        [userId]
+      );
+
+      // array_length returns the length of the first dimension
+      expect(result.rows[0].pinned_badge_ids).toHaveLength(1);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('free user CANNOT pin 2 badges (trigger rejects)', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'pin-free-2@test.com');
+
+      // Attempting to pin 2 badges on a free account should be rejected
+      // by the enforce_pinned_badge_limit trigger with a check_violation error
+      await expect(
+        client.query(
+          `UPDATE profiles
+           SET pinned_badge_ids = ARRAY[gen_random_uuid(), gen_random_uuid()]
+           WHERE id = $1`,
+          [userId]
+        )
+      ).rejects.toThrow('Free tier allows max 1 pinned badge');
+    } finally {
+      // ROLLBACK cleans up the aborted transaction state (see memory note:
+      // Transaction Error State in Tests — don't call resetToSuperuser after rejects)
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('pro user can pin 3 badges', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'pin-pro-3@test.com');
+
+      // Upgrade user to pro tier first
+      await client.query(
+        `UPDATE profiles SET tier = 'pro' WHERE id = $1`,
+        [userId]
+      );
+
+      // Pro users can pin up to 3 badges
+      const result = await client.query(
+        `UPDATE profiles
+         SET pinned_badge_ids = ARRAY[gen_random_uuid(), gen_random_uuid(), gen_random_uuid()]
+         WHERE id = $1
+         RETURNING pinned_badge_ids`,
+        [userId]
+      );
+
+      expect(result.rows[0].pinned_badge_ids).toHaveLength(3);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('pro user CANNOT pin 4 badges (trigger rejects)', async () => {
+    await client.query('BEGIN');
+    try {
+      const userId = await createTestUser(client, 'pin-pro-4@test.com');
+
+      // Upgrade to pro
+      await client.query(
+        `UPDATE profiles SET tier = 'pro' WHERE id = $1`,
+        [userId]
+      );
+
+      // Attempting to pin 4 badges on a pro account should be rejected
+      await expect(
+        client.query(
+          `UPDATE profiles
+           SET pinned_badge_ids = ARRAY[
+             gen_random_uuid(), gen_random_uuid(),
+             gen_random_uuid(), gen_random_uuid()
+           ]
+           WHERE id = $1`,
+          [userId]
+        )
+      ).rejects.toThrow('Pro tier allows max 3 pinned badges');
     } finally {
       await client.query('ROLLBACK');
     }

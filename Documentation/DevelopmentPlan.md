@@ -1827,9 +1827,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 8.2 — Badge Display on Profile
+### Step 8.2 — Badge Display on Profile ✅
 
-**Depends on:** Step 8.1, Phase 3 (auth)  
+**Depends on:** Step 8.1, Phase 3 (auth)
 **Relevant requirements:** FR-A2, FR-F1
 
 **What to test:**
@@ -1848,6 +1848,20 @@ Run `supabase db push`, then run test suite against local DB.
 - Profile screen: badge row with pin management.
 
 **Acceptance:** Profile displays badges; tier limit enforced.
+
+**Implementation notes:**
+- Migration `20260210120000_add_pinned_badges.sql`: Added `pinned_badge_ids uuid[]` column to profiles with `enforce_pinned_badge_limit` trigger (free: max 1, pro: max 3)
+- Created `components/ui/BadgeIcon.tsx` — circular achievement display with text-initial placeholders (distinct from Badge label pill)
+- Created `components/badges/ProfileBadges.tsx` — horizontal pinned badge row with empty slot placeholders and Edit button
+- Created `components/badges/BadgePicker.tsx` — Modal overlay for selecting which badges to pin, with maxPins enforcement
+- Extended `services/gamification.service.ts` with `getPinnedBadges()` and `setPinnedBadges()` methods
+- Extended `hooks/useBadges.ts` with `usePinnedBadges()` query and `useSetPinnedBadges()` mutation (invalidates cache on success)
+- Extended `hooks/useAuth.ts` with `pinnedBadgeIds: string[]` on UserProfile interface
+- Replaced profile placeholder with full screen: avatar, display name, tier badge, streak stats, pinned badges section, BadgePicker modal
+- Files created: migration, BadgeIcon.tsx, ProfileBadges.tsx, BadgePicker.tsx, components/badges/index.ts, 4 test files
+- Files modified: gamification.service.ts, useBadges.ts, useAuth.ts, profile.tsx, components/ui/index.ts, database.types.ts, DevelopmentPlan.md
+- Tests: +27 unit (4 BadgeIcon + 2 service + 4 hooks + 4 ProfileBadges + 5 BadgePicker + 8 profile screen), +4 integration = +31 total
+- Unit tests: 526 total (was 499). Integration tests: 334 total (was 330).
 
 ---
 
