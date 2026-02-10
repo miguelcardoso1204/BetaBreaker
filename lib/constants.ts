@@ -327,12 +327,13 @@ export const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
  * levels. A P-256 key gives ~128-bit security with a ~64-byte public key,
  * vs ~256 bytes for a 2048-bit RSA key. Smaller keys = smaller QR codes.
  *
- * NOTE: This is a development placeholder key. Replace with the production
- * key when the sign-qr Edge Function is deployed (Step 7.2).
+ * NOTE: This keypair was generated in Step 7.2. Production uses a different
+ * keypair managed via `supabase secrets set`. The matching private key for
+ * local dev lives in `supabase/.env.local` (gitignored).
  */
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',
-  x: 'nOz2wzHGQ58n4_ZuAdcfoJxZd7wW8_77fqbJ4xzNUDY',
-  y: 'A9PXmHQO1GXdl4KCSwOA0bcXorauCxs-2M3cSa_cgmA',
+  x: 'eJxiTPk23BHL0fZhpYFCxrqKh-f4vkDfCSJ2eqFBxMg',
+  y: 'Q5H3povkDpzIwa93Be_XWFypkPRz9DlzcJWgnGVbR4Y',
 } as const;

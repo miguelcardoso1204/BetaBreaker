@@ -1755,9 +1755,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 7.2 — QR Signing Edge Function
+### Step 7.2 — QR Signing Edge Function ✅
 
-**Depends on:** Phase 2 (tables), Phase 0 (Supabase)  
+**Depends on:** Phase 2 (tables), Phase 0 (Supabase)
 **Relevant requirements:** FR-C5, FR-P3
 
 **What to test (integration / unit test for Edge Function):**
@@ -1778,6 +1778,14 @@ Run `supabase db push`, then run test suite against local DB.
 - Uses secret key from environment.
 
 **Acceptance:** Edge function tests pass; generated QR scannable by client.
+
+**Implementation notes (Step 7.2):**
+- Files created: `supabase/functions/sign-qr/index.ts` (Edge Function), `supabase/.env.local` (private key, gitignored), `supabase/__tests__/00010_qr_signing.test.ts` (8 integration tests), `utils/__tests__/qr-roundtrip.test.ts` (1 unit test)
+- Files modified: `lib/constants.ts` (real EC P-256 public key), `tsconfig.json` (exclude `supabase/functions` — Deno uses different module system)
+- Generated real EC P-256 keypair; private key stored as `QR_PRIVATE_KEY` env var, public key embedded in app
+- Edge Function uses service role client for DB queries (bypasses RLS for route/role lookup), user identity verified via `auth.getUser()`
+- Requires `--no-verify-jwt` flag with `supabase functions serve` (newer Supabase auth issues ES256 tokens which the gateway may not validate correctly; function handles its own auth)
+- Test counts: 479 unit tests (+1), 326 integration tests (+8) = 805 total
 
 ---
 
