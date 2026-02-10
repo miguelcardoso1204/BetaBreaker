@@ -1899,9 +1899,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 8.4 — Time-Boxed Challenges & Quests
+### Step 8.4 — Time-Boxed Challenges & Quests ✅
 
-**Depends on:** Steps 8.1, 2.4  
+**Depends on:** Steps 8.1, 2.4
 **Relevant requirements:** FR-F3
 
 **What to test:**
@@ -1922,6 +1922,14 @@ Run `supabase db push`, then run test suite against local DB.
 - Challenge card component in gamification section.
 
 **Acceptance:** Challenge lifecycle works from creation to completion.
+
+**Implementation notes (completed 2026-02-10):**
+- Files created: `utils/challengeCriteria.ts`, `services/challenges.service.ts`, `hooks/useChallenges.ts`, `components/challenges/ChallengeCard.tsx`, `components/challenges/ChallengeProgress.tsx`, `components/challenges/index.ts`, `supabase/migrations/20260210140000_challenges.sql`
+- Files modified: `app/(tabs)/profile.tsx` (Active Challenges section), `lib/types/database.types.ts` (regenerated)
+- Migration: 2 tables (challenges, user_challenge_progress), 5 RLS policies, `update_challenge_progress()` SECURITY DEFINER function, expanded `check_and_award_badges()` with 'challenge' no-op branch, extended `on_ascent_insert()` with challenge progress call
+- 4 criteria types: send_count, flash_count, unique_routes, grade_sends (JSONB + Zod validation)
+- Trigger-based auto-progress: `update_challenge_progress()` fires inside `on_ascent_insert()`, keeping all gamification atomic
+- New tests: 20 (challengeCriteria) + 30 (integration 00011) + 7 (challenges.service) + 10 (useChallenges hooks) + 8 (ChallengeCard) + 4 (ChallengeProgress) + 3 (profile) = **+82 tests** → **599 unit tests, 364 integration tests**
 
 ---
 

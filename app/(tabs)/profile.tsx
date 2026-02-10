@@ -29,12 +29,21 @@ import {
   usePinnedBadges,
   useSetPinnedBadges,
 } from "@/hooks/useBadges";
+import {
+  useActiveChallenges,
+  useChallengeProgress,
+} from "@/hooks/useChallenges";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileBadges } from "@/components/badges/ProfileBadges";
 import { BadgePicker } from "@/components/badges/BadgePicker";
+import { ChallengeCard } from "@/components/challenges";
 import { StreakCard, StreakStatusBanner } from "@/components/streaks";
 import { deriveStreakStatus } from "@/utils/streakStatus";
+import {
+  deriveChallengeStatus,
+  computeTimeRemaining,
+} from "@/utils/challengeCriteria";
 
 export default function ProfileScreen() {
   const { user, isLoading: authLoading } = useAuth();
@@ -44,6 +53,13 @@ export default function ProfileScreen() {
   const { data: streak } = useUserStreak(user?.id);
   const { data: pinnedData } = usePinnedBadges(user?.id);
   const setPinnedBadges = useSetPinnedBadges();
+
+  // Fetch active challenges for the user's home gym (if set)
+  const { data: activeChallenges } = useActiveChallenges(user?.homeGymId ?? undefined);
+  const { data: challengeProgress } = useChallengeProgress(
+    user?.id,
+    user?.homeGymId ?? undefined,
+  );
 
   // Local state for the BadgePicker modal visibility
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -160,6 +176,40 @@ export default function ProfileScreen() {
           <Text className="text-text-secondary text-xs mt-1">
             Start climbing to earn achievements!
           </Text>
+        </View>
+      )}
+
+      {/* Active Challenges section — only shown when user has a home gym
+          and there are active challenges. Each challenge card shows progress,
+          status, time remaining, and optional reward badge. */}
+      {activeChallenges && activeChallenges.length > 0 && (
+        <View className="mt-4">
+          <Text className="text-text-primary text-lg font-bold px-4 mb-2">
+            Active Challenges
+          </Text>
+          {activeChallenges.map((challenge: any) => {
+            // Find the user's progress for this challenge (if any)
+            const progress = challengeProgress?.find(
+              (p: any) => p.challenge_id === challenge.id,
+            );
+            const criteria = challenge.criteria as { target: number };
+            const status = deriveChallengeStatus(challenge, progress);
+            const timeRemaining = computeTimeRemaining(challenge.end_date);
+
+            return (
+              <ChallengeCard
+                key={challenge.id}
+                name={challenge.name}
+                description={challenge.description}
+                progress={progress?.progress ?? 0}
+                target={criteria.target}
+                status={status}
+                timeRemaining={timeRemaining}
+                rewardBadge={challenge.reward_badge}
+                testID={`challenge-card-${challenge.id}`}
+              />
+            );
+          })}
         </View>
       )}
 

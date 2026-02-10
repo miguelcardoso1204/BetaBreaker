@@ -109,6 +109,23 @@ jest.mock("@/hooks/useBadges", () => ({
   useSetPinnedBadges: () => mockUseSetPinnedBadgesReturn,
 }));
 
+// Mock useChallenges — returns active challenges and progress data
+let mockUseActiveChallengesReturn: any = {
+  data: null,
+  isLoading: false,
+  error: null,
+};
+let mockUseChallengeProgressReturn: any = {
+  data: null,
+  isLoading: false,
+  error: null,
+};
+
+jest.mock("@/hooks/useChallenges", () => ({
+  useActiveChallenges: () => mockUseActiveChallengesReturn,
+  useChallengeProgress: () => mockUseChallengeProgressReturn,
+}));
+
 // Mock expo-image (no native runtime in Jest)
 jest.mock("expo-image", () => ({
   Image: (props: any) => {
@@ -150,6 +167,16 @@ describe("ProfileScreen", () => {
     };
     mockUsePinnedBadgesReturn = {
       data: { pinned_badge_ids: ["b1"] },
+      isLoading: false,
+      error: null,
+    };
+    mockUseActiveChallengesReturn = {
+      data: null,
+      isLoading: false,
+      error: null,
+    };
+    mockUseChallengeProgressReturn = {
+      data: null,
       isLoading: false,
       error: null,
     };
@@ -290,5 +317,91 @@ describe("ProfileScreen", () => {
     ).toBeOnTheScreen();
     // displayStreak should be 0 when broken (overrides stale DB value of 5)
     expect(screen.getByText("0")).toBeOnTheScreen();
+  });
+
+  // ── Active Challenges tests ──────────────────────────────────────
+  // These verify that the profile screen renders challenge cards when
+  // the user has a home gym with active challenges.
+
+  it('renders "Active Challenges" section when challenges exist', () => {
+    // When the user has a home gym and there are active challenges,
+    // the profile screen should show an "Active Challenges" header
+    // and render ChallengeCard components for each challenge.
+    mockUseAuthReturn = {
+      ...mockUseAuthReturn,
+      user: { ...mockUser, homeGymId: "gym-1" },
+    };
+    mockUseActiveChallengesReturn = {
+      data: [
+        {
+          id: "c1",
+          name: "Flash Five",
+          description: "Flash 5 routes this week",
+          criteria: { type: "flash_count", target: 5 },
+          start_date: "2026-02-01T00:00:00Z",
+          end_date: "2026-02-15T00:00:00Z",
+          reward_badge: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.getByText("Active Challenges")).toBeOnTheScreen();
+    expect(screen.getByText("Flash Five")).toBeOnTheScreen();
+  });
+
+  it("does not render challenges section when no active challenges", () => {
+    // When there are no active challenges (or the user has no home gym),
+    // the challenges section should not appear at all — no empty state,
+    // just absence. This keeps the profile clean.
+    mockUseActiveChallengesReturn = {
+      data: [],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.queryByText("Active Challenges")).toBeNull();
+  });
+
+  it("shows challenge progress from hook data", () => {
+    // When the user has progress toward a challenge, the ChallengeCard
+    // should display the progress count from the hook data.
+    mockUseAuthReturn = {
+      ...mockUseAuthReturn,
+      user: { ...mockUser, homeGymId: "gym-1" },
+    };
+    mockUseActiveChallengesReturn = {
+      data: [
+        {
+          id: "c1",
+          name: "Send Ten",
+          description: "Send 10 routes",
+          criteria: { type: "send_count", target: 10 },
+          start_date: "2026-02-01T00:00:00Z",
+          end_date: "2026-02-15T00:00:00Z",
+          reward_badge: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+    mockUseChallengeProgressReturn = {
+      data: [
+        {
+          user_id: "user-123",
+          challenge_id: "c1",
+          progress: 7,
+          completed_at: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.getByText("7 / 10")).toBeOnTheScreen();
   });
 });
