@@ -1645,9 +1645,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 6.2 — Offline Route Cache
+### Step 6.2 — Offline Route Cache ✅
 
-**Depends on:** Step 6.1, Phase 4 (routes hook)  
+**Depends on:** Step 6.1, Phase 4 (routes hook)
 **Relevant requirements:** NFR-3
 
 **What to test:**
@@ -1666,6 +1666,14 @@ Run `supabase db push`, then run test suite against local DB.
 - Cache TTL: 24 hours (configurable).
 
 **Acceptance:** Airplane-mode test: cached routes load; new logs queue offline.
+
+**Implementation notes (2026-02-10):**
+- Added `ROUTE_CACHE_TTL_MS` constant (24h) to `lib/constants.ts`
+- Extended `lib/offlineDb.ts` with `cached_routes` table + `upsertCachedRoutes`, `getCachedRoutesByGym`, `clearCachedRoutes`
+- Created `lib/routeCache.ts` — business logic layer: serialization, TTL checks, gym scoping
+- Modified `hooks/useRoutes.ts` — write-through on success, fallback on error
+- New tests: 7 in `lib/__tests__/routeCache.test.ts`, 3 in `hooks/__tests__/useRoutes.test.tsx`, 1 in `lib/__tests__/constants.test.ts` = 11 new unit tests
+- Total tests: 447 unit + 318 integration = 765
 
 ---
 

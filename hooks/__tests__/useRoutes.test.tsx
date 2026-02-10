@@ -27,6 +27,15 @@ jest.mock("@/services/routes.service", () => ({
   },
 }));
 
+// ── Mock routeCache ─────────────────────────────────────────────
+// The route cache module handles offline write-through and fallback.
+// We mock it to verify the hook correctly calls cacheRoutes on success
+// and getCachedRoutes on failure.
+jest.mock("@/lib/routeCache", () => ({
+  cacheRoutes: jest.fn(),
+  getCachedRoutes: jest.fn(),
+}));
+
 import { useRoutes, useRouteDetail } from "../useRoutes";
 
 const { routeService } = jest.requireMock<{
@@ -35,6 +44,11 @@ const { routeService } = jest.requireMock<{
     getRouteById: jest.Mock;
   };
 }>("@/services/routes.service");
+
+const { cacheRoutes, getCachedRoutes } = jest.requireMock<{
+  cacheRoutes: jest.Mock;
+  getCachedRoutes: jest.Mock;
+}>("@/lib/routeCache");
 
 // ── Test wrapper ──────────────────────────────────────────────────
 // TanStack Query hooks must render inside a QueryClientProvider.
@@ -152,6 +166,82 @@ describe("useRoutes", () => {
     });
 
     expect(routeService.getRoutes).toHaveBeenCalledWith(filters);
+  });
+
+  // ── Offline Cache Tests ──────────────────────────────────────────
+
+  it("caches routes on successful fetch (write-through)", async () => {
+    // GIVEN: The service returns routes successfully
+    // WHEN: The hook resolves
+    // THEN: cacheRoutes should be called with the gymId and fetched data,
+    //       writing the routes through to SQLite for offline access later.
+    routeService.getRoutes.mockResolvedValueOnce({
+      data: mockRoutes,
+      error: null,
+    });
+
+    const { result } = renderHook(
+      () => useRoutes({ gymId: "gym-1" }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toEqual(mockRoutes);
+    expect(cacheRoutes).toHaveBeenCalledWith("gym-1", mockRoutes);
+  });
+
+  it("falls back to cached routes on network error", async () => {
+    // GIVEN: The service throws a network error
+    // AND: getCachedRoutes returns fresh cached data
+    // WHEN: The hook resolves
+    // THEN: It should return the cached data instead of an error.
+    // This enables offline route browsing — the user can still see routes
+    // even when their phone has no signal at the climbing gym.
+    routeService.getRoutes.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Network error" },
+    });
+    getCachedRoutes.mockReturnValue(mockRoutes);
+
+    const { result } = renderHook(
+      () => useRoutes({ gymId: "gym-1" }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // The hook should have resolved with cached data, not an error
+    expect(result.current.data).toEqual(mockRoutes);
+    expect(result.current.error).toBeNull();
+    expect(getCachedRoutes).toHaveBeenCalledWith("gym-1");
+  });
+
+  it("propagates error when network fails and no cache exists", async () => {
+    // GIVEN: The service throws a network error
+    // AND: getCachedRoutes returns null (no cache or expired)
+    // WHEN: The hook resolves
+    // THEN: The error should propagate — there's no data to show.
+    routeService.getRoutes.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Network error" },
+    });
+    getCachedRoutes.mockReturnValue(null);
+
+    const { result } = renderHook(
+      () => useRoutes({ gymId: "gym-1" }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.error).toBeTruthy();
   });
 });
 

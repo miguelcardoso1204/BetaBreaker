@@ -268,3 +268,20 @@ export const MAX_OFFLINE_RETRIES = 3;
  * the same filename.
  */
 export const OFFLINE_DB_NAME = 'betabreaker_offline.db';
+
+/* ── Route Cache ──────────────────────────────────────────────────────── */
+
+/**
+ * How long cached route data is considered "fresh" before expiring.
+ *
+ * When the app fetches routes from Supabase, it writes them through to a
+ * local SQLite cache. If a subsequent fetch fails (no network), the hook
+ * falls back to this cached data — but only if it was cached within the
+ * TTL window. After 24 hours, the cached data is considered too stale to
+ * show, so the hook propagates the network error instead.
+ *
+ * 24 hours strikes a balance: routes don't change every minute (gyms reset
+ * walls every few weeks), but we don't want to show week-old route lists
+ * where half the routes might have been archived or replaced.
+ */
+export const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;

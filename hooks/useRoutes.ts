@@ -32,6 +32,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { routeService } from "@/services/routes.service";
 import type { RouteFilters } from "@/services/routes.service";
+import { cacheRoutes, getCachedRoutes } from "@/lib/routeCache";
 
 /**
  * Fetch a filtered list of routes for a gym.
@@ -51,12 +52,38 @@ export function useRoutes(filters: RouteFilters) {
     // and { gymId: "1" } are treated as the same key (cache hit).
     queryKey: ["routes", filters],
     // queryFn: the async function that fetches the data.
-    // routeService.getRoutes returns { data, error } from Supabase.
-    // We unwrap it here: throw on error (so TanStack Query catches it),
-    // return just the data array on success.
+    // This implements a "write-through cache with fallback" pattern:
+    //   1. Try fetching from Supabase (the source of truth)
+    //   2. On SUCCESS → write data to SQLite cache, then return it
+    //   3. On ERROR → check SQLite cache for fresh data to serve offline
+    //   4. If no cache → re-throw so TanStack Query enters error state
     queryFn: async () => {
       const result = await routeService.getRoutes(filters);
-      if (result.error) throw result.error;
+
+      if (result.error) {
+        // Network fetch failed — attempt offline fallback.
+        // getCachedRoutes returns null if the cache is empty or expired
+        // (older than ROUTE_CACHE_TTL_MS = 24 hours).
+        // We cast the result to match the Supabase return type — the cache
+        // stores the exact same objects that were returned by the service,
+        // just round-tripped through JSON serialization.
+        const cached = getCachedRoutes(filters.gymId) as typeof result.data;
+        if (cached) {
+          return cached;
+        }
+        // No usable cache — propagate the original error so the UI
+        // can show an appropriate error message to the user.
+        throw result.error;
+      }
+
+      // Success path: write through to SQLite so this data is available
+      // if the next fetch fails (e.g., user enters a dead zone at the gym).
+      // We fire-and-forget — cacheRoutes is synchronous (SQLite sync API),
+      // so there's no async overhead or risk of unhandled rejections.
+      if (result.data) {
+        cacheRoutes(filters.gymId, result.data);
+      }
+
       return result.data;
     },
   });

@@ -27,6 +27,7 @@ import {
   OFFLINE_ACTION_TYPES,
   MAX_OFFLINE_RETRIES,
   OFFLINE_DB_NAME,
+  ROUTE_CACHE_TTL_MS,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -276,6 +277,18 @@ describe('OFFLINE_DB_NAME', () => {
     // expo-sqlite uses this filename to open/create the DB in the app's
     // sandboxed documents directory. Must match what offlineDb.ts uses.
     expect(OFFLINE_DB_NAME).toBe('betabreaker_offline.db');
+  });
+});
+
+/* ── ROUTE_CACHE_TTL_MS ──────────────────────────────────────────────── */
+
+describe('ROUTE_CACHE_TTL_MS', () => {
+  it('is exactly 24 hours in milliseconds', () => {
+    // The route cache TTL determines how long cached route data is considered
+    // fresh. After this period, getCachedRoutes() treats the data as expired
+    // and returns null, forcing a fresh network fetch.
+    // 24 hours = 24 * 60 * 60 * 1000 = 86_400_000 ms
+    expect(ROUTE_CACHE_TTL_MS).toBe(86_400_000);
   });
 });
 
