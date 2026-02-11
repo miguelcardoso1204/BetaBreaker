@@ -14,7 +14,7 @@
  */
 
 import React from "react";
-import { render, screen } from "@testing-library/react-native";
+import { render, screen, fireEvent } from "@testing-library/react-native";
 
 // ── Mocks ────────────────────────────────────────────────────────
 
@@ -22,6 +22,27 @@ jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
     user: { id: "user-1", displayName: "Dawn" },
     isAuthenticated: true,
+  }),
+}));
+
+// Mock useUnreadCount — the home screen uses this for the bell badge
+jest.mock("@/hooks/useNotifications", () => {
+  const mockUnreadData = {
+    count: 0,
+    isLoading: false,
+  };
+  return {
+    useUnreadCount: () => mockUnreadData,
+    __mockUnreadData: mockUnreadData,
+  };
+});
+
+// Mock expo-router for navigation assertions
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({
+  useRouter: () => ({
+    push: mockPush,
+    back: jest.fn(),
   }),
 }));
 
@@ -42,6 +63,7 @@ jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
     ArrowLeft: (props: any) => <View testID="icon-arrow-left" {...props} />,
+    Bell: (props: any) => <View testID="icon-bell" {...props} />,
   };
 });
 
@@ -66,12 +88,22 @@ const { __mockFeedData } = jest.requireMock<{
   };
 }>("@/hooks/useSocial");
 
+const { __mockUnreadData } = jest.requireMock<{
+  __mockUnreadData: {
+    count: number;
+    isLoading: boolean;
+  };
+}>("@/hooks/useNotifications");
+
 // ── Helpers ──────────────────────────────────────────────────────
 
 function resetMockData() {
   __mockFeedData.feed = [];
   __mockFeedData.isLoading = false;
   __mockFeedData.error = null;
+  __mockUnreadData.count = 0;
+  __mockUnreadData.isLoading = false;
+  mockPush.mockClear();
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -151,5 +183,30 @@ describe("HomeScreen", () => {
     expect(
       screen.getByText(/Follow climbers to see their activity/)
     ).toBeOnTheScreen();
+  });
+
+  // ── Notification Bell Tests ──────────────────────────────────────
+
+  it("renders the notification bell in the header", () => {
+    render(<HomeScreen />);
+
+    expect(screen.getByTestId("icon-bell")).toBeOnTheScreen();
+  });
+
+  it("shows unread count on the bell badge", () => {
+    __mockUnreadData.count = 5;
+
+    render(<HomeScreen />);
+
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByTestId("notification-badge")).toBeOnTheScreen();
+  });
+
+  it("navigates to notification center when bell is pressed", () => {
+    render(<HomeScreen />);
+
+    fireEvent.press(screen.getByRole("button", { name: "Notifications" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/notifications");
   });
 });

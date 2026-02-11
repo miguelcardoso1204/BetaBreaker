@@ -2201,9 +2201,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 10.3 — In-App Notification Center
+### Step 10.3 — In-App Notification Center ✅
 
-**Depends on:** Steps 10.1, 10.2  
+**Depends on:** Steps 10.1, 10.2
 **Relevant requirements:** FR-J2, FR-J3
 
 **What to test:**
@@ -2224,6 +2224,18 @@ Run `supabase db push`, then run test suite against local DB.
 - Supabase Realtime subscription for new notifications.
 
 **Acceptance:** Notifications flow from trigger → DB → push + in-app display.
+
+**Implementation notes (Step 10.3):**
+- Added 6 service methods to `services/notifications.service.ts`: getNotifications, getUnreadCount, markAsRead, markAllAsRead, getPreferences, updatePreference
+- Added 7 hooks to `hooks/useNotifications.ts`: useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead, useNotificationPreferences, useUpdatePreference, useNotificationRealtime
+- `useNotificationRealtime()` — first Supabase Realtime implementation in the codebase; subscribes to postgres_changes INSERT on `notifications` table filtered by user_id, invalidates TanStack Query caches on new events
+- Created `components/notifications/NotificationItem.tsx` — type-specific icons (Award/Trophy/Users/AlertCircle/Bell), relative time display, unread dot indicator, read opacity
+- Created `components/notifications/NotificationBell.tsx` — IconButton + absolute-positioned badge overlay, caps at "99+"
+- Created `app/notifications/index.tsx` — notification center screen with loading/empty/list states, mark-as-read on tap, mark-all-read header button, gear icon → preferences
+- Created `app/settings/notification-preferences.tsx` — 4 category toggles (friends, routes, comps, achievements), opt-out model (missing preference = enabled)
+- Modified `app/(tabs)/index.tsx` — added NotificationBell to home screen header with useUnreadCount + router.push("/notifications")
+- No migration needed — uses existing tables from Step 2.7
+- Test count: +59 unit tests (12 service + 17 hook + 7 NotificationItem + 6 NotificationBell + 9 screen + 7 preferences + 3 home screen = 781 total unit, 392 integration)
 
 ---
 
