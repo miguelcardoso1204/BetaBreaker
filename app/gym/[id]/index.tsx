@@ -202,14 +202,10 @@ export default function GymMainScreen() {
           </View>
         </Card>
 
-        {/* Leaderboards card — Phase 10 feature, shows placeholder alert. */}
+        {/* Leaderboards card — navigates to the gym leaderboard screen
+            where users can see weekly rankings by different scoring models. */}
         <Card
-          onPress={() => {
-            Alert.alert(
-              "Coming Soon",
-              "Leaderboards will be available in a future update."
-            );
-          }}
+          onPress={() => router.push(`/gym/${gymId}/leaderboard` as any)}
           testID="leaderboards-card"
         >
           <View className="flex-row items-center justify-between">

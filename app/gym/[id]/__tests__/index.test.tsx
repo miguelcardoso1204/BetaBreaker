@@ -252,9 +252,9 @@ describe("GymMainScreen", () => {
     expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/routes");
   });
 
-  it("shows coming soon alert for Leaderboards card", () => {
-    // Leaderboards are a Phase 10 feature — not yet implemented.
-    // Pressing the card shows a "Coming Soon" alert as a placeholder.
+  it("navigates to leaderboard screen when Leaderboards card is pressed", () => {
+    // The Leaderboards card navigates to the gym's leaderboard detail
+    // screen where users see weekly rankings by scoring model.
     __mockData.data = mockGym;
 
     render(<GymMainScreen />);
@@ -262,10 +262,7 @@ describe("GymMainScreen", () => {
     const leaderboardsCard = screen.getByText("Leaderboards");
     fireEvent.press(leaderboardsCard);
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      "Coming Soon",
-      expect.any(String)
-    );
+    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/leaderboard");
   });
 
   it("shows coming soon alert for Style Analysis card", () => {

@@ -1994,9 +1994,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 9.2 — Leaderboard Screen
+### Step 9.2 — Leaderboard Screen ✅
 
-**Depends on:** Step 9.1  
+**Depends on:** Step 9.1
 **Relevant requirements:** FR-G1, FR-G4
 
 **What to test:**
@@ -2009,14 +2009,21 @@ Run `supabase db push`, then run test suite against local DB.
 | Video required indicator | Sends above threshold show verification badge |
 | Tap navigates to profile | Tapping user row goes to `social/[userId]` |
 
-**What to implement (`app/(tabs)/social/index.tsx`):**
+**What to implement (`app/gym/[id]/leaderboard.tsx`):**
 
 - Leaderboard list with `useLeaderboard()`.
-- Period tab bar.
-- Scoring model switcher.
-- Video verification indicator per entry.
+- Period chips (This Week / Last Week).
+- Scoring model chips (Grade / Flash Rate / Volume).
+- Video verification indicator deferred to Phase 12 (no `video_required` column).
 
 **Acceptance:** Leaderboard screen renders with seeded data; interactions work.
+
+**Implementation notes:**
+- Created `utils/isoWeek.ts` — ISO week label helpers (getISOWeekLabel, getCurrentISOWeekLabel, getPreviousISOWeekLabel)
+- Created `app/gym/[id]/leaderboard.tsx` — gym leaderboard detail screen with period/model chips, ranked list, current user highlighting, score formatting per model
+- Updated `app/gym/[id]/index.tsx` — Leaderboards card now navigates to `/gym/${gymId}/leaderboard` instead of showing "Coming Soon" alert
+- Updated `app/gym/[id]/__tests__/index.test.tsx` — test verifies `mockPush` instead of `Alert.alert`
+- Tests: +4 isoWeek util, +10 leaderboard screen = +14 new (625 total unit tests)
 
 ---
 
