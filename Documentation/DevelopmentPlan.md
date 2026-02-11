@@ -2100,9 +2100,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 9.5 — Content Reporting & Moderation
+### Step 9.5 — Content Reporting & Moderation ✅
 
-**Depends on:** Phase 2 (Step 2.5), Steps 9.3, 9.4  
+**Depends on:** Phase 2 (Step 2.5), Steps 9.3, 9.4
 **Relevant requirements:** FR-G3, FR-K2, FR-K3
 
 **What to test:**
@@ -2124,6 +2124,12 @@ Run `supabase db push`, then run test suite against local DB.
 - Admin moderation screen: `app/(admin)/moderation.tsx`.
 
 **Acceptance:** Full report → review → resolve cycle tested.
+
+**Implementation notes:**
+- Migration: `20260211160000_admin_moderation_policies.sql` — `is_admin()` helper function + admin SELECT/UPDATE policies on content_reports
+- New files: `services/moderation.service.ts`, `hooks/useModeration.ts`, `components/social/ReportSheet.tsx`, `app/(admin)/_layout.tsx`, `app/(admin)/moderation.tsx`, `app/settings/guidelines.tsx`
+- Modified: `components/social/FeedbackItem.tsx` (added `onReport` prop + Flag icon), `app/gym/[id]/route/[routeId]/index.tsx` (integrated ReportSheet)
+- Tests: +25 new unit tests (6 service, 5 hooks, 5 ReportSheet, 5 moderation screen, 2 guidelines, 1 FeedbackItem, 1 route detail) = 710 total unit tests
 
 ---
 

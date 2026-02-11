@@ -30,7 +30,7 @@
  *   VideoSubmissionsSection: heading + empty state (until Phase 12)
  */
 
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -54,6 +54,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { FeedbackItem } from "@/components/social/FeedbackItem";
 import { FeedbackComposer } from "@/components/social/FeedbackComposer";
+import { ReportSheet } from "@/components/social/ReportSheet";
 import type { RouteStatus } from "@/lib/constants";
 
 /**
@@ -113,6 +114,11 @@ export default function RouteDetailScreen() {
     useCreateFeedback(routeId);
   const { mutate: deleteFeedback } = useDeleteFeedback(routeId);
   const { mutate: voteFeedback } = useVoteFeedback(routeId);
+
+  // ── Report sheet state ────────────────────────────────────────────
+  // Tracks whether the ReportSheet is visible and which feedback ID
+  // is being reported. Set by the Flag button on each FeedbackItem.
+  const [reportTarget, setReportTarget] = useState<string | null>(null);
 
   /**
    * Handle vote button presses on a feedback item.
@@ -302,6 +308,7 @@ export default function RouteDetailScreen() {
               currentUserId={user?.id ?? ""}
               onVote={handleVote}
               onDelete={(feedbackId) => deleteFeedback({ feedbackId })}
+              onReport={(feedbackId) => setReportTarget(feedbackId)}
             />
           ))
         ) : (
@@ -327,6 +334,17 @@ export default function RouteDetailScreen() {
           </Text>
         </View>
       </View>
+
+      {/* ── Report Sheet ──────────────────────────────────────────── */}
+      {/* Slides up when a user taps the Flag icon on a FeedbackItem.
+          The reportTarget state tracks which feedback ID is being reported.
+          Dismissing clears the state, hiding the sheet. */}
+      <ReportSheet
+        visible={reportTarget !== null}
+        onDismiss={() => setReportTarget(null)}
+        targetType="feedback"
+        targetId={reportTarget ?? ""}
+      />
     </ScrollView>
   );
 }

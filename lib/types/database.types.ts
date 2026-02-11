@@ -1274,6 +1274,7 @@ export type Database = {
         }[]
       }
       get_user_role: { Args: { p_gym_id: string }; Returns: string }
+      is_admin: { Args: never; Returns: boolean }
       recompute_streak: { Args: { p_user_id: string }; Returns: undefined }
       role_rank: { Args: { p_role: string }; Returns: number }
       update_challenge_progress: {

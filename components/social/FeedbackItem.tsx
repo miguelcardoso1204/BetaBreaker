@@ -23,7 +23,7 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { ThumbsUp, ThumbsDown, Trash2 } from "lucide-react-native";
+import { ThumbsUp, ThumbsDown, Trash2, Flag } from "lucide-react-native";
 import { Avatar } from "@/components/ui/Avatar";
 
 /**
@@ -54,6 +54,12 @@ export interface FeedbackItemProps {
   onVote: (feedbackId: string, direction: "up" | "down") => void;
   /** Called when the delete button is pressed: (feedbackId) */
   onDelete: (feedbackId: string) => void;
+  /**
+   * Optional callback for reporting this tip. When provided, a flag icon
+   * appears next to the delete button (but only for tips the user didn't
+   * author — you don't report your own content).
+   */
+  onReport?: (feedbackId: string) => void;
 }
 
 /**
@@ -83,6 +89,7 @@ export function FeedbackItem({
   currentUserId,
   onVote,
   onDelete,
+  onReport,
 }: FeedbackItemProps) {
   const { profile } = feedback;
   const isAuthor = feedback.user_id === currentUserId;
@@ -108,6 +115,20 @@ export function FeedbackItem({
         <Text className="text-text-secondary text-xs mr-2">
           {timeAgo(feedback.created_at)}
         </Text>
+        {/* Report button — only visible for tips the user did NOT author.
+            You don't report your own content. The flag icon opens the
+            ReportSheet via the parent's callback. */}
+        {!isAuthor && onReport && (
+          <Pressable
+            testID="report-button"
+            onPress={() => onReport(feedback.id)}
+            accessibilityRole="button"
+            accessibilityLabel="Report tip"
+            className="p-1 mr-1"
+          >
+            <Flag size={16} color="#6B6B80" />
+          </Pressable>
+        )}
         {/* Delete button — only visible when the current user authored this tip.
             The UI hides it for other users' tips; RLS enforces this at the DB
             level as a security boundary. */}

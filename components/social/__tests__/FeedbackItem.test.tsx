@@ -21,6 +21,7 @@ jest.mock("lucide-react-native", () => {
     ThumbsUp: (props: any) => <View testID="icon-thumbs-up" {...props} />,
     ThumbsDown: (props: any) => <View testID="icon-thumbs-down" {...props} />,
     Trash2: (props: any) => <View testID="icon-trash" {...props} />,
+    Flag: (props: any) => <View testID="icon-flag" {...props} />,
   };
 });
 
@@ -141,5 +142,21 @@ describe("FeedbackItem", () => {
     fireEvent.press(screen.getByTestId("delete-button"));
 
     expect(onDelete).toHaveBeenCalledWith("fb-1");
+  });
+
+  it("shows report button for non-author when onReport is provided", () => {
+    // The report flag should appear for other users' tips (not your own).
+    // It only renders when the onReport callback is provided.
+    const onReport = jest.fn();
+    render(
+      <FeedbackItem {...defaultProps} onReport={onReport} />
+    );
+
+    // currentUserId is "user-1", feedback.user_id is "user-2" → not author
+    const reportButton = screen.getByTestId("report-button");
+    expect(reportButton).toBeOnTheScreen();
+
+    fireEvent.press(reportButton);
+    expect(onReport).toHaveBeenCalledWith("fb-1");
   });
 });

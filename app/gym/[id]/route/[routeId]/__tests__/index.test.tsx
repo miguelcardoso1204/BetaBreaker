@@ -101,6 +101,17 @@ jest.mock("@/hooks/useFeedback", () => {
   };
 });
 
+// Mock useModeration — used by ReportSheet which is rendered inside the
+// route detail screen. We mock it to prevent actual service calls.
+const mockCreateReport = jest.fn();
+jest.mock("@/hooks/useModeration", () => ({
+  useCreateReport: () => ({
+    mutate: mockCreateReport,
+    isPending: false,
+    isSuccess: false,
+  }),
+}));
+
 // Mock grades utility — return a controlled display string so we can
 // verify the screen formats grades correctly without testing the grade
 // conversion logic (that has its own tests in utils/__tests__/grades.test.ts).
@@ -120,6 +131,7 @@ jest.mock("lucide-react-native", () => {
     ThumbsDown: (props: any) => <View testID="icon-thumbs-down" {...props} />,
     Trash2: (props: any) => <View testID="icon-trash" {...props} />,
     Send: (props: any) => <View testID="icon-send" {...props} />,
+    Flag: (props: any) => <View testID="icon-flag" {...props} />,
   };
 });
 
@@ -375,5 +387,27 @@ describe("RouteDetailScreen", () => {
     expect(
       screen.getByText("No beta tips yet — share your knowledge!")
     ).toBeOnTheScreen();
+  });
+
+  it("shows report button on other users' feedback items", () => {
+    // Feedback items authored by other users should show a Flag icon
+    // for reporting. The current user is "user-1" (from the auth mock),
+    // so feedback by "user-2" should show the report button.
+    __mockData.data = mockRoute;
+    __mockFeedbackData.feedback = [
+      {
+        id: "fb-1",
+        route_id: "route-1",
+        user_id: "user-2",
+        body: "Some tip",
+        score: 0,
+        created_at: "2026-02-10T00:00:00Z",
+        profile: { display_name: "Other User", avatar_url: null },
+      },
+    ];
+
+    render(<RouteDetailScreen />);
+
+    expect(screen.getByTestId("report-button")).toBeOnTheScreen();
   });
 });
