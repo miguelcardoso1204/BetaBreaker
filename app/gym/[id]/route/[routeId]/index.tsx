@@ -41,10 +41,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Star } from "lucide-react-native";
 import { useRouteDetail } from "@/hooks/useRoutes";
 import { useIsFavorite, useToggleFavorite } from "@/hooks/useSavedRoutes";
+import {
+  useRouteFeedback,
+  useCreateFeedback,
+  useDeleteFeedback,
+  useVoteFeedback,
+} from "@/hooks/useFeedback";
+import { useAuth } from "@/hooks/useAuth";
 import { canonicalToDisplay } from "@/utils/grades";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { FeedbackItem } from "@/components/social/FeedbackItem";
+import { FeedbackComposer } from "@/components/social/FeedbackComposer";
 import type { RouteStatus } from "@/lib/constants";
 
 /**
@@ -95,6 +104,33 @@ export default function RouteDetailScreen() {
   // Favorite state: whether the star icon should be filled or outlined.
   const { isFavorite } = useIsFavorite(routeId);
   const { mutate: toggleFavorite } = useToggleFavorite(routeId);
+
+  // Beta tips (feedback) — text-based climbing advice from the community.
+  // useRouteFeedback fetches tips + the current user's votes in one query.
+  const { user } = useAuth();
+  const { feedback, userVotes } = useRouteFeedback(routeId);
+  const { mutate: createFeedback, isPending: isCreating } =
+    useCreateFeedback(routeId);
+  const { mutate: deleteFeedback } = useDeleteFeedback(routeId);
+  const { mutate: voteFeedback } = useVoteFeedback(routeId);
+
+  /**
+   * Handle vote button presses on a feedback item.
+   *
+   * If the user taps the same vote direction they already have active,
+   * it's a toggle-off (unvote). Otherwise it's a new vote or direction switch.
+   * The hook's mutation handles the actual service call.
+   */
+  function handleVote(feedbackId: string, direction: "up" | "down") {
+    const currentVote = userVotes[feedbackId];
+    if (currentVote === direction) {
+      // Tapping the same button again → remove the vote
+      voteFeedback({ feedbackId, direction: null });
+    } else {
+      // New vote or switching direction
+      voteFeedback({ feedbackId, direction });
+    }
+  }
 
   // ── Loading state ──────────────────────────────────────────────
   if (isLoading) {
@@ -239,12 +275,48 @@ export default function RouteDetailScreen() {
         />
       </View>
 
+      {/* ── Beta Tips Section ──────────────────────────────────────── */}
+      {/* Text-based climbing tips from the community. Users can post
+          tips and upvote/downvote to surface the best advice. The list
+          is sorted by score descending (best tips first). */}
+      <View className="px-4 mb-4">
+        <Text className="text-lg font-bold text-text-primary mb-2">
+          Beta Tips{feedback.length > 0 ? ` (${feedback.length})` : ""}
+        </Text>
+
+        {/* Composer — authenticated users can submit new tips */}
+        {user && (
+          <FeedbackComposer
+            onSubmit={(body) => createFeedback({ body })}
+            isSubmitting={isCreating}
+          />
+        )}
+
+        {/* Tip list or empty state */}
+        {feedback.length > 0 ? (
+          feedback.map((item: any) => (
+            <FeedbackItem
+              key={item.id}
+              feedback={item}
+              userVote={userVotes[item.id] ?? null}
+              currentUserId={user?.id ?? ""}
+              onVote={handleVote}
+              onDelete={(feedbackId) => deleteFeedback({ feedbackId })}
+            />
+          ))
+        ) : (
+          <View className="items-center py-8" testID="empty-feedback">
+            <Text className="text-text-secondary text-center">
+              No beta tips yet — share your knowledge!
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* ── Video Submissions Section ────────────────────────────── */}
-      {/* Beta videos are short clips showing how to climb a route
-          ("beta" is climbing slang for route information/technique).
-          The beta_videos table doesn't exist yet (Phase 12), so we
-          render the section heading and an empty state message.
-          Phase 12 will replace this with a FlatList of video thumbnails. */}
+      {/* Beta videos are short clips showing how to climb a route.
+          The route_media table and Storage integration come in Phase 12,
+          so we render the section heading and an empty state message. */}
       <View className="px-4 mb-4">
         <Text className="text-lg font-bold text-text-primary mb-2">
           Video Submissions

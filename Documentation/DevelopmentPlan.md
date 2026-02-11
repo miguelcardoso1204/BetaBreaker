@@ -2027,9 +2027,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 9.3 — Beta Tips & Route Feedback
+### Step 9.3 — Beta Tips & Route Feedback ✅
 
-**Depends on:** Phase 4 (route detail)  
+**Depends on:** Phase 4 (route detail)
 **Relevant requirements:** FR-G2, FR-C6
 
 **What to test:**
@@ -2052,11 +2052,21 @@ Run `supabase db push`, then run test suite against local DB.
 
 **Acceptance:** Full feedback flow works end-to-end.
 
+**Implementation notes:**
+- Created `services/feedback.service.ts` — thin Supabase wrapper for route_feedback + route_feedback_votes tables (getRouteFeedback, getUserVotes, createFeedback, deleteFeedback, vote, unvote)
+- Created `hooks/useFeedback.ts` — TanStack Query wrappers (useRouteFeedback, useCreateFeedback, useDeleteFeedback, useVoteFeedback)
+- Created `components/social/FeedbackItem.tsx` — presentational card with avatar, body, vote buttons (ThumbsUp/ThumbsDown with color highlighting), delete button for authors
+- Created `components/social/FeedbackComposer.tsx` — TextInput + Send button form for submitting new tips
+- Updated `app/gym/[id]/route/[routeId]/index.tsx` — added Beta Tips section with composer, tip list, empty state; kept Video Submissions section below
+- Vote pattern: delete-then-insert for upsert behavior; score recalculated on refetch via query invalidation
+- Videos deferred to Phase 12 (Storage integration); tags already handled on ascent form
+- Tests: +8 service, +6 hooks, +7 FeedbackItem, +4 FeedbackComposer, +4 route detail = +29 new (654 total unit tests)
+
 ---
 
-### Step 9.4 — Follow System & Activity Feed
+### Step 9.4 — Follow System & Activity Feed ✅
 
-**Depends on:** Phase 2 (Step 2.5), Phase 3  
+**Depends on:** Phase 2 (Step 2.5), Phase 3
 **Relevant requirements:** FR-G5
 
 **What to test:**
@@ -2077,6 +2087,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Follow/unfollow button on user profiles.
 
 **Acceptance:** Follow flow works; feed populates with followed users' activity.
+
+**Implementation notes:**
+- Created: `services/social.service.ts` (follow, unfollow, isFollowing, getFollowCounts, getFollowing, getActivityFeed)
+- Created: `hooks/useSocial.ts` (useIsFollowing, useToggleFollow, useFollowCounts, useActivityFeed)
+- Created: `components/social/FollowButton.tsx` (self-contained toggle button)
+- Created: `components/social/FeedItem.tsx` (presentational activity feed item)
+- Created: `app/profile/[userId].tsx` (other user profile screen — avatar, name, follow button, counts)
+- Updated: `app/(tabs)/index.tsx` (replaced placeholder with activity feed)
+- +31 unit tests (8 service + 7 hooks + 4 FollowButton + 3 FeedItem + 5 profile + 4 home tab) = 685 total unit tests
+- No new migration needed — `follows` table already exists from migration `20260206050000_social_community.sql`
 
 ---
 

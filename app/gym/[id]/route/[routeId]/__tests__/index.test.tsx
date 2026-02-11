@@ -62,6 +62,45 @@ jest.mock("@/hooks/useSavedRoutes", () => ({
   }),
 }));
 
+// Mock useAuth — provide user for feedback features.
+jest.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({
+    user: { id: "user-1" },
+    session: { user: { id: "user-1" } },
+    isAuthenticated: true,
+  }),
+}));
+
+// Mock useFeedback — control beta tips data and capture mutation calls.
+// Uses __mockFeedbackData so tests can mutate the feedback state.
+const mockCreateFeedback = jest.fn();
+const mockDeleteFeedback = jest.fn();
+const mockVoteFeedback = jest.fn();
+jest.mock("@/hooks/useFeedback", () => {
+  const mockFeedbackData = {
+    feedback: [] as any[],
+    userVotes: {} as Record<string, string>,
+  };
+  return {
+    useRouteFeedback: () => ({
+      ...mockFeedbackData,
+      isLoading: false,
+      error: null,
+    }),
+    useCreateFeedback: () => ({
+      mutate: mockCreateFeedback,
+      isPending: false,
+    }),
+    useDeleteFeedback: () => ({
+      mutate: mockDeleteFeedback,
+    }),
+    useVoteFeedback: () => ({
+      mutate: mockVoteFeedback,
+    }),
+    __mockFeedbackData: mockFeedbackData,
+  };
+});
+
 // Mock grades utility — return a controlled display string so we can
 // verify the screen formats grades correctly without testing the grade
 // conversion logic (that has its own tests in utils/__tests__/grades.test.ts).
@@ -77,6 +116,18 @@ jest.mock("lucide-react-native", () => {
   return {
     Star: (props: any) => <View testID="icon-star" {...props} />,
     ArrowLeft: (props: any) => <View testID="icon-arrow-left" {...props} />,
+    ThumbsUp: (props: any) => <View testID="icon-thumbs-up" {...props} />,
+    ThumbsDown: (props: any) => <View testID="icon-thumbs-down" {...props} />,
+    Trash2: (props: any) => <View testID="icon-trash" {...props} />,
+    Send: (props: any) => <View testID="icon-send" {...props} />,
+  };
+});
+
+// Mock expo-image — native module unavailable in Jest
+jest.mock("expo-image", () => {
+  const { View } = require("react-native");
+  return {
+    Image: (props: any) => <View testID="expo-image" {...props} />,
   };
 });
 
@@ -93,6 +144,13 @@ const { __mockData } = jest.requireMock<{
     error: Error | null;
   };
 }>("@/hooks/useRoutes");
+
+const { __mockFeedbackData } = jest.requireMock<{
+  __mockFeedbackData: {
+    feedback: any[];
+    userVotes: Record<string, string>;
+  };
+}>("@/hooks/useFeedback");
 
 // ── Fixtures ─────────────────────────────────────────────────────
 
@@ -120,6 +178,8 @@ function resetMockData() {
   __mockData.data = null;
   __mockData.isLoading = false;
   __mockData.error = null;
+  __mockFeedbackData.feedback = [];
+  __mockFeedbackData.userVotes = {};
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -255,5 +315,65 @@ describe("RouteDetailScreen", () => {
     render(<RouteDetailScreen />);
 
     expect(screen.queryByTestId("status-banner")).toBeNull();
+  });
+
+  // ── Beta Tips section ──────────────────────────────────────────
+
+  it("shows Beta Tips section heading", () => {
+    // The Beta Tips section should always appear on route detail
+    // when data is loaded, even if there are no tips yet.
+    __mockData.data = mockRoute;
+
+    render(<RouteDetailScreen />);
+
+    expect(screen.getByText("Beta Tips")).toBeOnTheScreen();
+  });
+
+  it("shows FeedbackComposer", () => {
+    // Authenticated users should see the tip submission form.
+    __mockData.data = mockRoute;
+
+    render(<RouteDetailScreen />);
+
+    expect(
+      screen.getByPlaceholderText("Share a tip for this route...")
+    ).toBeOnTheScreen();
+  });
+
+  it("renders feedback items when data exists", () => {
+    // When tips exist, the screen should render each one as a
+    // FeedbackItem component showing the author and body text.
+    __mockData.data = mockRoute;
+    __mockFeedbackData.feedback = [
+      {
+        id: "fb-1",
+        route_id: "route-1",
+        user_id: "user-2",
+        body: "Start with left hand on the jug",
+        score: 3,
+        created_at: "2026-02-10T00:00:00Z",
+        profile: { display_name: "Alex", avatar_url: null },
+      },
+    ];
+
+    render(<RouteDetailScreen />);
+
+    expect(
+      screen.getByText("Start with left hand on the jug")
+    ).toBeOnTheScreen();
+    expect(screen.getByText("Beta Tips (1)")).toBeOnTheScreen();
+  });
+
+  it("shows empty state when no feedback", () => {
+    // When there are no tips yet, show an encouraging empty state
+    // message instead of a blank space.
+    __mockData.data = mockRoute;
+    __mockFeedbackData.feedback = [];
+
+    render(<RouteDetailScreen />);
+
+    expect(
+      screen.getByText("No beta tips yet — share your knowledge!")
+    ).toBeOnTheScreen();
   });
 });
