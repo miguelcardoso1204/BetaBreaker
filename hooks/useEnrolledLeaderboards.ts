@@ -1,22 +1,32 @@
-// hooks/useEnrolledLeaderboards.ts
-//
-// Stub hook for the Leaderboards tab. Returns an empty array so the screen
-// renders its empty state in practice. Phase 9 (Gamification) will replace
-// this with a real TanStack Query hook that fetches from leaderboard_entries.
-//
-// WHY A STUB?
-// The Leaderboards tab needs to render now (Phase 4), but the leaderboard
-// service/hook that queries the DB won't be built until Phase 9. By creating
-// this stub with the correct return shape, the screen can be fully tested
-// and functional — it just always shows the empty state until Phase 9 wires
-// up the real data fetching.
+/**
+ * Enrolled Leaderboards Hook — TanStack Query Wrapper for User Standings
+ *
+ * Fetches the current user's leaderboard standings across all gyms they've
+ * competed at. Returns enriched data including gym names and total participant
+ * counts by calling the get_enrolled_leaderboards() Postgres function via RPC.
+ *
+ * QUERY KEY: ["leaderboards", "enrolled", userId]
+ *
+ * Why include userId in the key?
+ * Different users see different leaderboard standings. Including userId ensures
+ * TanStack Query maintains separate caches per user, which matters if the app
+ * ever supports account switching.
+ *
+ * The query is disabled when userId is undefined (user not logged in), which
+ * prevents firing an RPC call with a null parameter.
+ */
+
+import { useQuery } from "@tanstack/react-query";
+import { leaderboardService } from "@/services/leaderboard.service";
 
 /**
  * Shape of a single leaderboard entry displayed on the Leaderboards tab.
- * Each entry represents the user's standing at one gym for a given period.
+ * Each entry represents the user's standing at one gym for a given period
+ * and scoring model.
  *
- * Phase 9 will use this same interface when querying leaderboard_entries
- * joined with gyms to get the gym_name.
+ * This interface matches the return type of get_enrolled_leaderboards() —
+ * the Postgres function that joins leaderboard_entries with gyms and computes
+ * participant counts.
  */
 export interface EnrolledLeaderboard {
   /** Unique identifier for this leaderboard entry */
@@ -27,6 +37,8 @@ export interface EnrolledLeaderboard {
   gym_name: string;
   /** ISO week period string, e.g. "2026-W06" */
   period: string;
+  /** Which scoring model this entry uses */
+  scoring_model: string;
   /** User's rank position in this leaderboard (1 = first place) */
   rank: number;
   /** User's total score for this period */
@@ -36,16 +48,21 @@ export interface EnrolledLeaderboard {
 }
 
 /**
- * Stub hook — always returns empty data.
+ * Fetch the current user's enrolled leaderboard standings.
  *
- * The return shape matches what TanStack Query's useQuery returns
- * (data, isLoading, error) so the screen code won't need to change
- * when Phase 9 swaps in the real implementation.
+ * @param userId - The UUID of the current user, or undefined if not logged in
  */
-export function useEnrolledLeaderboards() {
-  return {
-    data: [] as EnrolledLeaderboard[],
-    isLoading: false,
-    error: null,
-  };
+export function useEnrolledLeaderboards(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["leaderboards", "enrolled", userId],
+    queryFn: async () => {
+      // userId is guaranteed non-undefined here because enabled: !!userId
+      // prevents this from running when userId is falsy.
+      const result = await leaderboardService.getEnrolledLeaderboards(userId!);
+      if (result.error) throw result.error;
+      return result.data as EnrolledLeaderboard[];
+    },
+    // Don't fetch until we have a userId — prevents RPC call with null param
+    enabled: !!userId,
+  });
 }

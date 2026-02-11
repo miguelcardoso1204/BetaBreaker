@@ -849,7 +849,7 @@ describe('Leaderboard', () => {
 
       const result = await client.query(
         `SELECT user_id, score, rank FROM leaderboard_entries
-         WHERE gym_id = $1 AND user_id = $2`,
+         WHERE gym_id = $1 AND user_id = $2 AND scoring_model = 'hardest_grade'`,
         [gymId, userId]
       );
       expect(result.rows).toHaveLength(1);
@@ -880,7 +880,7 @@ describe('Leaderboard', () => {
 
       const result = await client.query(
         `SELECT user_id, score, rank FROM leaderboard_entries
-         WHERE gym_id = $1
+         WHERE gym_id = $1 AND scoring_model = 'hardest_grade'
          ORDER BY rank ASC, score DESC`,
         [gymId]
       );
@@ -921,7 +921,7 @@ describe('Leaderboard', () => {
       // Leaderboard should show score 15 (hardest grade)
       let result = await client.query(
         `SELECT score FROM leaderboard_entries
-         WHERE gym_id = $1 AND user_id = $2`,
+         WHERE gym_id = $1 AND user_id = $2 AND scoring_model = 'hardest_grade'`,
         [gymId, userId]
       );
       expect(Number(result.rows[0].score)).toBe(15);
@@ -934,7 +934,7 @@ describe('Leaderboard', () => {
 
       result = await client.query(
         `SELECT score FROM leaderboard_entries
-         WHERE gym_id = $1 AND user_id = $2`,
+         WHERE gym_id = $1 AND user_id = $2 AND scoring_model = 'hardest_grade'`,
         [gymId, userId]
       );
       expect(Number(result.rows[0].score)).toBe(5);

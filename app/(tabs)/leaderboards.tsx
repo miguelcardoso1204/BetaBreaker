@@ -27,6 +27,7 @@ import {
 } from "react-native";
 
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useEnrolledLeaderboards,
   EnrolledLeaderboard,
@@ -46,7 +47,10 @@ function formatScore(score: number): string {
 
 export default function LeaderboardsScreen() {
   const router = useRouter();
-  const { data, isLoading } = useEnrolledLeaderboards();
+  // Get the current user's ID to pass to useEnrolledLeaderboards.
+  // The hook is disabled when user is null (not logged in).
+  const { user } = useAuth();
+  const { data, isLoading } = useEnrolledLeaderboards(user?.id);
 
   // ── Loading state ─────────────────────────────────────────────
   // Show a centered spinner while data is being fetched.

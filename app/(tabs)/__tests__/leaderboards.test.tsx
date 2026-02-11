@@ -7,12 +7,14 @@
  * leaderboard detail for that gym.
  *
  * This screen integrates:
- *   - useEnrolledLeaderboards() stub hook (Phase 9 adds real TanStack Query)
+ *   - useAuth() for the current user's ID
+ *   - useEnrolledLeaderboards(userId) for fetching leaderboard data
  *   - expo-router for card → gym leaderboard navigation
  *   - Button component for "Find Gyms" CTA in empty state
  *
  * Mock strategy (matching map.test.tsx __mockData pattern):
  *   - @/hooks/useEnrolledLeaderboards: __mockData pattern (array data)
+ *   - @/hooks/useAuth: returns { user: { id: 'test-user-id' } }
  *   - expo-router: useRouter returns { push: mockPush }
  *   - lucide-react-native: Trophy/ChevronRight as simple Views with testIDs
  *   - expo-image: Image as View with testID
@@ -23,8 +25,9 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 
 // ── Mocks ────────────────────────────────────────────────────────
 
-// Mock useEnrolledLeaderboards — control leaderboard data via __mockData.
-// The stub hook returns empty data in production, but tests override it.
+// Track what userId is passed to useEnrolledLeaderboards.
+// The hook now requires a userId parameter (from useAuth).
+const mockUseEnrolledLeaderboards = jest.fn();
 jest.mock("@/hooks/useEnrolledLeaderboards", () => {
   const mockData = {
     data: [] as any[],
@@ -32,10 +35,25 @@ jest.mock("@/hooks/useEnrolledLeaderboards", () => {
     error: null as Error | null,
   };
   return {
-    useEnrolledLeaderboards: () => mockData,
+    useEnrolledLeaderboards: (...args: any[]) => {
+      mockUseEnrolledLeaderboards(...args);
+      return mockData;
+    },
     __mockData: mockData,
   };
 });
+
+// Mock useAuth — provides the current user context to the screen.
+// The screen passes user.id to useEnrolledLeaderboards.
+jest.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({
+    user: { id: "test-user-id" },
+    session: {},
+    isLoading: false,
+    isAuthenticated: true,
+    role: "climber",
+  }),
+}));
 
 // Mock expo-router — useRouter returns push for card tap navigation.
 const mockPush = jest.fn();
@@ -185,5 +203,16 @@ describe("LeaderboardsScreen", () => {
     fireEvent.press(screen.getByText("Summit Climbing Gym"));
 
     expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/leaderboard");
+  });
+
+  // ── 5. Passes userId from useAuth to useEnrolledLeaderboards ────
+
+  it("passes userId from useAuth to useEnrolledLeaderboards", () => {
+    // The screen should get the user's ID from useAuth() and pass it
+    // to useEnrolledLeaderboards(userId) for personalized data.
+    render(<LeaderboardsScreen />);
+
+    // Verify the hook was called with the mocked user's ID
+    expect(mockUseEnrolledLeaderboards).toHaveBeenCalledWith("test-user-id");
   });
 });

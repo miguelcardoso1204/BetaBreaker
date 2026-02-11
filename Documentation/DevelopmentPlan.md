@@ -1960,9 +1960,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 9 — Social & Leaderboards
 
-### Step 9.1 — Leaderboard Service & Hook
+### Step 9.1 — Leaderboard Service & Hook ✅
 
-**Depends on:** Phase 2 (Step 2.4), Phase 5  
+**Depends on:** Phase 2 (Step 2.4), Phase 5
 **Relevant requirements:** FR-G1
 
 **What to test:**
@@ -1981,6 +1981,16 @@ Run `supabase db push`, then run test suite against local DB.
 - `hooks/useLeaderboard.ts`: TanStack Query wrapper.
 
 **Acceptance:** Leaderboard service returns correctly ranked data.
+
+**Implementation notes:**
+- Created migration `20260211150000_leaderboard_scoring_models.sql`: added `scoring_model` column to `leaderboard_entries` with CHECK constraint, updated UNIQUE constraint and index to include scoring_model, extended `compute_leaderboard()` with 3 scoring models (hardest_grade, flash_rate, volume), updated `on_ascent_insert()`/`on_ascent_delete()` triggers to compute all 3 models, created `get_enrolled_leaderboards()` RPC function
+- Created `services/leaderboard.service.ts` — getLeaderboard (PostgREST with model filter) and getEnrolledLeaderboards (RPC)
+- Updated `hooks/useLeaderboard.ts` to use leaderboardService with optional `model` parameter, updated query key to include model
+- Replaced stub `hooks/useEnrolledLeaderboards.ts` with real TanStack Query hook taking `userId` parameter
+- Updated `app/(tabs)/leaderboards.tsx` to pass `user.id` from `useAuth()` to `useEnrolledLeaderboards(userId)`
+- Updated 00003 integration tests to filter by `scoring_model = 'hardest_grade'` (backward compat)
+- Tests: +20 integration (00012), +5 service, +2 useLeaderboard, +4 useEnrolledLeaderboards, +1 screen = **+32 tests**
+- Totals: 611 unit tests, 376 integration tests (excluding edge function)
 
 ---
 

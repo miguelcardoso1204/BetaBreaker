@@ -479,6 +479,7 @@ export type Database = {
           period: string
           rank: number
           score: number
+          scoring_model: string
           updated_at: string
           user_id: string
         }
@@ -488,6 +489,7 @@ export type Database = {
           period: string
           rank?: number
           score?: number
+          scoring_model?: string
           updated_at?: string
           user_id: string
         }
@@ -497,6 +499,7 @@ export type Database = {
           period?: string
           rank?: number
           score?: number
+          scoring_model?: string
           updated_at?: string
           user_id?: string
         }
@@ -1237,14 +1240,38 @@ export type Database = {
         Args: { p_route_id: string }
         Returns: undefined
       }
-      compute_leaderboard: {
-        Args: {
-          p_gym_id: string
-          p_period_end: string
-          p_period_label: string
-          p_period_start: string
-        }
-        Returns: undefined
+      compute_leaderboard:
+        | {
+            Args: {
+              p_gym_id: string
+              p_period_end: string
+              p_period_label: string
+              p_period_start: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_gym_id: string
+              p_period_end: string
+              p_period_label: string
+              p_period_start: string
+              p_scoring_model?: string
+            }
+            Returns: undefined
+          }
+      get_enrolled_leaderboards: {
+        Args: { p_user_id: string }
+        Returns: {
+          gym_id: string
+          gym_name: string
+          id: string
+          period: string
+          rank: number
+          score: number
+          scoring_model: string
+          total_participants: number
+        }[]
       }
       get_user_role: { Args: { p_gym_id: string }; Returns: string }
       recompute_streak: { Args: { p_user_id: string }; Returns: undefined }
