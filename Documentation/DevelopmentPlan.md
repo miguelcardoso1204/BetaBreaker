@@ -2165,9 +2165,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 10.2 — Push Dispatch Edge Function
+### Step 10.2 — Push Dispatch Edge Function ✅
 
-**Depends on:** Step 10.1, Phase 2 (Step 2.7)  
+**Depends on:** Step 10.1, Phase 2 (Step 2.7)
 **Relevant requirements:** FR-J1
 
 **What to test:**
@@ -2188,6 +2188,16 @@ Run `supabase db push`, then run test suite against local DB.
 - Log dispatch status.
 
 **Acceptance:** Edge function integration tests pass.
+
+**Implementation notes (Step 10.2):**
+- Created `supabase/functions/dispatch-push/index.ts` — service-role-only Edge Function that persists notification, checks preferences, fetches tokens, sends via Expo Push API
+- Created `supabase/__tests__/00013_push_dispatch.test.ts` — 8 integration tests (persistent data pattern, service-role auth)
+- No migration needed — uses existing `notifications`, `push_tokens`, `notification_preferences` tables from Step 2.7
+- Type→category mapping: `friend_send→friends`, `route_retirement→routes`, `comp_update→comps`, `rank_change/badge_earned→achievements`, `general→always send`
+- Opt-out model: no preference row = enabled; row with `enabled=false` = muted
+- Notification row always created (even if push skipped) — powers in-app notification center (Step 10.3)
+- Expo Push API failures are non-fatal (fire-and-forget)
+- Test count: +8 integration tests (392 total integration, 710 unit)
 
 ---
 
