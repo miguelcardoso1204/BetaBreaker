@@ -2135,9 +2135,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 10 — Notifications
 
-### Step 10.1 — Push Token Registration
+### Step 10.1 — Push Token Registration ✅
 
-**Depends on:** Phase 3 (auth), Phase 2 (Step 2.7)  
+**Depends on:** Phase 3 (auth), Phase 2 (Step 2.7)
 **Relevant requirements:** FR-J1
 
 **What to test:**
@@ -2155,6 +2155,13 @@ Run `supabase db push`, then run test suite against local DB.
 - `services/notifications.service.ts`: `registerPushToken()`, `unregisterPushToken()`
 
 **Acceptance:** Push token appears in DB after app launch.
+
+**Implementation notes:**
+- Created `services/notifications.service.ts` — registerPushToken (no RETURNING), unregisterPushToken, getPushTokens
+- Created `hooks/useNotifications.ts` — TanStack Query wrappers: useRegisterPushToken, useUnregisterPushToken, usePushTokens
+- Created `hooks/usePushTokenRegistration.ts` — useEffect side-effect hook: requests permissions → gets Expo push token → persists via service. Fire-and-forget with graceful error handling.
+- Added `PushTokenManager` invisible component to `app/_layout.tsx` (same pattern as SyncManager)
+- +12 unit tests (4 service + 4 hooks + 4 registration hook); 722 total unit tests
 
 ---
 

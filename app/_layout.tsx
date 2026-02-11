@@ -37,6 +37,7 @@ import "react-native-reanimated";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { usePushTokenRegistration } from "@/hooks/usePushTokenRegistration";
 import { useColorScheme } from "@/components/useColorScheme";
 import { queryClient } from "@/lib/queryClient";
 import { useOfflineStore } from "@/stores/offlineStore";
@@ -147,6 +148,22 @@ function SyncManager() {
 }
 
 /**
+ * PushTokenManager — invisible component that handles push token registration.
+ *
+ * On mount (when the user is authenticated), this requests notification
+ * permissions and persists the device's Expo push token in the DB. This
+ * is a fire-and-forget operation — if it fails, the app continues normally
+ * without push notifications.
+ *
+ * Same pattern as SyncManager: a separate component to isolate the side
+ * effect and prevent unnecessary re-renders of the layout tree.
+ */
+function PushTokenManager() {
+  usePushTokenRegistration();
+  return null;
+}
+
+/**
  * RootLayout — the default export that Expo Router mounts as the root.
  *
  * This wraps the entire app in providers and handles font loading.
@@ -204,6 +221,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SyncManager />
+      <PushTokenManager />
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <AuthGate />
       </ThemeProvider>

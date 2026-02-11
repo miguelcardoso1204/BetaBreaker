@@ -24,6 +24,17 @@ jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => mockAuthState,
 }));
 
+// usePushTokenRegistration runs push token registration on mount.
+// Mock it as a no-op so AuthGate tests don't trigger real notification
+// permission requests or Expo push token fetches.
+jest.mock("@/hooks/usePushTokenRegistration", () => ({
+  usePushTokenRegistration: () => ({
+    permissionStatus: null,
+    token: null,
+    error: null,
+  }),
+}));
+
 // Track router.replace calls to verify navigation behavior
 const mockReplace = jest.fn();
 
