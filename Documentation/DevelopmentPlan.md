@@ -2241,9 +2241,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 11 — Competitions & Events
 
-### Step 11.1 — Event CRUD (Admin)
+### Step 11.1 — Event CRUD (Admin) ✅
 
-**Depends on:** Phase 4 (routes), Phase 2 (Step 2.6)  
+**Depends on:** Phase 4 (routes), Phase 2 (Step 2.6)
 **Relevant requirements:** FR-H1
 
 **What to test:**
@@ -2263,6 +2263,14 @@ Run `supabase db push`, then run test suite against local DB.
 - `app/(admin)/events/` screens: list, create, edit.
 
 **Acceptance:** Admin can manage events end-to-end.
+
+**Implementation notes:**
+- `services/events.service.ts` — 11 methods covering events, event_routes, event_categories CRUD. No RETURNING on INSERTs (RLS gotcha pattern).
+- `hooks/useEvents.ts` — 11 TanStack Query hooks (4 queries + 7 mutations) with cache invalidation. camelCase → snake_case transform at hook boundary.
+- `app/(admin)/events/index.tsx` — FlatList of events with status badges, scoring model labels, date ranges. Create button navigates to form.
+- `app/(admin)/events/create.tsx` — Form with name, scoring model chips, date inputs. Defaults to draft status.
+- `app/(admin)/events/[id].tsx` — Edit screen with 3 sections: event info (name/status), linked routes (with remove), categories (with add/remove). Delete event button.
+- 44 new unit tests: 12 service, 12 hook, 6 list screen, 6 create screen, 8 edit screen. Total unit tests: 825.
 
 ---
 
