@@ -37,8 +37,8 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { useLocalSearchParams } from "expo-router";
-import { CheckCircle, Clock, Trophy } from "lucide-react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { CheckCircle, Clock, Trophy, BarChart3 } from "lucide-react-native";
 
 import { useEvent, useEventRoutes } from "@/hooks/useEvents";
 import { useUserEventScores, useCreateScore } from "@/hooks/useScores";
@@ -53,6 +53,7 @@ const SCORING_LABELS: Record<string, string> = {
 
 export default function EventDetailScreen() {
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
 
   // ── Data fetching ──────────────────────────────────────────────────
   const { event, isLoading, error } = useEvent(eventId);
@@ -157,6 +158,15 @@ export default function EventDetailScreen() {
           {new Date(event.start_date).toLocaleDateString()} –{" "}
           {new Date(event.end_date).toLocaleDateString()}
         </Text>
+
+        {/* Scoreboard link — navigates to the live ranked scoreboard */}
+        <Pressable
+          onPress={() => router.push(`/events/${event.id}/scoreboard` as any)}
+          className="flex-row items-center gap-2 mt-3 bg-accent/20 px-4 py-3 rounded-lg"
+        >
+          <BarChart3 size={18} color="#7C3AED" strokeWidth={2} />
+          <Text className="text-accent font-medium">Scoreboard</Text>
+        </Pressable>
       </View>
 
       {/* ── Routes List ──────────────────────────────────────────── */}

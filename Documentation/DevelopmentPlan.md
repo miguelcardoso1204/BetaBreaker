@@ -2298,9 +2298,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 11.3 — Live Scoreboard
+### Step 11.3 — Live Scoreboard ✅
 
-**Depends on:** Step 11.2  
+**Depends on:** Step 11.2
 **Relevant requirements:** FR-H3
 
 **What to test:**
@@ -2319,6 +2319,13 @@ Run `supabase db push`, then run test suite against local DB.
 - Scoreboard screen with auto-updating FlatList.
 
 **Acceptance:** Adding a score via one device updates the scoreboard on another in <2s.
+
+**Implementation notes (Step 11.3):**
+- Files created: `utils/competitionScoring.ts` (aggregateScores, rankCompetitionEntries, formatCompetitionScore), `hooks/useScoreboardRealtime.ts` (Realtime subscription), `app/events/[id]/scoreboard.tsx` (scoreboard screen)
+- Files modified: `app/events/[id].tsx` (added Scoreboard navigation button)
+- Test files: `utils/__tests__/competitionScoring.test.ts` (14 tests), `hooks/__tests__/useScoreboardRealtime.test.tsx` (5 tests), `app/events/__tests__/scoreboard.test.tsx` (8 tests), `app/events/__tests__/[id].test.tsx` (+2 tests = 10 total)
+- New unit tests: 29 (total: 891)
+- Key decisions: Client-side aggregation (SUM + rank) via reuse of rankLeaderboard(); Realtime wildcard event (*) for INSERT/UPDATE/DELETE; category pre-filter before aggregation; no new migration needed
 
 ---
 

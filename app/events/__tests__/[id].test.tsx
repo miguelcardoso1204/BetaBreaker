@@ -17,9 +17,10 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react-nativ
 
 // ── Mock expo-router ────────────────────────────────────────────────
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "event-1" }),
-  useRouter: () => ({ back: mockBack }),
+  useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
 
 // ── Mock useAuth ────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ jest.mock("lucide-react-native", () => {
     Clock: (props: any) => <Text testID="icon-clock" {...props}>Clock</Text>,
     Trophy: (props: any) => <Text testID="icon-trophy" {...props}>Trophy</Text>,
     Send: (props: any) => <Text testID="icon-send" {...props}>Send</Text>,
+    BarChart3: (props: any) => <Text testID="icon-barchart" {...props}>BarChart</Text>,
   };
 });
 
@@ -223,5 +225,25 @@ describe("EventDetailScreen (Athlete)", () => {
       }),
       expect.anything()
     );
+  });
+
+  // ── Scoreboard button tests ────────────────────────────────────────
+
+  it("renders a Scoreboard button when event is loaded", () => {
+    mockEventData.event = mockEvent;
+
+    render(<EventDetailScreen />);
+
+    expect(screen.getByText("Scoreboard")).toBeOnTheScreen();
+  });
+
+  it("navigates to scoreboard screen on Scoreboard button press", () => {
+    mockEventData.event = mockEvent;
+
+    render(<EventDetailScreen />);
+
+    fireEvent.press(screen.getByText("Scoreboard"));
+
+    expect(mockPush).toHaveBeenCalledWith("/events/event-1/scoreboard");
   });
 });
