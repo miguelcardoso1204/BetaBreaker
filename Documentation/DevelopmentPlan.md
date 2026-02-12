@@ -2329,9 +2329,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 11.4 — Results Export
+### Step 11.4 — Results Export ✅
 
-**Depends on:** Step 11.3  
+**Depends on:** Step 11.3
 **Relevant requirements:** FR-H4, FR-H5
 
 **What to test:**
@@ -2350,6 +2350,15 @@ Run `supabase db push`, then run test suite against local DB.
 - Category-aware export with separate sections.
 
 **Acceptance:** Exported files contain correct, complete competition results.
+
+**Implementation notes (completed 2026-02-12):**
+- Files created: `utils/exportResults.ts` (pure CSV/HTML generators), `hooks/useExportResults.ts` (File + Sharing + Print orchestration)
+- Tests created: `utils/__tests__/exportResults.test.ts` (12 tests), `hooks/__tests__/useExportResults.test.tsx` (6 tests)
+- Modified: `app/events/[id]/scoreboard.tsx` (added CSV/PDF export buttons + useExportResults hook), `app/events/__tests__/scoreboard.test.tsx` (+3 tests)
+- Dependencies installed: `expo-file-system`, `expo-sharing`, `expo-print`
+- Uses expo-file-system SDK 54 class API (`File` + `Paths.cache`) instead of legacy `writeAsStringAsync`
+- CSV follows RFC 4180 (proper escaping for commas/quotes); HTML rendered to PDF via `expo-print.printToFileAsync()`
+- Total new tests: 21 (12 utils + 6 hook + 3 scoreboard). Running total: 912 unit tests, 392 integration tests
 
 ---
 

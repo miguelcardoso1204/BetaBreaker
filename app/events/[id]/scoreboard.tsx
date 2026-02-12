@@ -46,6 +46,7 @@ import { Trophy } from "lucide-react-native";
 import { useEvent, useEventCategories } from "@/hooks/useEvents";
 import { useEventScores } from "@/hooks/useScores";
 import { useScoreboardRealtime } from "@/hooks/useScoreboardRealtime";
+import { useExportResults } from "@/hooks/useExportResults";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar } from "@/components/ui/Avatar";
 import {
@@ -88,6 +89,23 @@ export default function ScoreboardScreen() {
     const aggregated = aggregateScores(scores, selectedCategory ?? undefined);
     return rankCompetitionEntries(aggregated);
   }, [scores, selectedCategory]);
+
+  // ── Export hook ────────────────────────────────────────────────────
+  // Provides CSV/PDF export callbacks that generate files and open
+  // the native share sheet. isExporting disables buttons during I/O.
+  const { exportCSV, exportPDF, isExporting } = useExportResults();
+
+  // ── Category sections for export ──────────────────────────────────
+  // When exporting, we include per-category breakdowns (re-ranked).
+  // This runs the aggregation pipeline once per category — cheap since
+  // competition datasets are small.
+  const categorySections = useMemo(() => {
+    if (categories.length === 0) return undefined;
+    return categories.map((cat: any) => ({
+      name: cat.name as string,
+      entries: rankCompetitionEntries(aggregateScores(scores, cat.id)),
+    }));
+  }, [scores, categories]);
 
   // ── Loading state ────────────────────────────────────────────────
   if (isLoading) {
@@ -138,6 +156,61 @@ export default function ScoreboardScreen() {
           <Text className="text-text-secondary text-sm">
             {SCORING_LABELS[event.scoring_model] ?? event.scoring_model}
           </Text>
+
+          {/* ── Export buttons ──────────────────────────────────────── */}
+          {/* CSV and PDF share buttons. Disabled while an export is in
+              progress to prevent double-taps during file generation. */}
+          <View className="flex-row gap-2 mt-3">
+            <Pressable
+              onPress={() =>
+                exportCSV({
+                  eventName: event.name,
+                  startDate: event.start_date,
+                  endDate: event.end_date,
+                  scoringModel,
+                  allRanked: rankedEntries,
+                  categorySections,
+                })
+              }
+              disabled={isExporting}
+              className={`px-4 py-2 rounded-lg ${
+                isExporting ? "bg-card/50" : "bg-card"
+              }`}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  isExporting ? "text-text-secondary/50" : "text-text-secondary"
+                }`}
+              >
+                CSV
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() =>
+                exportPDF({
+                  eventName: event.name,
+                  startDate: event.start_date,
+                  endDate: event.end_date,
+                  scoringModel,
+                  allRanked: rankedEntries,
+                  categorySections,
+                })
+              }
+              disabled={isExporting}
+              className={`px-4 py-2 rounded-lg ${
+                isExporting ? "bg-card/50" : "bg-card"
+              }`}
+            >
+              <Text
+                className={`text-sm font-medium ${
+                  isExporting ? "text-text-secondary/50" : "text-text-secondary"
+                }`}
+              >
+                PDF
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* ── Category chips ─────────────────────────────────────── */}

@@ -12,6 +12,7 @@
  *   - useScoreboardRealtime: mocked as no-op (tested separately)
  *   - useAuth: provides current user for row highlighting
  *   - competitionScoring utils: mocked to control aggregation output
+ *   - useExportResults: mocked to verify export button wiring
  */
 
 import React from "react";
@@ -77,6 +78,19 @@ jest.mock("expo-image", () => {
     Image: (props: any) => <View testID="avatar-image" {...props} />,
   };
 });
+
+// ── Mock useExportResults ────────────────────────────────────────────
+const mockExportCSV = jest.fn().mockResolvedValue(undefined);
+const mockExportPDF = jest.fn().mockResolvedValue(undefined);
+const mockExportData = {
+  exportCSV: mockExportCSV,
+  exportPDF: mockExportPDF,
+  isExporting: false,
+};
+
+jest.mock("@/hooks/useExportResults", () => ({
+  useExportResults: () => mockExportData,
+}));
 
 // ── Mock competitionScoring utils ────────────────────────────────────
 // Mock the aggregation and ranking so tests control exactly what renders
@@ -227,6 +241,51 @@ describe("ScoreboardScreen", () => {
     expect(mockAggregateScores).toHaveBeenCalledWith(
       expect.anything(),
       "cat-1"
+    );
+  });
+
+  // ── Export button tests ─────────────────────────────────────────────
+
+  it("renders CSV and PDF export buttons when event is loaded", () => {
+    mockEventData.event = mockEvent;
+
+    render(<ScoreboardScreen />);
+
+    expect(screen.getByText("CSV")).toBeOnTheScreen();
+    expect(screen.getByText("PDF")).toBeOnTheScreen();
+  });
+
+  it("calls exportCSV when CSV button is pressed", () => {
+    mockEventData.event = mockEvent;
+    mockAggregateScores.mockReturnValue(mockRankedEntries);
+    mockRankCompetitionEntries.mockReturnValue(mockRankedEntries);
+
+    render(<ScoreboardScreen />);
+
+    fireEvent.press(screen.getByText("CSV"));
+
+    expect(mockExportCSV).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "Spring Bouldering Comp",
+        scoringModel: "points",
+      })
+    );
+  });
+
+  it("calls exportPDF when PDF button is pressed", () => {
+    mockEventData.event = mockEvent;
+    mockAggregateScores.mockReturnValue(mockRankedEntries);
+    mockRankCompetitionEntries.mockReturnValue(mockRankedEntries);
+
+    render(<ScoreboardScreen />);
+
+    fireEvent.press(screen.getByText("PDF"));
+
+    expect(mockExportPDF).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventName: "Spring Bouldering Comp",
+        scoringModel: "points",
+      })
     );
   });
 });
