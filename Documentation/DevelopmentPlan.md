@@ -2364,9 +2364,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 12 — Media (Beta Videos)
 
-### Step 12.1 — Video Upload Flow
+### Step 12.1 — Video Upload Flow ✅
 
-**Depends on:** Phase 4 (route detail), Phase 2 (tables)  
+**Depends on:** Phase 4 (route detail), Phase 2 (tables)
 **Relevant requirements:** FR-K1, NFR-11
 
 **What to test:**
@@ -2390,6 +2390,25 @@ Run `supabase db push`, then run test suite against local DB.
 - Upload to Supabase Storage → create `route_media` row.
 
 **Acceptance:** Video upload flow works end-to-end with all constraints enforced.
+
+**Implementation notes:**
+
+- **Files created:**
+  - `supabase/migrations/20260212120000_beta_videos_bucket.sql` — Storage bucket + RLS policies
+  - `utils/videoValidation.ts` — Duration/size/type validation logic
+  - `services/media.service.ts` — Upload to Storage + create route_media row
+  - `hooks/useMedia.ts` — TanStack Query wrappers for upload/list
+  - `components/routes/OwnershipModal.tsx` — Affirmation checkbox modal
+  - `components/routes/VideoUploadButton.tsx` — Picker + validation + upload flow
+  - 7 test files: `utils/__tests__/videoValidation.test.ts`, `services/__tests__/media.service.test.ts`, `hooks/__tests__/useMedia.test.ts`, `components/routes/__tests__/OwnershipModal.test.tsx`, `components/routes/__tests__/VideoUploadButton.test.tsx`, `supabase/migrations/__tests__/00014_beta_videos_bucket.test.ts`, plus screen test updates
+- **Files modified:**
+  - `app/gym/[id]/route/[routeId]/ascent.tsx` — Replaced placeholder with VideoUploadButton
+  - `app/gym/[id]/route/[routeId]/index.tsx` — Added media list + upload button
+- **Key decisions:**
+  - No client-side compression in 12.1 — validation + rejection only (compression deferred)
+  - Alert-based ActionSheet for cross-platform picker (React Native Alert.alert)
+  - fetch() for file URI → Blob conversion (Expo SDK 54 compatible)
+- **Test counts:** 27 validation + 9 service + 8 hooks + 6 modal + 8 button + 6 integration + ~5 screen test updates = 69 new tests (unit: 912→972, integration: 392→398)
 
 ---
 

@@ -36,10 +36,9 @@ import {
   TextInput,
   Pressable,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Minus, Plus, Video } from "lucide-react-native";
+import { Minus, Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import { useRouteDetail } from "@/hooks/useRoutes";
@@ -48,6 +47,7 @@ import { canonicalToDisplay } from "@/utils/grades";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { StarRating } from "@/components/ui/StarRating";
+import { VideoUploadButton } from "@/components/routes/VideoUploadButton";
 import { ASCENT_STATUSES, STYLE_TAGS } from "@/lib/constants";
 import type { AscentStatus, StyleTagKey } from "@/lib/constants";
 
@@ -302,27 +302,13 @@ export default function AscentFormScreen() {
         <StarRating value={starRating} onChange={setStarRating} />
       </View>
 
-      {/* ── Video Upload Placeholder ──────────────────────────────── */}
-      {/* Beta video uploads will be implemented in Phase 12 (Media).
-          For now, the button shows a placeholder Alert explaining the
-          feature isn't available yet. The dashed border style signals
-          "upload target" to users familiar with drag-and-drop UIs. */}
+      {/* ── Video Upload ───────────────────────────────────────────── */}
+      {/* VideoUploadButton handles the full flow: picker → validate →
+          ownership modal → upload to Storage → link to route_media.
+          It's self-contained — just pass the routeId and it manages
+          all internal state (picker, modal visibility, upload progress). */}
       <View className="px-4 mb-4">
-        <Pressable
-          testID="video-upload-button"
-          onPress={() => {
-            Alert.alert(
-              "Coming Soon",
-              "Beta video uploads will be available in a future update (Phase 12)."
-            );
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Add Beta Video"
-          className="items-center justify-center py-6 rounded-xl border-2 border-dashed border-border"
-        >
-          <Video size={28} color="#6B7280" />
-          <Text className="text-text-secondary mt-2">Add Beta Video</Text>
-        </Pressable>
+        <VideoUploadButton routeId={routeId as string} />
       </View>
 
       {/* ── Comment Section ───────────────────────────────────────── */}

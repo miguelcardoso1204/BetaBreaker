@@ -75,6 +75,10 @@ jest.mock("lucide-react-native", () => {
     Minus: (props: any) => <View testID="icon-minus" {...props} />,
     Plus: (props: any) => <View testID="icon-plus" {...props} />,
     Video: (props: any) => <View testID="icon-video" {...props} />,
+    Upload: (props: any) => <View testID="icon-upload" {...props} />,
+    ShieldCheck: (props: any) => <View testID="icon-shield-check" {...props} />,
+    Square: (props: any) => <View testID="icon-square" {...props} />,
+    CheckSquare: (props: any) => <View testID="icon-check-square" {...props} />,
   };
 });
 
@@ -82,6 +86,34 @@ jest.mock("lucide-react-native", () => {
 jest.mock("expo-haptics", () => ({
   notificationAsync: jest.fn(),
   NotificationFeedbackType: { Success: "success" },
+}));
+
+// Mock useAuth — VideoUploadButton needs a user ID.
+jest.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ user: { id: "user-1" } }),
+}));
+
+// Mock useMedia — VideoUploadButton uses useUploadVideo internally.
+jest.mock("@/hooks/useMedia", () => ({
+  useUploadVideo: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+    isError: false,
+    error: null,
+  }),
+}));
+
+// Mock expo-image-picker — used by VideoUploadButton.
+jest.mock("expo-image-picker", () => ({
+  launchImageLibraryAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  MediaTypeOptions: { Videos: "Videos" },
+  UIImagePickerControllerQualityType: { Medium: 1 },
+}));
+
+// Mock expo-file-system — used by VideoUploadButton for file size.
+jest.mock("expo-file-system", () => ({
+  getInfoAsync: jest.fn(),
 }));
 
 import AscentFormScreen from "../ascent";
@@ -181,7 +213,9 @@ describe("AscentFormScreen", () => {
 
   // ── 4. Video upload button renders ──────────────────────────────
 
-  it("renders the video upload placeholder button", () => {
+  it("renders the VideoUploadButton component", () => {
+    // VideoUploadButton replaced the Phase 12 placeholder.
+    // It shows the same "Add Beta Video" text and testID.
     render(<AscentFormScreen />);
 
     expect(screen.getByText("Add Beta Video")).toBeOnTheScreen();

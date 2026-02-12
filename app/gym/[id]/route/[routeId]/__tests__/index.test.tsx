@@ -132,6 +132,11 @@ jest.mock("lucide-react-native", () => {
     Trash2: (props: any) => <View testID="icon-trash" {...props} />,
     Send: (props: any) => <View testID="icon-send" {...props} />,
     Flag: (props: any) => <View testID="icon-flag" {...props} />,
+    Video: (props: any) => <View testID="icon-video" {...props} />,
+    Upload: (props: any) => <View testID="icon-upload" {...props} />,
+    ShieldCheck: (props: any) => <View testID="icon-shield-check" {...props} />,
+    Square: (props: any) => <View testID="icon-square" {...props} />,
+    CheckSquare: (props: any) => <View testID="icon-check-square" {...props} />,
   };
 });
 
@@ -142,6 +147,52 @@ jest.mock("expo-image", () => {
     Image: (props: any) => <View testID="expo-image" {...props} />,
   };
 });
+
+// Mock useMedia — control media list and capture delete mutation calls.
+const mockDeleteMedia = jest.fn();
+jest.mock("@/hooks/useMedia", () => {
+  const mockMediaData = {
+    media: [] as any[],
+  };
+  return {
+    useRouteMedia: () => ({
+      ...mockMediaData,
+      isLoading: false,
+      error: null,
+    }),
+    useDeleteMedia: () => ({
+      mutate: mockDeleteMedia,
+    }),
+    // useUploadVideo mock for VideoUploadButton rendered inside the screen
+    useUploadVideo: () => ({
+      mutate: jest.fn(),
+      isPending: false,
+      isError: false,
+      error: null,
+    }),
+    __mockMediaData: mockMediaData,
+  };
+});
+
+// Mock mediaService — used for extractStoragePath in the delete flow.
+jest.mock("@/services/media.service", () => ({
+  mediaService: {
+    extractStoragePath: jest.fn().mockReturnValue("user-1/route-1/12345.mp4"),
+  },
+}));
+
+// Mock expo-image-picker — used by VideoUploadButton.
+jest.mock("expo-image-picker", () => ({
+  launchImageLibraryAsync: jest.fn(),
+  launchCameraAsync: jest.fn(),
+  MediaTypeOptions: { Videos: "Videos" },
+  UIImagePickerControllerQualityType: { Medium: 1 },
+}));
+
+// Mock expo-file-system — used by VideoUploadButton for file size.
+jest.mock("expo-file-system", () => ({
+  getInfoAsync: jest.fn(),
+}));
 
 // Alert import removed — the Add Ascent button now navigates to the
 // Full Ascent Form instead of showing a placeholder dialog.
@@ -163,6 +214,12 @@ const { __mockFeedbackData } = jest.requireMock<{
     userVotes: Record<string, string>;
   };
 }>("@/hooks/useFeedback");
+
+const { __mockMediaData } = jest.requireMock<{
+  __mockMediaData: {
+    media: any[];
+  };
+}>("@/hooks/useMedia");
 
 // ── Fixtures ─────────────────────────────────────────────────────
 
@@ -192,6 +249,7 @@ function resetMockData() {
   __mockData.error = null;
   __mockFeedbackData.feedback = [];
   __mockFeedbackData.userVotes = {};
+  __mockMediaData.media = [];
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -258,9 +316,9 @@ describe("RouteDetailScreen", () => {
 
   // ── Beta videos section ────────────────────────────────────────
 
-  it("shows Video Submissions heading and empty state", () => {
-    // The video section exists as a UI shell for Phase 12.
-    // Until beta_videos are implemented, it shows an empty state message.
+  it("shows Video Submissions heading and empty state when no media", () => {
+    // When no videos have been uploaded yet, show an encouraging
+    // empty state message plus the upload button.
     __mockData.data = mockRoute;
 
     render(<RouteDetailScreen />);
@@ -269,6 +327,65 @@ describe("RouteDetailScreen", () => {
     expect(
       screen.getByText(/No beta videos yet/)
     ).toBeOnTheScreen();
+    // VideoUploadButton should be present even with no media
+    expect(screen.getByTestId("video-upload-button")).toBeOnTheScreen();
+  });
+
+  it("renders media items when videos exist", () => {
+    // When videos have been uploaded, the screen should show each
+    // uploader's name and the upload date.
+    __mockData.data = mockRoute;
+    __mockMediaData.media = [
+      {
+        id: "media-1",
+        route_id: "route-1",
+        user_id: "user-2",
+        url: "https://example.com/video.mp4",
+        type: "video",
+        created_at: "2026-02-12T00:00:00Z",
+        profile: { display_name: "Alex", avatar_url: null },
+      },
+    ];
+
+    render(<RouteDetailScreen />);
+
+    expect(screen.getByText("Alex")).toBeOnTheScreen();
+    expect(screen.getByTestId("media-item-media-1")).toBeOnTheScreen();
+    // Empty state should NOT be shown when media exists
+    expect(screen.queryByTestId("empty-videos")).toBeNull();
+  });
+
+  it("shows delete button only for own media uploads", () => {
+    // Users should only see the Delete button on their own uploads.
+    // The current user is "user-1" (from the auth mock).
+    __mockData.data = mockRoute;
+    __mockMediaData.media = [
+      {
+        id: "media-own",
+        route_id: "route-1",
+        user_id: "user-1", // current user's upload
+        url: "https://example.com/own.mp4",
+        type: "video",
+        created_at: "2026-02-12T00:00:00Z",
+        profile: { display_name: "Me", avatar_url: null },
+      },
+      {
+        id: "media-other",
+        route_id: "route-1",
+        user_id: "user-2", // another user's upload
+        url: "https://example.com/other.mp4",
+        type: "video",
+        created_at: "2026-02-11T00:00:00Z",
+        profile: { display_name: "Alex", avatar_url: null },
+      },
+    ];
+
+    render(<RouteDetailScreen />);
+
+    // Own upload should have a delete button
+    expect(screen.getByTestId("delete-media-media-own")).toBeOnTheScreen();
+    // Other user's upload should NOT have a delete button
+    expect(screen.queryByTestId("delete-media-media-other")).toBeNull();
   });
 
   // ── Favorite button ────────────────────────────────────────────

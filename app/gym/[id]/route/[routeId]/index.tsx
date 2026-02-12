@@ -55,6 +55,9 @@ import { Badge } from "@/components/ui/Badge";
 import { FeedbackItem } from "@/components/social/FeedbackItem";
 import { FeedbackComposer } from "@/components/social/FeedbackComposer";
 import { ReportSheet } from "@/components/social/ReportSheet";
+import { VideoUploadButton } from "@/components/routes/VideoUploadButton";
+import { useRouteMedia, useDeleteMedia } from "@/hooks/useMedia";
+import { mediaService } from "@/services/media.service";
 import type { RouteStatus } from "@/lib/constants";
 
 /**
@@ -114,6 +117,12 @@ export default function RouteDetailScreen() {
     useCreateFeedback(routeId);
   const { mutate: deleteFeedback } = useDeleteFeedback(routeId);
   const { mutate: voteFeedback } = useVoteFeedback(routeId);
+
+  // Beta video media — videos uploaded by the community showing how
+  // to climb this route. useRouteMedia fetches the list, useDeleteMedia
+  // provides a mutation for removing your own uploads.
+  const { media } = useRouteMedia(routeId);
+  const { mutate: deleteMedia } = useDeleteMedia(routeId);
 
   // ── Report sheet state ────────────────────────────────────────────
   // Tracks whether the ReportSheet is visible and which feedback ID
@@ -322,17 +331,61 @@ export default function RouteDetailScreen() {
 
       {/* ── Video Submissions Section ────────────────────────────── */}
       {/* Beta videos are short clips showing how to climb a route.
-          The route_media table and Storage integration come in Phase 12,
-          so we render the section heading and an empty state message. */}
+          Users can upload their own and delete videos they've previously
+          uploaded. Actual video playback is handled in Step 12.2. */}
       <View className="px-4 mb-4">
         <Text className="text-lg font-bold text-text-primary mb-2">
           Video Submissions
         </Text>
-        <View className="items-center py-8" testID="empty-videos">
-          <Text className="text-text-secondary text-center">
-            No beta videos yet — be the first to share!
-          </Text>
+
+        {/* Upload button at the top of the section for quick access */}
+        <View className="mb-4">
+          <VideoUploadButton routeId={routeId} />
         </View>
+
+        {media.length > 0 ? (
+          // Media list — shows uploader name, timestamp, and a delete
+          // button for the current user's own uploads.
+          media.map((item: any) => (
+            <View
+              key={item.id}
+              testID={`media-item-${item.id}`}
+              className="flex-row items-center justify-between py-3 border-b border-border"
+            >
+              <View className="flex-1">
+                <Text className="text-text-primary font-medium">
+                  {item.profile?.display_name ?? 'Unknown'}
+                </Text>
+                <Text className="text-text-secondary text-sm">
+                  {new Date(item.created_at).toLocaleDateString()}
+                </Text>
+              </View>
+              {/* Delete button — only shown for the current user's uploads.
+                  RLS enforces this server-side too, but hiding the button
+                  prevents confusing "permission denied" errors. */}
+              {item.user_id === user?.id && (
+                <Text
+                  testID={`delete-media-${item.id}`}
+                  onPress={() =>
+                    deleteMedia({
+                      mediaId: item.id,
+                      storagePath: mediaService.extractStoragePath(item.url),
+                    })
+                  }
+                  className="text-red-500 text-sm font-medium px-2"
+                >
+                  Delete
+                </Text>
+              )}
+            </View>
+          ))
+        ) : (
+          <View className="items-center py-8" testID="empty-videos">
+            <Text className="text-text-secondary text-center">
+              No beta videos yet — be the first to share!
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* ── Report Sheet ──────────────────────────────────────────── */}
