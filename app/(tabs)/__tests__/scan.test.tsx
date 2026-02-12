@@ -44,6 +44,12 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: mockBack }),
 }));
 
+// Mock useScores hook for active event detection after a QR scan.
+const mockActiveEventsData = { activeEvents: [] as any[], isLoading: false, error: null };
+jest.mock('@/hooks/useScores', () => ({
+  useActiveEventsForRoute: () => mockActiveEventsData,
+}));
+
 // Mock QuickLogSheet as a simple View to avoid deep dependency tree.
 jest.mock('@/components/session', () => {
   const { View, Text } = require('react-native');
@@ -87,6 +93,10 @@ jest.mock('lucide-react-native', () => ({
     const { Text } = require('react-native');
     return <Text testID="icon-RotateCcw" {...props}>RotateCcw</Text>;
   },
+  Trophy: (props: any) => {
+    const { Text } = require('react-native');
+    return <Text testID="icon-Trophy" {...props}>Trophy</Text>;
+  },
 }));
 
 // Import the component under test AFTER mocks are in place.
@@ -116,6 +126,8 @@ describe('ScanScreen', () => {
       { granted: false, canAskAgain: true },
       mockRequestPermission,
     ]);
+    // Default: no active events for the scanned route
+    mockActiveEventsData.activeEvents = [];
   });
 
   it('requests camera permission on mount and shows prompt when not granted', () => {
@@ -245,5 +257,83 @@ describe('ScanScreen', () => {
 
     fireEvent.press(screen.getByText(/view route/i));
     expect(mockPush).toHaveBeenCalledWith('/gym/gym-456/route/route-123');
+  });
+
+  // ── Comp Score integration tests ───────────────────────────────────
+
+  it('shows "Comp Score" button when route is in an active event', async () => {
+    // After a successful QR scan, if the scanned route is part of an
+    // ongoing competition, a "Comp Score" button should appear alongside
+    // "View Route" and "Quick Log".
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: true, canAskAgain: true },
+      mockRequestPermission,
+    ]);
+    mockVerifyQrToken.mockResolvedValue({
+      ok: true,
+      payload: { sub: 'route-comp', gym_id: 'gym-1', iat: 1000, exp: 9999 },
+    });
+    // Simulate an active event containing this route
+    mockActiveEventsData.activeEvents = [
+      { id: 'event-1', name: 'Spring Comp', status: 'ongoing' },
+    ];
+
+    render(<ScanScreen />);
+    simulateBarcodeScan('valid.comp.token');
+
+    await waitFor(() => {
+      expect(screen.getByText(/route found/i)).toBeOnTheScreen();
+    });
+
+    expect(screen.getByText(/comp score/i)).toBeOnTheScreen();
+  });
+
+  it('hides "Comp Score" button when no active event', async () => {
+    // If the scanned route is NOT in any active competition, the
+    // "Comp Score" button should not appear.
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: true, canAskAgain: true },
+      mockRequestPermission,
+    ]);
+    mockVerifyQrToken.mockResolvedValue({
+      ok: true,
+      payload: { sub: 'route-no-comp', gym_id: 'gym-1', iat: 1000, exp: 9999 },
+    });
+    mockActiveEventsData.activeEvents = [];
+
+    render(<ScanScreen />);
+    simulateBarcodeScan('valid.no-comp.token');
+
+    await waitFor(() => {
+      expect(screen.getByText(/route found/i)).toBeOnTheScreen();
+    });
+
+    expect(screen.queryByText(/comp score/i)).toBeNull();
+  });
+
+  it('navigates to event screen on "Comp Score" press', async () => {
+    // Pressing "Comp Score" should navigate to the event detail screen
+    // using the first active event's ID.
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: true, canAskAgain: true },
+      mockRequestPermission,
+    ]);
+    mockVerifyQrToken.mockResolvedValue({
+      ok: true,
+      payload: { sub: 'route-xyz', gym_id: 'gym-1', iat: 1000, exp: 9999 },
+    });
+    mockActiveEventsData.activeEvents = [
+      { id: 'event-42', name: 'Bouldering League', status: 'ongoing' },
+    ];
+
+    render(<ScanScreen />);
+    simulateBarcodeScan('valid.event.token');
+
+    await waitFor(() => {
+      expect(screen.getByText(/comp score/i)).toBeOnTheScreen();
+    });
+
+    fireEvent.press(screen.getByText(/comp score/i));
+    expect(mockPush).toHaveBeenCalledWith('/events/event-42');
   });
 });

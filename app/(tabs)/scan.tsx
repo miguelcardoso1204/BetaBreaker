@@ -26,11 +26,12 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
-import { Camera, CheckCircle, XCircle, Eye, ClipboardList, RotateCcw } from 'lucide-react-native';
+import { Camera, CheckCircle, XCircle, Eye, ClipboardList, RotateCcw, Trophy } from 'lucide-react-native';
 
 import { verifyQrToken } from '@/utils/qr';
 import type { QrPayload } from '@/utils/qr';
 import { QuickLogSheet } from '@/components/session';
+import { useActiveEventsForRoute } from '@/hooks/useScores';
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -62,6 +63,11 @@ export default function ScanScreen() {
 
   // Flag to prevent duplicate scans while processing or showing results.
   const [scanned, setScanned] = useState(false);
+
+  // Check if the scanned route is part of any active competition.
+  // The hook is disabled until a successful scan provides a route ID.
+  const scannedRouteId = scanState.status === 'success' ? scanState.payload.sub : null;
+  const { activeEvents } = useActiveEventsForRoute(scannedRouteId);
 
   /**
    * Called by CameraView when a barcode is detected in the camera feed.
@@ -116,6 +122,17 @@ export default function ScanScreen() {
    */
   const handleQuickLog = () => {
     setShowQuickLog(true);
+  };
+
+  /**
+   * Navigate to the event detail screen for competition scoring.
+   * If multiple active events contain this route, navigates to the first one
+   * (multi-event picker is future work).
+   */
+  const handleCompScore = () => {
+    if (activeEvents.length > 0) {
+      router.push(`/events/${activeEvents[0].id}` as any);
+    }
   };
 
   // ── Permission Not Granted State ──────────────────────────────────
@@ -222,6 +239,20 @@ export default function ScanScreen() {
                   <ClipboardList size={18} color="#FFFFFF" strokeWidth={2} />
                   <Text className="text-white font-semibold">Quick Log</Text>
                 </Pressable>
+
+                {/* Comp Score button — shown only when the scanned route is
+                    part of an active competition. Navigates to the event
+                    detail screen where the athlete can submit their score. */}
+                {activeEvents.length > 0 && (
+                  <Pressable
+                    onPress={handleCompScore}
+                    className="bg-amber-600 rounded-xl px-5 py-3 flex-row items-center gap-2"
+                    accessibilityRole="button"
+                  >
+                    <Trophy size={18} color="#FFFFFF" strokeWidth={2} />
+                    <Text className="text-white font-semibold">Comp Score</Text>
+                  </Pressable>
+                )}
               </View>
 
               {/* Scan Again button — resets scanner for the next QR code */}

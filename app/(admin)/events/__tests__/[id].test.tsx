@@ -16,9 +16,10 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 
 // ── Mock expo-router ────────────────────────────────────────────────
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "event-1" }),
-  useRouter: () => ({ back: mockBack }),
+  useRouter: () => ({ back: mockBack, push: mockPush }),
 }));
 
 // ── Mock useAuth ────────────────────────────────────────────────────
@@ -72,6 +73,11 @@ jest.mock("@/hooks/useEvents", () => {
     __mockCategoriesData: mockCategoriesData,
   };
 });
+
+// ── Mock useScores hooks (useEventScores is used for score count) ────
+jest.mock("@/hooks/useScores", () => ({
+  useEventScores: () => ({ scores: [], isLoading: false, error: null }),
+}));
 
 // ── Mock lucide-react-native ────────────────────────────────────────
 jest.mock("lucide-react-native", () => {

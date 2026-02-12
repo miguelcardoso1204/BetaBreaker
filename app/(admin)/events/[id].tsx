@@ -44,6 +44,7 @@ import {
   useAddCategory,
   useDeleteCategory,
 } from "@/hooks/useEvents";
+import { useEventScores } from "@/hooks/useScores";
 import type { ScoringModel, EventStatus } from "@/services/events.service";
 
 /** Status options for the status picker. */
@@ -71,6 +72,7 @@ export default function EditEventScreen() {
   const { event, isLoading, error } = useEvent(eventId);
   const { eventRoutes } = useEventRoutes(eventId);
   const { categories } = useEventCategories(eventId);
+  const { scores } = useEventScores(eventId);
 
   // ── Mutations ──────────────────────────────────────────────────────
   const updateEvent = useUpdateEvent();
@@ -302,6 +304,20 @@ export default function EditEventScreen() {
           <Text className="text-white font-medium">Add</Text>
         </Pressable>
       </View>
+
+      {/* ── Section 4: Manage Scores ──────────────────────────────── */}
+      <Pressable
+        onPress={() =>
+          router.push(`/(admin)/events/scores?eventId=${event!.id}` as any)
+        }
+        accessibilityRole="button"
+        testID="manage-scores-button"
+        className="bg-surface py-3 rounded-lg items-center mb-6"
+      >
+        <Text className="text-accent font-bold text-base">
+          Manage Scores ({scores.length})
+        </Text>
+      </Pressable>
 
       {/* ── Delete event (destructive) ────────────────────────────── */}
       <Pressable
