@@ -35,6 +35,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -56,6 +57,7 @@ import { FeedbackItem } from "@/components/social/FeedbackItem";
 import { FeedbackComposer } from "@/components/social/FeedbackComposer";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { VideoUploadButton } from "@/components/routes/VideoUploadButton";
+import { BetaVideoPlayer } from "@/components/routes/BetaVideoPlayer";
 import { useRouteMedia, useDeleteMedia } from "@/hooks/useMedia";
 import { mediaService } from "@/services/media.service";
 import type { RouteStatus } from "@/lib/constants";
@@ -331,8 +333,9 @@ export default function RouteDetailScreen() {
 
       {/* ── Video Submissions Section ────────────────────────────── */}
       {/* Beta videos are short clips showing how to climb a route.
-          Users can upload their own and delete videos they've previously
-          uploaded. Actual video playback is handled in Step 12.2. */}
+          Each video is rendered by BetaVideoPlayer, which uses lazy-loaded
+          expo-video playback. Videos start as thumbnails and only buffer
+          when the user taps play — preventing excessive network usage. */}
       <View className="px-4 mb-4">
         <Text className="text-lg font-bold text-text-primary mb-2">
           Video Submissions
@@ -343,49 +346,37 @@ export default function RouteDetailScreen() {
           <VideoUploadButton routeId={routeId} />
         </View>
 
-        {media.length > 0 ? (
-          // Media list — shows uploader name, timestamp, and a delete
-          // button for the current user's own uploads.
-          media.map((item: any) => (
-            <View
-              key={item.id}
-              testID={`media-item-${item.id}`}
-              className="flex-row items-center justify-between py-3 border-b border-border"
-            >
-              <View className="flex-1">
-                <Text className="text-text-primary font-medium">
-                  {item.profile?.display_name ?? 'Unknown'}
-                </Text>
-                <Text className="text-text-secondary text-sm">
-                  {new Date(item.created_at).toLocaleDateString()}
-                </Text>
-              </View>
-              {/* Delete button — only shown for the current user's uploads.
-                  RLS enforces this server-side too, but hiding the button
-                  prevents confusing "permission denied" errors. */}
-              {item.user_id === user?.id && (
-                <Text
-                  testID={`delete-media-${item.id}`}
-                  onPress={() =>
-                    deleteMedia({
-                      mediaId: item.id,
-                      storagePath: mediaService.extractStoragePath(item.url),
-                    })
-                  }
-                  className="text-red-500 text-sm font-medium px-2"
-                >
-                  Delete
-                </Text>
-              )}
+        {/* FlatList renders BetaVideoPlayer for each uploaded video.
+            scrollEnabled={false} because this FlatList is nested inside
+            the parent ScrollView — we want the lazy renderItem optimization
+            without scroll conflicts. Each item gets its own video player
+            with lazy initialization (player only created on tap). */}
+        <FlatList
+          data={media}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <BetaVideoPlayer
+              url={item.url}
+              uploaderName={item.profile?.display_name ?? "Unknown"}
+              uploadDate={new Date(item.created_at).toLocaleDateString()}
+              isOwner={item.user_id === user?.id}
+              onDelete={() =>
+                deleteMedia({
+                  mediaId: item.id,
+                  storagePath: mediaService.extractStoragePath(item.url),
+                })
+              }
+            />
+          )}
+          ListEmptyComponent={
+            <View className="items-center py-8" testID="empty-videos">
+              <Text className="text-text-secondary text-center">
+                No beta videos yet — be the first to share!
+              </Text>
             </View>
-          ))
-        ) : (
-          <View className="items-center py-8" testID="empty-videos">
-            <Text className="text-text-secondary text-center">
-              No beta videos yet — be the first to share!
-            </Text>
-          </View>
-        )}
+          }
+          scrollEnabled={false}
+        />
       </View>
 
       {/* ── Report Sheet ──────────────────────────────────────────── */}

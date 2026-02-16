@@ -148,6 +148,36 @@ jest.mock("expo-image", () => {
   };
 });
 
+// Mock expo-video — BetaVideoPlayer uses useVideoPlayer and VideoView
+// for video playback. We mock them to avoid native module errors in Jest.
+jest.mock("expo-video", () => {
+  const { View } = require("react-native");
+  return {
+    useVideoPlayer: () => null,
+    VideoView: (props: any) => <View testID="video-view" {...props} />,
+  };
+});
+
+// Mock expo's useEvent — used by BetaVideoPlayer to track player status
+jest.mock("expo", () => ({
+  useEvent: () => ({ status: "idle" }),
+}));
+
+// Mock BetaVideoPlayer — renders as a View with testID so we can verify
+// it receives correct props without needing the full video player stack.
+jest.mock("@/components/routes/BetaVideoPlayer", () => {
+  const { View, Text } = require("react-native");
+  return {
+    BetaVideoPlayer: (props: any) => (
+      <View testID={`beta-video-player-${props.url}`}>
+        <Text>{props.uploaderName}</Text>
+        <Text>{props.uploadDate}</Text>
+        {props.isOwner && <Text testID="owner-marker">Owner</Text>}
+      </View>
+    ),
+  };
+});
+
 // Mock useMedia — control media list and capture delete mutation calls.
 const mockDeleteMedia = jest.fn();
 jest.mock("@/hooks/useMedia", () => {
@@ -331,9 +361,9 @@ describe("RouteDetailScreen", () => {
     expect(screen.getByTestId("video-upload-button")).toBeOnTheScreen();
   });
 
-  it("renders media items when videos exist", () => {
-    // When videos have been uploaded, the screen should show each
-    // uploader's name and the upload date.
+  it("renders BetaVideoPlayer for each media item", () => {
+    // When videos have been uploaded, the screen should render a
+    // BetaVideoPlayer component for each one (not text-only items).
     __mockData.data = mockRoute;
     __mockMediaData.media = [
       {
@@ -349,15 +379,18 @@ describe("RouteDetailScreen", () => {
 
     render(<RouteDetailScreen />);
 
+    // BetaVideoPlayer should be rendered with the video URL
+    expect(
+      screen.getByTestId("beta-video-player-https://example.com/video.mp4")
+    ).toBeOnTheScreen();
     expect(screen.getByText("Alex")).toBeOnTheScreen();
-    expect(screen.getByTestId("media-item-media-1")).toBeOnTheScreen();
     // Empty state should NOT be shown when media exists
     expect(screen.queryByTestId("empty-videos")).toBeNull();
   });
 
-  it("shows delete button only for own media uploads", () => {
-    // Users should only see the Delete button on their own uploads.
-    // The current user is "user-1" (from the auth mock).
+  it("passes correct isOwner prop to BetaVideoPlayer", () => {
+    // BetaVideoPlayer receives isOwner=true only for videos uploaded
+    // by the current user (user-1). This controls delete button visibility.
     __mockData.data = mockRoute;
     __mockMediaData.media = [
       {
@@ -382,10 +415,19 @@ describe("RouteDetailScreen", () => {
 
     render(<RouteDetailScreen />);
 
-    // Own upload should have a delete button
-    expect(screen.getByTestId("delete-media-media-own")).toBeOnTheScreen();
-    // Other user's upload should NOT have a delete button
-    expect(screen.queryByTestId("delete-media-media-other")).toBeNull();
+    // Own upload should have the owner marker (from our mock)
+    const ownPlayer = screen.getByTestId(
+      "beta-video-player-https://example.com/own.mp4"
+    );
+    expect(ownPlayer).toBeOnTheScreen();
+    // The mock renders "Owner" text only when isOwner=true
+    expect(screen.getByTestId("owner-marker")).toBeOnTheScreen();
+
+    // Other user's upload should NOT have the owner marker
+    const otherPlayer = screen.getByTestId(
+      "beta-video-player-https://example.com/other.mp4"
+    );
+    expect(otherPlayer).toBeOnTheScreen();
   });
 
   // ── Favorite button ────────────────────────────────────────────

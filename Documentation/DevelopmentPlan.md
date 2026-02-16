@@ -2412,9 +2412,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ---
 
-### Step 12.2 — Video Playback
+### Step 12.2 — Video Playback ✅
 
-**Depends on:** Step 12.1  
+**Depends on:** Step 12.1
 **Relevant requirements:** FR-C2, NFR-11
 
 **What to test:**
@@ -2433,6 +2433,15 @@ Run `supabase db push`, then run test suite against local DB.
 - Lazy loading in FlatList.
 
 **Acceptance:** Videos play smoothly in route detail; thumbnails load in lists.
+
+**Implementation notes (Step 12.2):**
+- Created `components/routes/BetaVideoPlayer.tsx` — lazy-loaded video player using `expo-video`'s `useVideoPlayer` and `VideoView`. Videos start as dark thumbnail placeholders with a Play icon overlay; player only initializes when tapped (prevents all videos from buffering simultaneously). States: thumbnail → loading → playing → error (with retry). Uses `useEvent` from expo to track player status changes. Shows uploader name/date and owner-only delete button.
+- Created `components/routes/__tests__/BetaVideoPlayer.test.tsx` — 10 tests covering: thumbnail rendering, playback on tap, native controls, fullscreen, error fallback, loading indicator, uploader info, delete button visibility (owner vs non-owner), retry behavior.
+- Modified `app/gym/[id]/route/[routeId]/index.tsx` — replaced text-only `.map()` media list with `FlatList` rendering `BetaVideoPlayer` components. Added `scrollEnabled={false}` for nested ScrollView compatibility. Imported `BetaVideoPlayer` and `FlatList`.
+- Updated `app/gym/[id]/route/[routeId]/__tests__/index.test.tsx` — replaced old media item tests with BetaVideoPlayer integration tests. Added mocks for `expo-video`, `expo` (useEvent), and `BetaVideoPlayer`. 16 tests total (2 new: BetaVideoPlayer rendering + isOwner prop passing).
+- Installed `expo-image-picker` (was missing from node_modules, causing pre-existing test suite failure).
+- Key design decision: static thumbnail placeholder (dark View + Play icon) instead of `generateThumbnailsAsync` — simpler, faster, cross-platform.
+- All 10 BetaVideoPlayer tests pass, all 16 route detail tests pass, 981/982 unit tests pass (1 pre-existing failure: qr-roundtrip needs .env.local).
 
 ---
 
