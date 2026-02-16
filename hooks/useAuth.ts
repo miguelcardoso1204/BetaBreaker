@@ -76,6 +76,14 @@ export interface UseAuthReturn {
   signUp: (email: string, password: string) => Promise<{ error: unknown }>;
   /** Sign out the current user. Returns { error } from Supabase. */
   signOut: () => Promise<{ error: unknown }>;
+  /**
+   * Re-fetch the user's profile from the database and update local state.
+   *
+   * Called after an IAP purchase/restore when the verify-iap Edge Function
+   * has updated `profiles.tier` in the DB. This picks up the new tier
+   * without requiring re-authentication (the session stays the same).
+   */
+  refreshProfile: () => Promise<void>;
 }
 
 // ── Helper: snake_case → camelCase profile transform ───────────────
@@ -251,6 +259,30 @@ export function useAuth(): UseAuthReturn {
     return { error: result.error };
   }, []);
 
+  /**
+   * Re-fetch the user's profile from the database and update local state.
+   *
+   * This is needed after an IAP purchase: the verify-iap Edge Function
+   * updates `profiles.tier` in the DB, but useAuth's local state still
+   * has the old tier. Calling refreshProfile() re-reads the profile row
+   * and updates the `user` state with the fresh data.
+   *
+   * Unlike handleSession, this doesn't touch the session or roles —
+   * those don't change during a purchase. Only the profile data (tier,
+   * pinned badges, etc.) is refreshed.
+   */
+  const refreshProfile = useCallback(async () => {
+    if (!session) return;
+
+    const profileResult = await profileService.getById(session.user.id);
+
+    if (!mountedRef.current) return;
+
+    if (profileResult.data) {
+      setUser(toUserProfile(profileResult.data));
+    }
+  }, [session]);
+
   // ── Return value ─────────────────────────────────────────────────
   // `isAuthenticated` is computed from session, not stored as separate state.
   // This guarantees it's always in sync — if session is non-null, the user
@@ -264,5 +296,6 @@ export function useAuth(): UseAuthReturn {
     signIn,
     signUp,
     signOut,
+    refreshProfile,
   };
 }

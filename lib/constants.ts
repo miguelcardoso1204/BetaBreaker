@@ -331,6 +331,67 @@ export const ROUTE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
  * keypair managed via `supabase secrets set`. The matching private key for
  * local dev lives in `supabase/.env.local` (gitignored).
  */
+/* ── In-App Purchase (IAP) ─────────────────────────────────────────── */
+
+/**
+ * Product IDs registered in App Store Connect and Google Play Console.
+ *
+ * These must exactly match the product identifiers configured in both stores.
+ * The reverse-domain naming convention (com.betabreaker.pro.monthly) is the
+ * standard format expected by both Apple and Google.
+ *
+ * Currently we offer a single subscription tier: Pro Monthly.
+ * If we add yearly or other tiers later, add them here.
+ */
+export const IAP_PRODUCT_IDS = {
+  PRO_MONTHLY: 'com.betabreaker.pro.monthly',
+} as const;
+
+/**
+ * Features that are gated by subscription tier.
+ *
+ * The `useEntitlement(feature)` hook checks the user's tier against these
+ * features to determine access. The entitlement logic lives in
+ * `utils/entitlements.ts` — these constants are just the feature identifiers.
+ *
+ *   analytics      — access to the full analytics dashboard (FR-J series)
+ *   unlimited_beta — no weekly limit on beta video uploads
+ *   extra_badges   — display up to 3 badges on profile (vs 1 for free)
+ */
+export const ENTITLEMENT_FEATURES = ['analytics', 'unlimited_beta', 'extra_badges'] as const;
+
+/** Union type of features gated behind a subscription tier. */
+export type EntitlementFeature = typeof ENTITLEMENT_FEATURES[number];
+
+/**
+ * Subscription lifecycle event types.
+ *
+ * These map to the `event_type` CHECK constraint on the `subscription_events`
+ * table. Each represents a distinct moment in the subscription lifecycle:
+ *
+ *   purchase     — initial subscription purchase
+ *   renewal      — automatic renewal by the store (subscription continues)
+ *   cancellation — user cancelled, but access remains until expiry date
+ *   expiration   — subscription expired (access should be revoked)
+ *   restore      — user restored a previous purchase on a new device
+ */
+export const SUBSCRIPTION_EVENT_TYPES = ['purchase', 'renewal', 'cancellation', 'expiration', 'restore'] as const;
+
+/** Union type for subscription event types. */
+export type SubscriptionEventType = typeof SUBSCRIPTION_EVENT_TYPES[number];
+
+/**
+ * App store identifiers for IAP receipt validation.
+ *
+ * Used to route receipt verification to the correct store API:
+ *   apple  — App Store Server API (iOS)
+ *   google — Google Play Developer API (Android)
+ */
+export const IAP_STORES = ['apple', 'google'] as const;
+
+/** Union type for app store identifiers. */
+export type IapStore = typeof IAP_STORES[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',

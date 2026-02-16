@@ -240,6 +240,39 @@ describe('mediaService', () => {
     });
   });
 
+  // ── getWeeklyUploadCount ────────────────────────────────────────
+
+  describe('getWeeklyUploadCount', () => {
+    it('counts uploads from the last 7 days using exact count query', async () => {
+      // Beta limit enforcement: free users are capped at 5 uploads/week.
+      // We use Supabase's `count: 'exact', head: true` for an efficient
+      // COUNT query — no rows are transferred, just the count.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockResolvedValueOnce({ count: 3, error: null }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      // Freeze time so we can assert the date threshold
+      const now = new Date('2026-02-16T12:00:00Z');
+      jest.spyOn(Date, 'now').mockReturnValue(now.getTime());
+
+      const result = await mediaService.getWeeklyUploadCount('user-1');
+
+      expect(supabase.from).toHaveBeenCalledWith('route_media');
+      // head: true + count: 'exact' tells PostgREST to return only the count
+      expect(chainMock.select).toHaveBeenCalledWith('id', { count: 'exact', head: true });
+      expect(chainMock.eq).toHaveBeenCalledWith('user_id', 'user-1');
+      // Should filter to uploads from 7 days ago
+      const expectedDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      expect(chainMock.gte).toHaveBeenCalledWith('created_at', expectedDate);
+      expect(result.count).toBe(3);
+
+      jest.restoreAllMocks();
+    });
+  });
+
   // ── extractStoragePath ──────────────────────────────────────────
 
   describe('extractStoragePath', () => {

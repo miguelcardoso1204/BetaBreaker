@@ -99,6 +99,27 @@ export const mediaService = {
   },
 
   /**
+   * Count how many videos a user uploaded in the last 7 days.
+   *
+   * Used for beta limit enforcement: free-tier users are capped at
+   * `FREE_TIER.betaPerWeek` (5) uploads per rolling 7-day window.
+   * The Paywall shows when this limit is reached.
+   *
+   * Uses `head: true` with `count: 'exact'` for an efficient COUNT query —
+   * no row data is transferred over the wire, just the count value.
+   *
+   * @param userId - The user to count uploads for
+   */
+  getWeeklyUploadCount(userId: string) {
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    return supabase
+      .from('route_media')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', oneWeekAgo);
+  },
+
+  /**
    * Delete a video — removes the file from Storage, then the DB row.
    *
    * Order matters: we delete the file first because an orphaned file

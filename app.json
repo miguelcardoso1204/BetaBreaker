@@ -34,7 +34,8 @@
       "expo-secure-store",
       "expo-sqlite",
       "expo-video",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "react-native-iap"
     ],
     "experiments": {
       "typedRoutes": true

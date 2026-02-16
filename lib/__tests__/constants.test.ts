@@ -30,6 +30,10 @@ import {
   ROUTE_CACHE_TTL_MS,
   SYNC_BACKOFF_DELAYS,
   QR_PUBLIC_KEY,
+  IAP_PRODUCT_IDS,
+  ENTITLEMENT_FEATURES,
+  SUBSCRIPTION_EVENT_TYPES,
+  IAP_STORES,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -45,6 +49,9 @@ import type {
   SaveType,
   StyleTagKey,
   OfflineActionType,
+  EntitlementFeature,
+  SubscriptionEventType,
+  IapStore,
 } from '../constants';
 
 /* ── ROLES ──────────────────────────────────────────────────────────────── */
@@ -339,5 +346,70 @@ describe('QR_PUBLIC_KEY', () => {
     expect(typeof QR_PUBLIC_KEY.y).toBe('string');
     expect(QR_PUBLIC_KEY.x.length).toBeGreaterThan(0);
     expect(QR_PUBLIC_KEY.y.length).toBeGreaterThan(0);
+  });
+});
+
+/* ── IAP_PRODUCT_IDS ──────────────────────────────────────────────── */
+
+describe('IAP_PRODUCT_IDS', () => {
+  it('has a PRO_MONTHLY product ID using reverse-domain format', () => {
+    // The product ID must match exactly what's registered in App Store Connect
+    // and Google Play Console. Reverse-domain format is the convention.
+    expect(IAP_PRODUCT_IDS.PRO_MONTHLY).toBe('com.betabreaker.pro.monthly');
+  });
+});
+
+/* ── ENTITLEMENT_FEATURES ─────────────────────────────────────────── */
+
+describe('ENTITLEMENT_FEATURES', () => {
+  it('contains exactly 3 gated feature names', () => {
+    // These are the features that differ between free and pro tiers.
+    // Used by useEntitlement(feature) to check access at runtime.
+    expect(ENTITLEMENT_FEATURES).toHaveLength(3);
+    expect(ENTITLEMENT_FEATURES).toContain('analytics');
+    expect(ENTITLEMENT_FEATURES).toContain('unlimited_beta');
+    expect(ENTITLEMENT_FEATURES).toContain('extra_badges');
+  });
+});
+
+/* ── SUBSCRIPTION_EVENT_TYPES ─────────────────────────────────────── */
+
+describe('SUBSCRIPTION_EVENT_TYPES', () => {
+  it('contains exactly 5 subscription lifecycle event types', () => {
+    // Maps to the event_type CHECK constraint on the subscription_events table.
+    // Each type corresponds to a specific stage in the subscription lifecycle.
+    expect(SUBSCRIPTION_EVENT_TYPES).toHaveLength(5);
+    expect(SUBSCRIPTION_EVENT_TYPES).toContain('purchase');
+    expect(SUBSCRIPTION_EVENT_TYPES).toContain('renewal');
+    expect(SUBSCRIPTION_EVENT_TYPES).toContain('cancellation');
+    expect(SUBSCRIPTION_EVENT_TYPES).toContain('expiration');
+    expect(SUBSCRIPTION_EVENT_TYPES).toContain('restore');
+  });
+});
+
+/* ── IAP_STORES ───────────────────────────────────────────────────── */
+
+describe('IAP_STORES', () => {
+  it('contains exactly 2 store identifiers', () => {
+    // Maps to the store CHECK constraint on the subscription_events table.
+    // Used to determine which store API to call for receipt validation.
+    expect(IAP_STORES).toHaveLength(2);
+    expect(IAP_STORES).toContain('apple');
+    expect(IAP_STORES).toContain('google');
+  });
+});
+
+/* ── IAP Type Inference ───────────────────────────────────────────── */
+
+describe('IAP type inference', () => {
+  it('IAP-related types are correctly derived and assignable', () => {
+    // Compile-time check — if these assignments fail, types are broken.
+    const feature: EntitlementFeature = 'analytics';
+    const eventType: SubscriptionEventType = 'purchase';
+    const store: IapStore = 'apple';
+
+    expect(feature).toBe('analytics');
+    expect(eventType).toBe('purchase');
+    expect(store).toBe('apple');
   });
 });

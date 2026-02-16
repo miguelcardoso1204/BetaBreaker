@@ -300,7 +300,55 @@ describe("useAuth", () => {
     expect(result.current.role).toBe("climber");
   });
 
-  // ── Test 6: Role derivation picks highest privilege ────────────────
+  // ── Test 6: refreshProfile re-fetches and updates user state ────────
+
+  it("refreshProfile updates the user profile without re-authenticating", async () => {
+    // After an IAP purchase, the verify-iap Edge Function updates
+    // profiles.tier in the database. The client needs to re-fetch the
+    // profile to pick up the new tier WITHOUT going through the full
+    // sign-in flow. refreshProfile() does exactly this.
+    authService.getSession.mockResolvedValueOnce({
+      data: { session: mockSession },
+      error: null,
+    });
+    profileService.getById.mockResolvedValueOnce({
+      data: mockProfileRow,
+      error: null,
+    });
+    profileService.getRoles.mockResolvedValueOnce({
+      data: [],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useAuth());
+
+    // Wait for initial load
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    // Verify initial tier is 'free'
+    expect(result.current.user?.tier).toBe("free");
+
+    // Simulate: Edge Function updated tier to 'pro' in the database.
+    // Now refreshProfile should re-fetch and pick up the change.
+    const updatedProfileRow = { ...mockProfileRow, tier: "pro" };
+    profileService.getById.mockResolvedValueOnce({
+      data: updatedProfileRow,
+      error: null,
+    });
+
+    await act(async () => {
+      await result.current.refreshProfile();
+    });
+
+    // The user's tier should now reflect the DB update
+    expect(result.current.user?.tier).toBe("pro");
+    // Session should be unchanged (no re-authentication)
+    expect(result.current.session).toBe(mockSession);
+  });
+
+  // ── Test 7: Role derivation picks highest privilege ────────────────
 
   it("picks the highest-privilege role from multiple gym roles", async () => {
     // User has roles at two gyms: "setter" and "gym_admin". The hook

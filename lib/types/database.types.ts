@@ -985,6 +985,50 @@ export type Database = {
           },
         ]
       }
+      subscription_events: {
+        Row: {
+          id: string
+          user_id: string
+          event_type: string
+          store: string
+          store_transaction_id: string
+          store_product_id: string
+          receipt_data: string | null
+          expires_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          event_type: string
+          store: string
+          store_transaction_id: string
+          store_product_id: string
+          receipt_data?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          event_type?: string
+          store?: string
+          store_transaction_id?: string
+          store_product_id?: string
+          receipt_data?: string | null
+          expires_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_routes: {
         Row: {
           created_at: string

@@ -2447,9 +2447,9 @@ Run `supabase db push`, then run test suite against local DB.
 
 ## Phase 13 — Monetization
 
-### Step 13.1 — Pro Subscription Flow
+### Step 13.1 — Pro Subscription Flow ✅
 
-**Depends on:** Phase 3 (auth), Phase 8 (badges for tier enforcement)  
+**Depends on:** Phase 3 (auth), Phase 8 (badges for tier enforcement)
 **Relevant requirements:** FR-L3, FR-L4
 
 **What to test:**
@@ -2472,6 +2472,45 @@ Run `supabase db push`, then run test suite against local DB.
 - Tier check middleware/hook: `useEntitlement(feature)` returns boolean.
 
 **Acceptance:** Purchase flow works in sandbox; tier limits enforced.
+
+**Implementation notes (completed 2026-02-16):**
+
+Files created (16):
+- `utils/entitlements.ts` — pure functions: checkEntitlement, getBetaLimit, getMaxBadges
+- `utils/__tests__/entitlements.test.ts` — 10 tests for tier × feature combinations
+- `supabase/migrations/20260216120000_subscription_events.sql` — table + RLS + indexes
+- `supabase/__tests__/00015_subscription_events.test.ts` — 9 integration tests for RLS
+- `services/subscription.service.ts` — getEvents, getLatestActive, updateTier
+- `services/__tests__/subscription.service.test.ts` — 3 query construction tests
+- `services/purchase.service.ts` — wraps react-native-iap (v15+ API: fetchProducts, requestPurchase)
+- `services/__tests__/purchase.service.test.ts` — 6 tests with mocked IAP
+- `supabase/functions/verify-iap/index.ts` — receipt validation + tier update
+- `supabase/functions/billing-webhook/index.ts` — store renewal/cancellation/expiration handler
+- `hooks/useEntitlement.ts` — useEntitlement(feature) → { hasAccess, tier, isLoading }
+- `hooks/__tests__/useEntitlement.test.ts` — 5 tests
+- `hooks/useSubscription.ts` — purchaseMutation + restoreMutation with TanStack Query
+- `hooks/__tests__/useSubscription.test.ts` — 6 tests
+- `components/subscription/Paywall.tsx` — modal with benefits, subscribe, restore, loading/error
+- `components/subscription/__tests__/Paywall.test.tsx` — 9 tests
+
+Files modified (6):
+- `lib/constants.ts` — added IAP_PRODUCT_IDS, ENTITLEMENT_FEATURES, SUBSCRIPTION_EVENT_TYPES, IAP_STORES
+- `lib/__tests__/constants.test.ts` — added 5 test groups for new constants
+- `hooks/useAuth.ts` — added refreshProfile() method
+- `hooks/__tests__/useAuth.test.ts` — added refreshProfile test
+- `services/media.service.ts` — added getWeeklyUploadCount(userId)
+- `services/__tests__/media.service.test.ts` — added getWeeklyUploadCount test
+- `lib/types/database.types.ts` — added subscription_events table types
+
+Key decisions:
+- Used `react-native-iap` (v15+) over RevenueCat for learning value + cost savings
+- react-native-iap v15 API: fetchProducts/requestPurchase (not old getSubscriptions/requestSubscription)
+- Purchase objects use `purchaseToken` (unified iOS JWS / Android token) not `transactionReceipt`
+- refreshProfile() on useAuth solves the non-TanStack-Query tier refresh problem
+- UNIQUE(store, store_transaction_id) ensures idempotent webhook processing
+- Only service_role can INSERT subscription_events (no authenticated INSERT policy)
+
+Test count: +39 new tests (1027 total passing).
 
 ---
 
