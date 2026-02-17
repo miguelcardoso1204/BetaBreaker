@@ -34,6 +34,9 @@ import {
   ENTITLEMENT_FEATURES,
   SUBSCRIPTION_EVENT_TYPES,
   IAP_STORES,
+  PROMO_CODE_TYPES,
+  TRIAL_DURATION_DAYS,
+  TRIAL_STATUSES,
 } from '../constants';
 
 // Import types to verify they exist and are usable at compile time.
@@ -52,6 +55,8 @@ import type {
   EntitlementFeature,
   SubscriptionEventType,
   IapStore,
+  PromoCodeType,
+  TrialStatus,
 } from '../constants';
 
 /* ── ROLES ──────────────────────────────────────────────────────────────── */
@@ -411,5 +416,51 @@ describe('IAP type inference', () => {
     expect(feature).toBe('analytics');
     expect(eventType).toBe('purchase');
     expect(store).toBe('apple');
+  });
+
+  it('trial/promo types are correctly derived and assignable', () => {
+    // Compile-time check — PromoCodeType and TrialStatus should be
+    // derived from their respective `as const` arrays.
+    const codeType: PromoCodeType = 'trial';
+    const trialStatus: TrialStatus = 'active';
+
+    expect(codeType).toBe('trial');
+    expect(trialStatus).toBe('active');
+  });
+});
+
+/* ── PROMO_CODE_TYPES ──────────────────────────────────────────────── */
+
+describe('PROMO_CODE_TYPES', () => {
+  it('contains exactly 2 promo code types', () => {
+    // Promo codes can grant either a trial period or a discount.
+    // 'trial' codes give temporary pro access; 'discount' codes are
+    // reserved for future use (e.g., percentage off subscription).
+    expect(PROMO_CODE_TYPES).toHaveLength(2);
+    expect(PROMO_CODE_TYPES).toContain('trial');
+    expect(PROMO_CODE_TYPES).toContain('discount');
+  });
+});
+
+/* ── TRIAL_DURATION_DAYS ───────────────────────────────────────────── */
+
+describe('TRIAL_DURATION_DAYS', () => {
+  it('is 7 — the default trial period in days', () => {
+    // New trial users get 7 days of Pro access. This matches the
+    // default_duration_days on the promo_codes table and is used
+    // by the Edge Function when creating a trial record.
+    expect(TRIAL_DURATION_DAYS).toBe(7);
+  });
+});
+
+/* ── TRIAL_STATUSES ────────────────────────────────────────────────── */
+
+describe('TRIAL_STATUSES', () => {
+  it('contains exactly 2 trial statuses', () => {
+    // A trial is either actively granting pro access or has expired.
+    // The expire_trials() function transitions 'active' → 'expired'.
+    expect(TRIAL_STATUSES).toHaveLength(2);
+    expect(TRIAL_STATUSES).toContain('active');
+    expect(TRIAL_STATUSES).toContain('expired');
   });
 });

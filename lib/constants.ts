@@ -392,6 +392,47 @@ export const IAP_STORES = ['apple', 'google'] as const;
 /** Union type for app store identifiers. */
 export type IapStore = typeof IAP_STORES[number];
 
+/* ── Promo Codes & Trials ──────────────────────────────────────────── */
+
+/**
+ * Types of promotional codes that can be created.
+ *
+ * Promo codes grant users something for free or at a discount:
+ *   trial    — gives temporary Pro access (stored in user_trials table)
+ *   discount — reserved for future use (e.g., percentage off subscription)
+ *
+ * The Edge Function (redeem-promo) checks this value to decide
+ * what action to take when a code is redeemed.
+ */
+export const PROMO_CODE_TYPES = ['trial', 'discount'] as const;
+
+/** Union type of valid promo code types. */
+export type PromoCodeType = typeof PROMO_CODE_TYPES[number];
+
+/**
+ * Default trial duration in days.
+ *
+ * When a user redeems a trial promo code, their trial lasts this many days.
+ * Stored here so both the client (for display) and the Edge Function
+ * (for calculating expires_at) use the same value.
+ */
+export const TRIAL_DURATION_DAYS = 7;
+
+/**
+ * Lifecycle statuses for user trial records.
+ *
+ * A trial starts as 'active' (granting Pro access) and transitions to
+ * 'expired' when the trial period ends. The expire_trials() Postgres
+ * function handles this transition automatically.
+ *
+ *   active  — trial is in progress, user has Pro access
+ *   expired — trial period ended, user should be downgraded to free
+ */
+export const TRIAL_STATUSES = ['active', 'expired'] as const;
+
+/** Union type for trial lifecycle status. */
+export type TrialStatus = typeof TRIAL_STATUSES[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',
