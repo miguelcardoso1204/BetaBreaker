@@ -691,6 +691,77 @@ describe("sessionsService", () => {
     });
   });
 
+  // ── getSentRouteIds ────────────────────────────────────────────
+
+  describe("getSentRouteIds", () => {
+    it("returns a Set of route IDs for sent/flashed routes in a gym", async () => {
+      // getSentRouteIds queries route_ascents with an inner join on routes
+      // to filter by gym. It returns a Set<string> of route IDs where the
+      // user has a send or flash status — used to exclude already-completed
+      // routes from personalized suggestions.
+      const mockRows = [
+        { route_id: "route-a" },
+        { route_id: "route-b" },
+        { route_id: "route-a" }, // Duplicate — same route sent twice
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getSentRouteIds("user-1", "gym-1");
+
+      // Verify query targets route_ascents with route embedding for gym filter
+      expect(supabase.from).toHaveBeenCalledWith("route_ascents");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "route_id, route:routes!inner(gym_id)"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(chainMock.in).toHaveBeenCalledWith("status", ["send", "flash"]);
+
+      // Result should be a Set with duplicates removed
+      expect(result).toEqual(new Set(["route-a", "route-b"]));
+    });
+
+    it("returns empty Set when user has no sends in the gym", async () => {
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getSentRouteIds("user-1", "gym-1");
+
+      expect(result).toEqual(new Set());
+    });
+
+    it("throws when Supabase returns an error", async () => {
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: { message: "Connection refused", code: "PGRST000" },
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await expect(
+        sessionsService.getSentRouteIds("user-1", "gym-1")
+      ).rejects.toEqual({ message: "Connection refused", code: "PGRST000" });
+    });
+  });
+
   // ── deleteAscent ────────────────────────────────────────────────
 
   describe("deleteAscent", () => {

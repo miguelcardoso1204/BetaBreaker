@@ -64,6 +64,7 @@ jest.mock("lucide-react-native", () => {
   return {
     ArrowLeft: (props: any) => <View testID="icon-arrow-left" {...props} />,
     Bell: (props: any) => <View testID="icon-bell" {...props} />,
+    RefreshCw: (props: any) => <View testID="icon-refresh" {...props} />,
   };
 });
 
@@ -77,6 +78,24 @@ jest.mock("expo-image", () => {
 jest.mock("@/utils/grades", () => ({
   canonicalToDisplay: jest.fn().mockReturnValue("V4"),
 }));
+
+// Mock useRouteSuggestions with mutable data for per-test control
+jest.mock("@/hooks/useRouteSuggestions", () => {
+  const mockSuggestionsData = {
+    suggestions: undefined as any[] | undefined,
+    isLoading: false,
+    error: null as Error | null,
+    hasAccess: true,
+    tier: "pro",
+    hasMore: false,
+    refresh: jest.fn(),
+    noHomeGym: false,
+  };
+  return {
+    useRouteSuggestions: () => mockSuggestionsData,
+    __mockSuggestionsData: mockSuggestionsData,
+  };
+});
 
 import HomeScreen from "../index";
 
@@ -95,6 +114,19 @@ const { __mockUnreadData } = jest.requireMock<{
   };
 }>("@/hooks/useNotifications");
 
+const { __mockSuggestionsData } = jest.requireMock<{
+  __mockSuggestionsData: {
+    suggestions: any[] | undefined;
+    isLoading: boolean;
+    error: Error | null;
+    hasAccess: boolean;
+    tier: string;
+    hasMore: boolean;
+    refresh: jest.Mock;
+    noHomeGym: boolean;
+  };
+}>("@/hooks/useRouteSuggestions");
+
 // ── Helpers ──────────────────────────────────────────────────────
 
 function resetMockData() {
@@ -103,6 +135,13 @@ function resetMockData() {
   __mockFeedData.error = null;
   __mockUnreadData.count = 0;
   __mockUnreadData.isLoading = false;
+  __mockSuggestionsData.suggestions = undefined;
+  __mockSuggestionsData.isLoading = false;
+  __mockSuggestionsData.error = null;
+  __mockSuggestionsData.hasAccess = true;
+  __mockSuggestionsData.tier = "pro";
+  __mockSuggestionsData.hasMore = false;
+  __mockSuggestionsData.noHomeGym = false;
   mockPush.mockClear();
 }
 
@@ -208,5 +247,40 @@ describe("HomeScreen", () => {
     fireEvent.press(screen.getByRole("button", { name: "Notifications" }));
 
     expect(mockPush).toHaveBeenCalledWith("/notifications");
+  });
+
+  // ── Suggestions Card Tests ──────────────────────────────────────
+
+  it("renders suggestions card for Pro user with home gym and suggestions", () => {
+    // When the user has Pro access, a home gym, and suggestion data,
+    // the SuggestionsCard should appear on the home screen.
+    __mockSuggestionsData.suggestions = [
+      {
+        id: "r1",
+        name: "Overhang Blitz",
+        canonical_grade: 12,
+        color: "#EF4444",
+        status: "active",
+        tags: ["overhang"],
+        score: 3,
+      },
+    ];
+    __mockSuggestionsData.hasAccess = true;
+    __mockSuggestionsData.noHomeGym = false;
+
+    render(<HomeScreen />);
+
+    expect(screen.getByText("Suggested for You")).toBeOnTheScreen();
+    expect(screen.getByText("Overhang Blitz")).toBeOnTheScreen();
+  });
+
+  it("does not render suggestions card for free-tier user", () => {
+    __mockSuggestionsData.hasAccess = false;
+    __mockSuggestionsData.tier = "free";
+    __mockSuggestionsData.suggestions = undefined;
+
+    render(<HomeScreen />);
+
+    expect(screen.queryByText("Suggested for You")).toBeNull();
   });
 });

@@ -2658,9 +2658,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 14.3 — Personalized Route Suggestions
+### Step 14.3 — Personalized Route Suggestions ✅
 
-**Depends on:** Steps 14.1, 14.2  
+**Depends on:** Steps 14.1, 14.2
 **Relevant requirements:** FR-E3
 
 **What to test:**
@@ -2679,6 +2679,18 @@ Test count: +39 new tests (1027 total passing).
 - Suggestions card on home screen (Pro).
 
 **Acceptance:** Suggestions are relevant and change appropriately.
+
+**Implementation notes:**
+- Created `utils/suggestions.ts` — pure scoring functions: `computeWeakStyles()`, `scoreRoute()`, `scoreSuggestions()` with types `CandidateRoute`, `ScoredRoute`, `SuggestionParams`, `SuggestionResult`
+- Added `sessionsService.getSentRouteIds()` — uses PostgREST `!inner` join to filter by gym
+- Added `routeService.getCandidateRoutes()` — fetches routes with nested style tags, flattens to `CandidateRoute[]`, clamps grade range to 0–30
+- Created `hooks/useRouteSuggestions.ts` — composes useAuth, useEntitlement, useGradePyramid, useStyleInsights; derives maxGrade from pyramid, computes weak/known styles, fetches sent IDs + candidates in parallel, runs client-side scoring
+- Created `components/analytics/SuggestionsCard.tsx` — horizontal FlatList carousel with compact route cards showing color dot, name, grade, up to 2 style tag chips
+- Integrated SuggestionsCard into `app/(tabs)/index.tsx` — renders in `ListHeaderComponent` when feed has items, or above empty state; Pro-gated + requires home gym
+- Scoring: novel tags +2, weak tags +1, strong tags +0; sorted by score desc then grade desc; paginated (8 per page)
+- Files created: `utils/suggestions.ts`, `hooks/useRouteSuggestions.ts`, `components/analytics/SuggestionsCard.tsx`
+- Files modified: `services/sessions.service.ts`, `services/routes.service.ts`, `app/(tabs)/index.tsx`
+- Total unit tests: 1125 (30 new + 1095 existing)
 
 ---
 

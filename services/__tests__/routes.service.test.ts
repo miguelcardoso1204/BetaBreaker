@@ -223,6 +223,168 @@ describe("routeService", () => {
     });
   });
 
+  // ── getCandidateRoutes ────────────────────────────────────────
+
+  describe("getCandidateRoutes", () => {
+    it("fetches routes with style tags in the grade range", async () => {
+      // getCandidateRoutes queries active/retiring_soon routes for a gym,
+      // filtered to a canonical grade range, with style tags embedded via
+      // PostgREST's nested resource embedding:
+      //   routes → route_style_tags → style_tags
+      //
+      // The nested tag data is flattened into a `tags: string[]` array
+      // so the scoring algorithm gets a simple list of tag names.
+      const mockRows = [
+        {
+          id: "route-1",
+          name: "Crimpy Arete",
+          canonical_grade: 10,
+          color: "#EF4444",
+          status: "active",
+          route_style_tags: [
+            { tag: { name: "crimpy" } },
+            { tag: { name: "overhang" } },
+          ],
+        },
+        {
+          id: "route-2",
+          name: "Slab Master",
+          canonical_grade: 8,
+          color: "#22C55E",
+          status: "retiring_soon",
+          route_style_tags: [{ tag: { name: "slab" } }],
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await routeService.getCandidateRoutes("gym-1", 8, 12);
+
+      // Verify query construction
+      expect(supabase.from).toHaveBeenCalledWith("routes");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "id, name, canonical_grade, color, status, route_style_tags(tag:style_tags(name))"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("gym_id", "gym-1");
+      expect(chainMock.gte).toHaveBeenCalledWith("canonical_grade", 8);
+      expect(chainMock.lte).toHaveBeenCalledWith("canonical_grade", 12);
+      expect(chainMock.in).toHaveBeenCalledWith("status", [
+        "active",
+        "retiring_soon",
+      ]);
+
+      // Verify tag flattening — nested route_style_tags → flat string[]
+      expect(result).toEqual([
+        {
+          id: "route-1",
+          name: "Crimpy Arete",
+          canonical_grade: 10,
+          color: "#EF4444",
+          status: "active",
+          tags: ["crimpy", "overhang"],
+        },
+        {
+          id: "route-2",
+          name: "Slab Master",
+          canonical_grade: 8,
+          color: "#22C55E",
+          status: "retiring_soon",
+          tags: ["slab"],
+        },
+      ]);
+    });
+
+    it("clamps grade range to 0-30 bounds", async () => {
+      // If gradeMin is negative or gradeMax exceeds 30, the service
+      // should clamp to the valid canonical grade range (0-30).
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await routeService.getCandidateRoutes("gym-1", -2, 35);
+
+      // Should be clamped to [0, 30]
+      expect(chainMock.gte).toHaveBeenCalledWith("canonical_grade", 0);
+      expect(chainMock.lte).toHaveBeenCalledWith("canonical_grade", 30);
+    });
+
+    it("handles routes with no style tags gracefully", async () => {
+      // Some routes may not have any crowd-sourced style tags yet.
+      // The service should return them with an empty tags array.
+      const mockRows = [
+        {
+          id: "route-1",
+          name: "New Route",
+          canonical_grade: 10,
+          color: null,
+          status: "active",
+          route_style_tags: [],
+        },
+        {
+          id: "route-2",
+          name: "Broken Route",
+          canonical_grade: 8,
+          color: null,
+          status: "active",
+          route_style_tags: [{ tag: null }], // Malformed tag
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await routeService.getCandidateRoutes("gym-1", 8, 12);
+
+      expect(result[0].tags).toEqual([]);
+      expect(result[1].tags).toEqual([]);
+    });
+
+    it("throws when Supabase returns an error", async () => {
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: { message: "Connection refused", code: "PGRST000" },
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await expect(
+        routeService.getCandidateRoutes("gym-1", 8, 12)
+      ).rejects.toEqual({ message: "Connection refused", code: "PGRST000" });
+    });
+  });
+
   // ── getRouteById ────────────────────────────────────────────────
 
   describe("getRouteById", () => {

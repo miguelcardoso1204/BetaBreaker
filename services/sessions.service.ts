@@ -487,6 +487,42 @@ export const sessionsService = {
   },
 
   /**
+   * Get the set of route IDs the user has successfully sent or flashed
+   * at a specific gym.
+   *
+   * Used by the suggestions feature to exclude already-completed routes
+   * from recommendations. Uses PostgREST's `!inner` join to filter
+   * route_ascents rows to only those whose route belongs to the target gym.
+   *
+   * The `!inner` modifier makes this an INNER JOIN — rows where the route
+   * doesn't match the gym filter are excluded entirely (not returned with
+   * null route data). This is more efficient than fetching all ascents and
+   * filtering client-side.
+   *
+   * @param userId - The user whose sent routes to look up
+   * @param gymId - The gym to scope the lookup to
+   * @returns Set of route_id strings for routes with send/flash status
+   */
+  async getSentRouteIds(userId: string, gymId: string): Promise<Set<string>> {
+    // Use !inner join to filter by gym_id on the routes table.
+    // This ensures we only get route_ascents whose route belongs to this gym.
+    const { data, error } = await fromRouteAscents()
+      .select("route_id, route:routes!inner(gym_id)")
+      .eq("user_id", userId)
+      .in("status", ["send", "flash"]);
+
+    if (error) throw error;
+
+    // Collect route_ids into a Set for O(1) lookup when filtering candidates.
+    // Duplicates (same route sent multiple times) are automatically handled.
+    const ids = new Set<string>();
+    for (const row of data ?? []) {
+      ids.add(row.route_id);
+    }
+    return ids;
+  },
+
+  /**
    * Fetch style tag distribution for a user's sent/flashed routes.
    *
    * Joins route_ascents → routes → route_style_tags → style_tags to find

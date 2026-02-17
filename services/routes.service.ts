@@ -21,6 +21,7 @@
 
 import { supabase } from "@/lib/supabase";
 import type { RouteStatus } from "@/lib/constants";
+import type { CandidateRoute } from "@/utils/suggestions";
 
 /**
  * Filters that control which routes are returned and how they're sorted.
@@ -105,6 +106,66 @@ export const routeService = {
     }
     // Default sort: newest first (descending created_at)
     return query.order("created_at", { ascending: false });
+  },
+
+  /**
+   * Fetch candidate routes for the suggestion engine.
+   *
+   * Queries routes in a specific gym within a canonical grade range,
+   * including their crowd-sourced style tags via nested resource embedding.
+   * Only active and retiring_soon routes are included — archived routes
+   * have been taken off the wall and shouldn't be suggested.
+   *
+   * The nested PostgREST embedding:
+   *   "route_style_tags(tag:style_tags(name))"
+   * performs a server-side double JOIN:
+   *   routes → route_style_tags → style_tags
+   * returning the tag names nested under each route.
+   *
+   * The service flattens this nested structure into a simple `tags: string[]`
+   * array so the scoring algorithm doesn't need to know about the DB schema.
+   *
+   * @param gymId - The gym to fetch routes from
+   * @param gradeMin - Minimum canonical grade (inclusive, clamped to 0)
+   * @param gradeMax - Maximum canonical grade (inclusive, clamped to 30)
+   * @returns Array of candidate routes with flattened style tag names
+   */
+  async getCandidateRoutes(
+    gymId: string,
+    gradeMin: number,
+    gradeMax: number
+  ): Promise<CandidateRoute[]> {
+    // Clamp grade bounds to the valid canonical range (0–30).
+    // Without clamping, a negative gradeMin or gradeMax > 30 would silently
+    // return no results because no route has a grade outside this range.
+    const clampedMin = Math.max(0, gradeMin);
+    const clampedMax = Math.min(30, gradeMax);
+
+    const { data, error } = await supabase
+      .from("routes")
+      .select(
+        "id, name, canonical_grade, color, status, route_style_tags(tag:style_tags(name))"
+      )
+      .eq("gym_id", gymId)
+      .gte("canonical_grade", clampedMin)
+      .lte("canonical_grade", clampedMax)
+      .in("status", ["active", "retiring_soon"]);
+
+    if (error) throw error;
+
+    // Flatten the nested tag structure into simple string arrays.
+    // PostgREST returns: { route_style_tags: [{ tag: { name: "slab" } }, ...] }
+    // We want: { tags: ["slab", ...] }
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      canonical_grade: row.canonical_grade,
+      color: row.color,
+      status: row.status,
+      tags: (row.route_style_tags ?? [])
+        .map((rst: any) => rst.tag?.name)
+        .filter((name: string | undefined): name is string => !!name),
+    }));
   },
 
   /**
