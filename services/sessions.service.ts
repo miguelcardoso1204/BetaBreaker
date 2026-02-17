@@ -169,6 +169,24 @@ export interface GradePyramidEntry {
   count: number;
 }
 
+/**
+ * One axis on the Style Insights radar chart: a tag name with the count
+ * of distinct sent routes that have that tag, plus the tag's category
+ * for grouping/coloring.
+ *
+ * The count represents "how many of YOUR sent routes are tagged as X",
+ * not the total crowd vote count. This gives a personal climbing profile
+ * rather than a gym-wide aggregate.
+ */
+export interface StyleInsightEntry {
+  /** The tag name from the style_tags table (e.g., "slab", "crimpy"). */
+  tagName: string;
+  /** The tag's category (e.g., "angle", "hold_type", "movement"). */
+  category: string;
+  /** Number of distinct sent routes with this tag. */
+  count: number;
+}
+
 // ── Service ──────────────────────────────────────────────────────────
 
 export const sessionsService = {
@@ -464,6 +482,88 @@ export const sessionsService = {
       entries.push({ grade, count });
     }
     entries.sort((a, b) => a.grade - b.grade);
+
+    return entries;
+  },
+
+  /**
+   * Fetch style tag distribution for a user's sent/flashed routes.
+   *
+   * Joins route_ascents → routes → route_style_tags → style_tags to find
+   * which crowd-sourced tags appear on the routes the user has completed.
+   * Groups by tag name in JS, counting distinct routes per tag.
+   *
+   * PostgREST resource embedding handles the multi-table join in a single
+   * request:
+   *   route_ascents → route:routes → route_style_tags → tag:style_tags
+   *
+   * The result powers the radar chart on the analytics dashboard (FR-E2),
+   * showing the user's climbing style profile (e.g., heavy on overhangs,
+   * light on slabs).
+   *
+   * @param userId - The user whose style profile to compute
+   * @param startDate - Optional ISO date for range start (inclusive)
+   * @param endDate - Optional ISO date for range end (inclusive)
+   */
+  async getStyleInsights(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<StyleInsightEntry[]> {
+    // Build the query with nested resource embedding. PostgREST translates
+    // this into JOINs: route_ascents → routes → route_style_tags → style_tags.
+    // We only need the tag info from each route, not the full route data.
+    let query = fromRouteAscents()
+      .select(
+        "route_id, route:routes(route_style_tags(tag:style_tags(name, category)))"
+      )
+      .eq("user_id", userId)
+      .in("status", ["send", "flash"]);
+
+    // Apply optional date range filters (same pattern as getGradePyramid).
+    if (startDate) {
+      query = query.gte("created_at", startDate);
+    }
+    if (endDate) {
+      query = query.lte("created_at", endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Count distinct routes per tag. We track which route_id has already
+    // been counted for each tag to avoid double-counting if the user sent
+    // the same route multiple times (e.g., re-sent after it was reset).
+    const tagCounts = new Map<string, { category: string; routeIds: Set<string> }>();
+
+    for (const row of data ?? []) {
+      const routeId = row.route_id;
+      const styleTags = row.route?.route_style_tags;
+      if (!styleTags || !Array.isArray(styleTags)) continue;
+
+      for (const rst of styleTags) {
+        const tag = rst.tag;
+        if (!tag?.name) continue;
+
+        if (!tagCounts.has(tag.name)) {
+          tagCounts.set(tag.name, {
+            category: tag.category ?? "",
+            routeIds: new Set(),
+          });
+        }
+
+        // Add this route to the set — Set handles deduplication automatically.
+        tagCounts.get(tag.name)!.routeIds.add(routeId);
+      }
+    }
+
+    // Convert to array sorted by count descending (most prominent style first).
+    const entries: StyleInsightEntry[] = [];
+    for (const [tagName, { category, routeIds }] of tagCounts) {
+      entries.push({ tagName, category, count: routeIds.size });
+    }
+    entries.sort((a, b) => b.count - a.count);
 
     return entries;
   },

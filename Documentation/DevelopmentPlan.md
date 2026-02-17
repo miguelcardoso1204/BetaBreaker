@@ -2621,9 +2621,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 14.2 — Style Insights
+### Step 14.2 — Style Insights (COMPLETED ✅)
 
-**Depends on:** Step 14.1  
+**Depends on:** Step 14.1
 **Relevant requirements:** FR-E2
 
 **What to test:**
@@ -2641,6 +2641,20 @@ Test count: +39 new tests (1027 total passing).
 - Pro gate.
 
 **Acceptance:** Style chart renders with correct data.
+
+**Implementation notes (completed):**
+- Helper extraction: `hooks/_helpers.ts` — extracted `computeDateRange()` from `useGradePyramid.ts` so both pyramid and style insights hooks share the time-period → date-range conversion logic
+- Service: `services/sessions.service.ts` — added `StyleInsightEntry` type + `getStyleInsights(userId, startDate?, endDate?)` method; queries `route_ascents` with nested PostgREST resource embedding (`route:routes(route_style_tags(tag:style_tags(name, category)))`), counts distinct routes per tag using `Set<string>` deduplication, returns entries sorted by count descending
+- Hook: `hooks/useStyleInsights.ts` — TanStack Query wrapper with Pro-tier gating via `useEntitlement('analytics')`; uses shared `computeDateRange()`; query key `["analytics", "style", userId, timePeriod]`
+- Component: `components/analytics/StyleInsights.tsx` — radar chart using `react-native-svg` (v15.12.1, already installed); renders concentric reference polygons, axis lines, filled data polygon, data point dots, tag labels with smart text-anchoring, and a legend with exact counts; handles empty state and accessibility labels
+- Tests: `services/__tests__/sessions.service.test.ts` — 6 new tests (tag counting, deduplication, date filtering, empty data, null/missing tag handling, error propagation); `hooks/__tests__/useStyleInsights.test.tsx` — 6 tests (Pro access, free-tier disabled, no user disabled, date ranges for each period, error handling); `components/analytics/__tests__/StyleInsights.test.tsx` — 8 tests (tag labels, counts, accessibility, data polygon, empty state, single entry, testID)
+- Key decisions:
+  - Uses DB `style_tags` table (crowd-sourced route tags), not `STYLE_TAGS` constant (personal logging tags)
+  - Counts distinct routes per tag (not vote_count) — gives a personal climbing profile
+  - Radar chart via react-native-svg — natural fit for multi-axis style distribution, already installed
+  - Extracted `computeDateRange()` to shared `hooks/_helpers.ts` to DRY time-period logic
+  - No new dependencies added
+- Total unit tests: 1095 (20 new + 1075 existing)
 
 ---
 

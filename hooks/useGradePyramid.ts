@@ -6,8 +6,8 @@
  *
  * 1. TIME PERIOD → DATE RANGE CONVERSION
  *    The UI presents friendly time periods ('last_month', 'three_months',
- *    'all_time'). This hook converts them to ISO date strings that the
- *    service layer uses for `gte`/`lte` filters on `created_at`.
+ *    'all_time'). computeDateRange() (from _helpers.ts) converts them to
+ *    ISO date strings for the service's `gte`/`lte` filters on `created_at`.
  *
  * 2. PRO-TIER GATING
  *    Analytics is a Pro-only feature (FR-E1). The query is disabled when
@@ -30,42 +30,9 @@ import { useQuery } from "@tanstack/react-query";
 import { sessionsService } from "@/services/sessions.service";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntitlement } from "@/hooks/useEntitlement";
+import { computeDateRange } from "@/hooks/_helpers";
 import type { TimePeriod } from "@/lib/constants";
 import type { GradePyramidEntry } from "@/services/sessions.service";
-
-/**
- * Compute the ISO date range for a given time period.
- *
- * Uses simple day arithmetic relative to "now". Returns undefined for
- * `all_time` so the service skips date filtering entirely.
- *
- * Why not use a date library?
- * These are straightforward day offsets. `Date` handles month/year
- * rollover correctly (e.g., Jan 15 minus 30 days → Dec 16), so a
- * library like date-fns would be overkill here.
- */
-function computeDateRange(period: TimePeriod): {
-  startDate?: string;
-  endDate?: string;
-} {
-  if (period === "all_time") {
-    return {};
-  }
-
-  const now = new Date();
-  const end = now.toISOString();
-
-  // Calculate how many days to look back based on the period.
-  // 30 days for last_month, 90 days for three_months.
-  const daysBack = period === "last_month" ? 30 : 90;
-  const start = new Date(now);
-  start.setDate(start.getDate() - daysBack);
-
-  return {
-    startDate: start.toISOString(),
-    endDate: end,
-  };
-}
 
 /** The shape returned by useGradePyramid(), extending the TanStack Query result. */
 export interface UseGradePyramidReturn {

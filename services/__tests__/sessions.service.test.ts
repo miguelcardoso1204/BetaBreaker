@@ -483,6 +483,214 @@ describe("sessionsService", () => {
     });
   });
 
+  // ── getStyleInsights ────────────────────────────────────────────
+
+  describe("getStyleInsights", () => {
+    it("counts distinct routes per tag from sent/flashed routes", async () => {
+      // Two ascents on different routes. Route A is tagged "slab" + "crimpy",
+      // Route B is tagged "slab" + "dyno". Expected: slab=2, crimpy=1, dyno=1.
+      const mockRows = [
+        {
+          route_id: "route-a",
+          route: {
+            route_style_tags: [
+              { tag: { name: "slab", category: "angle" } },
+              { tag: { name: "crimpy", category: "hold_type" } },
+            ],
+          },
+        },
+        {
+          route_id: "route-b",
+          route: {
+            route_style_tags: [
+              { tag: { name: "slab", category: "angle" } },
+              { tag: { name: "dyno", category: "movement" } },
+            ],
+          },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getStyleInsights("user-1");
+
+      // Verify query construction
+      expect(supabase.from).toHaveBeenCalledWith("route_ascents");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "route_id, route:routes(route_style_tags(tag:style_tags(name, category)))"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(chainMock.in).toHaveBeenCalledWith("status", ["send", "flash"]);
+
+      // Sorted by count descending: slab(2), then crimpy(1) and dyno(1)
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({ tagName: "slab", category: "angle", count: 2 });
+      // crimpy and dyno both have count 1 — order is insertion order
+      expect(result.find((e) => e.tagName === "crimpy")).toEqual({
+        tagName: "crimpy",
+        category: "hold_type",
+        count: 1,
+      });
+      expect(result.find((e) => e.tagName === "dyno")).toEqual({
+        tagName: "dyno",
+        category: "movement",
+        count: 1,
+      });
+    });
+
+    it("deduplicates when the same route is sent twice", async () => {
+      // If a user sends route-a twice (e.g., re-sent after reset), each tag
+      // on that route should still only count once (distinct route counting).
+      const mockRows = [
+        {
+          route_id: "route-a",
+          route: {
+            route_style_tags: [
+              { tag: { name: "overhang", category: "angle" } },
+            ],
+          },
+        },
+        {
+          route_id: "route-a", // Same route, second send
+          route: {
+            route_style_tags: [
+              { tag: { name: "overhang", category: "angle" } },
+            ],
+          },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getStyleInsights("user-1");
+
+      // overhang should count as 1 (one distinct route), not 2
+      expect(result).toEqual([
+        { tagName: "overhang", category: "angle", count: 1 },
+      ]);
+    });
+
+    it("applies date range filters when provided", async () => {
+      // When startDate/endDate are passed, the service should add gte/lte
+      // filters on created_at — same pattern as getGradePyramid.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await sessionsService.getStyleInsights(
+        "user-1",
+        "2026-01-01T00:00:00",
+        "2026-01-31T23:59:59"
+      );
+
+      expect(chainMock.gte).toHaveBeenCalledWith(
+        "created_at",
+        "2026-01-01T00:00:00"
+      );
+      expect(chainMock.lte).toHaveBeenCalledWith(
+        "created_at",
+        "2026-01-31T23:59:59"
+      );
+    });
+
+    it("returns empty array when no ascent data exists", async () => {
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getStyleInsights("user-1");
+
+      expect(result).toEqual([]);
+    });
+
+    it("skips routes with no style tags or null tag data", async () => {
+      // Routes without tags (empty array), or rows with null route data,
+      // should be silently skipped.
+      const mockRows = [
+        {
+          route_id: "route-a",
+          route: { route_style_tags: [] }, // No tags
+        },
+        {
+          route_id: "route-b",
+          route: null, // Route deleted
+        },
+        {
+          route_id: "route-c",
+          route: {
+            route_style_tags: [
+              { tag: null }, // Malformed tag data
+              { tag: { name: "techy", category: "movement" } },
+            ],
+          },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getStyleInsights("user-1");
+
+      // Only the valid tag from route-c should appear
+      expect(result).toEqual([
+        { tagName: "techy", category: "movement", count: 1 },
+      ]);
+    });
+
+    it("throws when Supabase returns an error", async () => {
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: { message: "Connection refused", code: "PGRST000" },
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await expect(
+        sessionsService.getStyleInsights("user-1")
+      ).rejects.toEqual({ message: "Connection refused", code: "PGRST000" });
+    });
+  });
+
   // ── deleteAscent ────────────────────────────────────────────────
 
   describe("deleteAscent", () => {
