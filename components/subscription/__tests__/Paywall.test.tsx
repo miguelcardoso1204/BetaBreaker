@@ -46,9 +46,25 @@ jest.mock("@/hooks/useSubscription", () => ({
 
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { tier: "free" },
+    user: { id: "user-1", tier: "free" },
     isLoading: false,
     refreshProfile: jest.fn(),
+  }),
+}));
+
+// Mock useTrials for the PromoCodeInput rendered inside Paywall
+jest.mock("@/hooks/useTrials", () => ({
+  useTrials: () => ({
+    redeemMutation: {
+      mutate: jest.fn(),
+      isPending: false,
+      isError: false,
+      isSuccess: false,
+      error: null,
+    },
+    trialQuery: { data: null, isLoading: false },
+    isOnTrial: false,
+    trialExpiresAt: null,
   }),
 }));
 
@@ -167,5 +183,15 @@ describe("Paywall", () => {
 
     // The subtitle says "Unlock full analytics dashboard and more"
     expect(getByText(/unlock.*analytics/i)).toBeTruthy();
+  });
+
+  // ── Promo code section ──────────────────────────────────────────────
+
+  it("renders the promo code toggle", () => {
+    // The Paywall should include a PromoCodeInput component that starts
+    // collapsed as a "Have a promo code?" link.
+    const { getByText } = render(<Paywall {...defaultProps} />);
+
+    expect(getByText(/have a promo code/i)).toBeTruthy();
   });
 });

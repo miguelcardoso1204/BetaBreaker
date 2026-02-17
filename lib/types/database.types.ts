@@ -692,6 +692,39 @@ export type Database = {
           },
         ]
       }
+      promo_codes: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          current_uses: number
+          duration_days: number
+          id: string
+          max_uses: number
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          current_uses?: number
+          duration_days: number
+          id?: string
+          max_uses: number
+          type: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          current_uses?: number
+          duration_days?: number
+          id?: string
+          max_uses?: number
+          type?: string
+        }
+        Relationships: []
+      }
       push_tokens: {
         Row: {
           created_at: string
@@ -985,50 +1018,6 @@ export type Database = {
           },
         ]
       }
-      subscription_events: {
-        Row: {
-          id: string
-          user_id: string
-          event_type: string
-          store: string
-          store_transaction_id: string
-          store_product_id: string
-          receipt_data: string | null
-          expires_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          event_type: string
-          store: string
-          store_transaction_id: string
-          store_product_id: string
-          receipt_data?: string | null
-          expires_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          event_type?: string
-          store?: string
-          store_transaction_id?: string
-          store_product_id?: string
-          receipt_data?: string | null
-          expires_at?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscription_events_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       saved_routes: {
         Row: {
           created_at: string
@@ -1123,6 +1112,50 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      subscription_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          expires_at: string | null
+          id: string
+          receipt_data: string | null
+          store: string
+          store_product_id: string
+          store_transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          expires_at?: string | null
+          id?: string
+          receipt_data?: string | null
+          store: string
+          store_product_id: string
+          store_transaction_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          expires_at?: string | null
+          id?: string
+          receipt_data?: string | null
+          store?: string
+          store_product_id?: string
+          store_transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_badges: {
         Row: {
@@ -1267,6 +1300,51 @@ export type Database = {
           },
         ]
       }
+      user_trials: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          promo_code_id: string | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          promo_code_id?: string | null
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          promo_code_id?: string | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_trials_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_trials_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1304,6 +1382,7 @@ export type Database = {
             }
             Returns: undefined
           }
+      expire_trials: { Args: never; Returns: undefined }
       get_enrolled_leaderboards: {
         Args: { p_user_id: string }
         Returns: {

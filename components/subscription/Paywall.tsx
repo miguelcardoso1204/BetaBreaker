@@ -33,6 +33,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PromoCodeInput } from "@/components/subscription/PromoCodeInput";
 import { IAP_PRODUCT_IDS } from "@/lib/constants";
 import type { EntitlementFeature } from "@/lib/constants";
 
@@ -123,6 +124,9 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
         >
           <Text style={styles.restoreText}>Restore Purchases</Text>
         </Pressable>
+
+        {/* Promo code input — expandable section for trial codes */}
+        <PromoCodeInput onSuccess={onDismiss} />
 
         {/* Dismiss link — lets the user close without purchasing */}
         <Pressable style={styles.dismissButton} onPress={onDismiss}>

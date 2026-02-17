@@ -2514,9 +2514,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 13.2 — Trials & Promo Codes
+### Step 13.2 — Trials & Promo Codes ✅
 
-**Depends on:** Step 13.1  
+**Depends on:** Step 13.1
 **Relevant requirements:** FR-L5
 
 **What to test:**
@@ -2537,6 +2537,17 @@ Test count: +39 new tests (1027 total passing).
 - `pg_cron` job: expire trials nightly, revert tier to Free.
 
 **Acceptance:** Trial and promo flows work correctly with proper expiration.
+
+**Implementation notes (Step 13.2):**
+- Migration: `supabase/migrations/20260217120000_trials_promo_codes.sql` — `promo_codes` + `user_trials` tables, RLS policies, `expire_trials()` function, pg_cron scheduling
+- Edge Function: `supabase/functions/redeem-promo/index.ts` — validates code, inserts trial, upgrades tier
+- Service: `services/trial.service.ts` — `getActiveTrial()` + `redeemPromoCode()`
+- Hook: `hooks/useTrials.ts` — `trialQuery` + `redeemMutation` + computed `isOnTrial`/`trialExpiresAt`
+- UI: `components/subscription/PromoCodeInput.tsx` — expandable promo code input inside Paywall
+- Modified: `components/subscription/Paywall.tsx` — renders PromoCodeInput between Restore and Not Now
+- Regenerated: `lib/types/database.types.ts`
+- Tests: 22 integration (00016) + 18 unit (3 service + 6 hook + 8 PromoCodeInput + 1 Paywall) = 40 new tests
+- Total integration tests: 420 (398 + 22). Total unit tests: 990 (972 + 18).
 
 ---
 
