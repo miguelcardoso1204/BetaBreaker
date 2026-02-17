@@ -2585,9 +2585,9 @@ Test count: +39 new tests (1027 total passing).
 
 ## Phase 14 — Progression & Analytics (Pro)
 
-### Step 14.1 — Grade Pyramid
+### ✅ Step 14.1 — Grade Pyramid
 
-**Depends on:** Phase 5 (sessions), Phase 13 (tier gating)  
+**Depends on:** Phase 5 (sessions), Phase 13 (tier gating)
 **Relevant requirements:** FR-E1
 
 **What to test:**
@@ -2606,6 +2606,18 @@ Test count: +39 new tests (1027 total passing).
 - Pro gate: only accessible to Pro users.
 
 **Acceptance:** Grade pyramid displays correctly for test user's ascent history.
+
+**Implementation notes (completed):**
+- Constants: `lib/constants.ts` — added `TIME_PERIODS` array + `TimePeriod` type for analytics time range selection
+- Service: `services/sessions.service.ts` — added `GradePyramidEntry` type + `getGradePyramid(userId, startDate?, endDate?)` method; queries `route_ascents` filtered to `status IN ('send', 'flash')`, groups by `canonical_grade` in JS
+- Hook: `hooks/useGradePyramid.ts` — TanStack Query wrapper with Pro-tier gating via `useEntitlement('analytics')`; converts `TimePeriod` to date ranges; query key `["analytics", "pyramid", userId, timePeriod]`
+- Component: `components/analytics/GradePyramid.tsx` — pure presentational horizontal bar chart using `View` percentage widths (no charting library); handles empty state, accessibility labels, all 3 grade systems
+- Tests: `services/__tests__/sessions.service.test.ts` — 5 new tests (pyramid grouping, date filtering, empty data, null grade handling, error propagation); `hooks/__tests__/useGradePyramid.test.tsx` — 6 tests (Pro access, free-tier disabled, no user disabled, date ranges for each period, error handling); `components/analytics/__tests__/GradePyramid.test.tsx` — 8 tests (grade labels for all 3 systems, counts, accessibility, empty state, single entry, testID)
+- Key decisions:
+  - Flash = send for pyramid purposes (flashes are successful completions on first try)
+  - No charting library — horizontal bars are trivial with View + percentage widths
+  - Added to existing `sessions.service.ts` rather than creating a separate analytics service (queries same `route_ascents` table)
+- Total unit tests: 1075 (19 new + 1056 existing)
 
 ---
 

@@ -155,6 +155,20 @@ export interface AscentWithRoute extends Ascent {
   } | null;
 }
 
+/**
+ * One bar in the Grade Pyramid chart: a canonical grade and how many
+ * successful ascents (sends + flashes) the user has at that grade.
+ *
+ * Sorted ascending by grade so the chart renders easiest grades at
+ * the bottom and hardest at the top (typical pyramid shape).
+ */
+export interface GradePyramidEntry {
+  /** Canonical grade integer (0–30). */
+  grade: number;
+  /** Number of sends + flashes at this grade. */
+  count: number;
+}
+
 // ── Service ──────────────────────────────────────────────────────────
 
 export const sessionsService = {
@@ -385,5 +399,72 @@ export const sessionsService = {
     if (error) throw error;
 
     return (data ?? []) as AscentWithRoute[];
+  },
+
+  /**
+   * Fetch send/flash ascents grouped by grade for the Grade Pyramid chart.
+   *
+   * Queries route_ascents with a route join for canonical_grade, filtering
+   * to only successful completions (status IN ('send', 'flash')). Flashes
+   * are included because they ARE sends — the climber completed the route
+   * on first try. Attempts are excluded since they don't represent a
+   * completed climb.
+   *
+   * The optional startDate/endDate params enable time-period filtering
+   * (last month, 3 months, all time). When omitted, all ascents are included.
+   *
+   * Grouping by grade happens in JS (PostgREST can't GROUP BY), returning
+   * an array of { grade, count } sorted ascending by grade.
+   *
+   * @param userId - The user whose pyramid to build
+   * @param startDate - Optional ISO date string for the range start (inclusive)
+   * @param endDate - Optional ISO date string for the range end (inclusive)
+   */
+  async getGradePyramid(
+    userId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<GradePyramidEntry[]> {
+    // Build the query chain. Start with user filter and status filter.
+    // PostgREST's `.in()` generates a `WHERE status IN (...)` clause.
+    let query = fromRouteAscents()
+      .select("status, route:routes(canonical_grade)")
+      .eq("user_id", userId)
+      .in("status", ["send", "flash"]);
+
+    // Apply optional date range filters. These are ISO date strings
+    // like "2026-01-17T00:00:00" — Postgres handles the comparison.
+    if (startDate) {
+      query = query.gte("created_at", startDate);
+    }
+    if (endDate) {
+      query = query.lte("created_at", endDate);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    // Group by canonical_grade in JS. We use a Map to count occurrences
+    // of each grade. Rows with null grades (route deleted or no grade set)
+    // are skipped — they can't be placed on the pyramid.
+    const gradeCounts = new Map<number, number>();
+
+    for (const row of data ?? []) {
+      const grade = row.route?.canonical_grade;
+      if (grade != null) {
+        gradeCounts.set(grade, (gradeCounts.get(grade) ?? 0) + 1);
+      }
+    }
+
+    // Convert to array and sort ascending by grade (easiest → hardest).
+    // This ordering is what the chart expects: bottom bars = easy grades.
+    const entries: GradePyramidEntry[] = [];
+    for (const [grade, count] of gradeCounts) {
+      entries.push({ grade, count });
+    }
+    entries.sort((a, b) => a.grade - b.grade);
+
+    return entries;
   },
 };

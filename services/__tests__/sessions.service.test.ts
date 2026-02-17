@@ -338,6 +338,151 @@ describe("sessionsService", () => {
     });
   });
 
+  // ── getGradePyramid ──────────────────────────────────────────────
+
+  describe("getGradePyramid", () => {
+    it("groups sends and flashes by grade, sorted ascending", async () => {
+      // The pyramid counts successful completions (send + flash) per grade.
+      // Given 3 rows: two at grade 6 (one flash, one send) and one at grade 10,
+      // the result should be [{ grade: 6, count: 2 }, { grade: 10, count: 1 }].
+      const mockRows = [
+        {
+          status: "flash",
+          route: { canonical_grade: 6 },
+        },
+        {
+          status: "send",
+          route: { canonical_grade: 10 },
+        },
+        {
+          status: "send",
+          route: { canonical_grade: 6 },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getGradePyramid("user-1");
+
+      // Verify correct table and filters
+      expect(supabase.from).toHaveBeenCalledWith("route_ascents");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "status, route:routes(canonical_grade)"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("user_id", "user-1");
+      expect(chainMock.in).toHaveBeenCalledWith("status", ["send", "flash"]);
+
+      // Verify grouping and ascending sort
+      expect(result).toEqual([
+        { grade: 6, count: 2 },
+        { grade: 10, count: 1 },
+      ]);
+    });
+
+    it("applies date range filters when startDate and endDate are provided", async () => {
+      // When the hook passes a time period, the service should add gte/lte
+      // filters on created_at. This test verifies the chain includes those calls.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockResolvedValueOnce({
+          data: [
+            { status: "send", route: { canonical_grade: 8 } },
+          ],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getGradePyramid(
+        "user-1",
+        "2026-01-01T00:00:00",
+        "2026-01-31T23:59:59"
+      );
+
+      // Verify date filters were applied
+      expect(chainMock.gte).toHaveBeenCalledWith(
+        "created_at",
+        "2026-01-01T00:00:00"
+      );
+      expect(chainMock.lte).toHaveBeenCalledWith(
+        "created_at",
+        "2026-01-31T23:59:59"
+      );
+      expect(result).toEqual([{ grade: 8, count: 1 }]);
+    });
+
+    it("returns empty array when no ascent data exists", async () => {
+      // A new user with no sends should get back an empty pyramid.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: [],
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getGradePyramid("user-1");
+
+      expect(result).toEqual([]);
+    });
+
+    it("skips rows with null grades (route has no grade set)", async () => {
+      // Some routes might have null canonical_grade (e.g., route was deleted
+      // and the JOIN returns null). These should be silently skipped.
+      const mockRows = [
+        { status: "send", route: { canonical_grade: null } },
+        { status: "send", route: { canonical_grade: 5 } },
+        { status: "flash", route: null }, // route was deleted entirely
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockRows,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await sessionsService.getGradePyramid("user-1");
+
+      // Only the row with grade 5 should appear
+      expect(result).toEqual([{ grade: 5, count: 1 }]);
+    });
+
+    it("throws when Supabase returns an error", async () => {
+      // If the PostgREST query fails (e.g., network error, RLS violation),
+      // the service should propagate the error to the caller.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: { message: "Connection refused", code: "PGRST000" },
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await expect(
+        sessionsService.getGradePyramid("user-1")
+      ).rejects.toEqual({ message: "Connection refused", code: "PGRST000" });
+    });
+  });
+
   // ── deleteAscent ────────────────────────────────────────────────
 
   describe("deleteAscent", () => {

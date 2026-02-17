@@ -459,6 +459,25 @@ export const GYM_BILLING_STATUSES = ['pending', 'invoiced', 'paid'] as const;
 /** Union type of valid gym billing statuses. */
 export type GymBillingStatus = typeof GYM_BILLING_STATUSES[number];
 
+/* ── Analytics Time Periods ─────────────────────────────────────── */
+
+/**
+ * Time periods for analytics queries (Grade Pyramid, etc.).
+ *
+ * Each period defines a lookback window from "now":
+ *   last_month    — last 30 days of sends
+ *   three_months  — last 90 days of sends
+ *   all_time      — no date filter, all historical sends
+ *
+ * The hook (useGradePyramid) converts these into startDate/endDate
+ * params for the service layer. `all_time` passes no dates, which
+ * tells the service to skip the date range filter.
+ */
+export const TIME_PERIODS = ['last_month', 'three_months', 'all_time'] as const;
+
+/** Union type for analytics time period selectors. */
+export type TimePeriod = typeof TIME_PERIODS[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',
