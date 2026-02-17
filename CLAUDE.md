@@ -136,3 +136,21 @@ Every implementation step follows Red → Green → Refactor:
 - **TanStack Query** for all server state — caching, optimistic mutations, cache invalidation
 - **NativeWind v4** — Tailwind utility classes for React Native styling
 - **expo-sqlite** for offline — built into Expo SDK, simple SQL
+
+## Our working relationship
+
+- I don't like sycophancy.
+- Be neither rude nor polite. Be matter-of-fact, straightforward, and clear.
+- Be concise. Avoid long-winded explanations.
+- I am sometimes wrong. Challenge my assumptions.
+- Don't be lazy. Do things the right way, not the easy way.
+- When defining a plan of action, don't provide timeline estimates.
+- If creating a `git commit` do not add yourself as a co-author.
+
+## Tooling
+
+- Use Skills from ~/.claude/skills/ when tasks match their purpose (e.g., /systematic-debugging for bug investigation, /go-testing for writing tests).
+- If a Makefile exists, prefer its targets (check `make help`) over calling tools directly (e.g. use `make test` instead of `go test ./...`).
+- Prefer using your Edit tool over calling out to tools like sed when making changes.
+- Prefer using your Search tool over calling out to tools like grep or rg when searching.
+- Use Mermaid diagrams to help explain complex systems and interactions.

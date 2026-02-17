@@ -21,3 +21,10 @@ The `components/` directory is like a toolbox with labeled drawers — each subd
 - **`navigation/`** — Navigation helpers (tab bar customization, etc.).
 
 The loose files at the top (`useClientOnlyValue.ts`, `useColorScheme.ts`) are small hooks from the Expo template that handle platform differences between web and native. The pattern is: **`ui/` holds generic pieces, domain folders hold app-specific pieces**. A screen in `app/` assembles components from these drawers like snapping Legos together, rather than building everything from scratch each time.
+
+### Q: What are hooks?
+Hooks are special functions in React that let your components "hook into" React's superpowers — things like remembering data, reacting to changes, or talking to the outside world.
+
+Think of a component like a puppet. On its own it's just a shape — it can't remember anything, fetch data, or respond to the world. Hooks are the strings that connect it to the puppeteer (React). `useState` gives it memory. `useEffect` lets it do something when the scene changes. `useQuery` (from TanStack Query) lets it ask a server for data and automatically re-render when the answer arrives.
+
+In Beta Breaker, the `hooks/` directory holds **custom hooks** — hooks we wrote ourselves that combine React's built-in hooks with our app's logic. For example, `useRoutes()` wraps TanStack Query's `useQuery` to fetch climbing routes from Supabase. The screen component just calls `useRoutes()` and gets back the data, loading state, and error — it doesn't need to know *how* the fetch works. This keeps screens simple: they describe what to show, and hooks handle how to get it.
