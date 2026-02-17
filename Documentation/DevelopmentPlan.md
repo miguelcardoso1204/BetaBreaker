@@ -2551,9 +2551,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 13.3 — Gym Billing (Admin)
+### Step 13.3 — Gym Billing (Admin) ✅
 
-**Depends on:** Phase 2 (tables), Phase 15 (admin portal)  
+**Depends on:** Phase 2 (tables), Phase 15 (admin portal)
 **Relevant requirements:** FR-L2
 
 **What to test:**
@@ -2571,6 +2571,15 @@ Test count: +39 new tests (1027 total passing).
 - Billing history screen.
 
 **Acceptance:** Billing calculation is correct for seeded data.
+
+**Implementation notes (completed):**
+- Migration: `supabase/migrations/20260217130000_gym_billing.sql` — gym_billing_records table, get_gym_active_user_count() RPC, generate_monthly_billing() function, pg_cron schedule
+- Constants: `lib/constants.ts` — GYM_BILLING_RATE_EUR, GYM_BILLING_STATUSES, GymBillingStatus
+- Service: `services/billing.service.ts` — getGymBillingHistory, getCurrentMonthActiveUsers, getLatestBillingRecord
+- Hook: `hooks/useBilling.ts` — billingHistoryQuery, activeUsersQuery, projectedBill computed value
+- Screen: `app/(admin)/billing.tsx` — current month widget + billing history FlatList
+- Tests: 18 integration (00017) + 12 unit (3 service + 4 hook + 5 screen) = 30 new tests
+- Total integration tests: 438 (420 + 18). Total unit tests: 1002 (990 + 12).
 
 ---
 

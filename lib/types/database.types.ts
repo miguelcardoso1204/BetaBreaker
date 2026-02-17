@@ -439,6 +439,50 @@ export type Database = {
           },
         ]
       }
+      gym_billing_records: {
+        Row: {
+          active_user_count: number
+          created_at: string
+          gym_id: string
+          id: string
+          period_end: string
+          period_start: string
+          rate_per_user_eur: number
+          status: string
+          total_due_eur: number
+        }
+        Insert: {
+          active_user_count: number
+          created_at?: string
+          gym_id: string
+          id?: string
+          period_end: string
+          period_start: string
+          rate_per_user_eur?: number
+          status?: string
+          total_due_eur: number
+        }
+        Update: {
+          active_user_count?: number
+          created_at?: string
+          gym_id?: string
+          id?: string
+          period_end?: string
+          period_start?: string
+          rate_per_user_eur?: number
+          status?: string
+          total_due_eur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gym_billing_records_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gyms: {
         Row: {
           address: string | null
@@ -1383,6 +1427,10 @@ export type Database = {
             Returns: undefined
           }
       expire_trials: { Args: never; Returns: undefined }
+      generate_monthly_billing: {
+        Args: { target_month?: string }
+        Returns: undefined
+      }
       get_enrolled_leaderboards: {
         Args: { p_user_id: string }
         Returns: {
@@ -1395,6 +1443,10 @@ export type Database = {
           scoring_model: string
           total_participants: number
         }[]
+      }
+      get_gym_active_user_count: {
+        Args: { p_gym_id: string; p_period_end: string; p_period_start: string }
+        Returns: number
       }
       get_user_role: { Args: { p_gym_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
