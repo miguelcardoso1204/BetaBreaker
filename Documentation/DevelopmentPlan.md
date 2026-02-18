@@ -2728,9 +2728,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 15.2 — Route Management (Admin)
+### Step 15.2 — Route Management (Admin) ✅
 
-**Depends on:** Step 15.1, Phase 7 (Step 7.2 for QR signing)  
+**Depends on:** Step 15.1, Phase 7 (Step 7.2 for QR signing)
 **Relevant requirements:** FR-I1, FR-C5, FR-C7
 
 **What to test:**
@@ -2753,6 +2753,15 @@ Test count: +39 new tests (1027 total passing).
 - QR code generation + display (from `sign-qr` edge function).
 
 **Acceptance:** Full route lifecycle manageable from admin screens.
+
+**Implementation notes:**
+- 31 new tests, 8 new files, 5 modified files
+- Service: added createRoute, updateRoute, deleteRoute, getGymSetters, generateQrToken to routeService + 3 types (CreateRouteData, UpdateRouteData, GymSetter)
+- Hooks: created useAdminRoutes.ts with 6 hooks (useAdminRoutes, useGymSetters, useCreateRoute, useUpdateRoute, useDeleteRoute, useGenerateQr)
+- Screens: route list (index.tsx), create form (create.tsx), edit/detail ([id].tsx) under app/(admin)/routes/
+- Grade picker uses deduplicated GRADE_TABLE entries for V-scale chip selection
+- Bulk import/update deferred to future iteration
+- Test counts: 143 suites, 1190 unit tests passing
 
 ---
 

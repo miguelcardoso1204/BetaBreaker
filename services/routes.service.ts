@@ -24,6 +24,44 @@ import type { RouteStatus } from "@/lib/constants";
 import type { CandidateRoute } from "@/utils/suggestions";
 
 /**
+ * Data needed to create a new route. gym_id and canonical_grade are required;
+ * everything else is optional because not every gym tracks all fields.
+ */
+export interface CreateRouteData {
+  gym_id: string;
+  name?: string;
+  canonical_grade: number;
+  color?: string;
+  wall_section?: string;
+  setter_id?: string;
+}
+
+/**
+ * Partial update shape for editing a route. All fields optional — the service
+ * sends only the changed fields, and Supabase's .update() ignores undefined keys.
+ * Includes status and retired_at for lifecycle transitions.
+ */
+export interface UpdateRouteData {
+  name?: string;
+  canonical_grade?: number;
+  color?: string;
+  wall_section?: string;
+  setter_id?: string | null;
+  status?: RouteStatus;
+  retired_at?: string | null;
+}
+
+/**
+ * Shape returned by getGymSetters — a user with a setter-capable role
+ * plus their profile display name for the setter assignment dropdown.
+ */
+export interface GymSetter {
+  user_id: string;
+  role: string;
+  profile: { id: string; display_name: string | null };
+}
+
+/**
  * Filters that control which routes are returned and how they're sorted.
  *
  * All fields except gymId are optional — sensible defaults are applied in
@@ -198,5 +236,76 @@ export const routeService = {
       .select("*, setter:profiles!setter_id(display_name, avatar_url)")
       .eq("id", routeId)
       .single();
+  },
+
+  /**
+   * Create a new route.
+   *
+   * Inserts into the routes table. Does NOT chain .select() — same
+   * INSERT-without-RETURNING pattern as eventsService to avoid the
+   * RLS + INSERT RETURNING gotcha.
+   *
+   * @param data - Route fields: gym_id + canonical_grade required, rest optional
+   */
+  createRoute(data: CreateRouteData) {
+    return supabase.from("routes").insert(data);
+  },
+
+  /**
+   * Update an existing route.
+   *
+   * Supports partial updates — only provided fields are changed.
+   * Used for editing route info (name, grade, color, wall section, setter)
+   * and advancing lifecycle status (active → retiring_soon → archived).
+   *
+   * @param routeId - UUID of the route to update
+   * @param data - Partial fields to change
+   */
+  updateRoute(routeId: string, data: UpdateRouteData) {
+    return supabase.from("routes").update(data).eq("id", routeId);
+  },
+
+  /**
+   * Delete a route.
+   *
+   * RLS restricts this to gym_admin+ roles. Related data (ascents, etc.)
+   * may CASCADE depending on migration policies.
+   *
+   * @param routeId - UUID of the route to delete
+   */
+  deleteRoute(routeId: string) {
+    return supabase.from("routes").delete().eq("id", routeId);
+  },
+
+  /**
+   * Fetch users who can be assigned as route setters at a gym.
+   *
+   * Queries user_gym_roles for users with setter, gym_admin, or super_admin
+   * roles, and joins the profiles table to get display names for the
+   * setter assignment dropdown in the admin route form.
+   *
+   * @param gymId - The gym to fetch setters for
+   */
+  getGymSetters(gymId: string) {
+    return supabase
+      .from("user_gym_roles")
+      .select("user_id, role, profile:profiles(id, display_name)")
+      .eq("gym_id", gymId)
+      .in("role", ["setter", "gym_admin", "super_admin"]);
+  },
+
+  /**
+   * Generate a signed QR token for a route via the sign-qr Edge Function.
+   *
+   * The Edge Function creates a signed JWT containing the route ID. This
+   * token can be encoded into a QR code and displayed at the physical
+   * wall, allowing climbers to scan and quickly navigate to the route.
+   *
+   * @param routeId - UUID of the route to generate a QR token for
+   */
+  generateQrToken(routeId: string) {
+    return supabase.functions.invoke("sign-qr", {
+      body: { route_id: routeId },
+    });
   },
 };

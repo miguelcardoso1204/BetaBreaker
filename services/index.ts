@@ -28,9 +28,14 @@ export type { OAuthProvider, AuthChangeEvent, Session } from "./auth.service";
 export { profileService } from "./profile.service";
 
 // Routes service — fetches climbing routes with filtering, sorting, and detail views.
-// Used by useRoutes hook (Step 4.2) to populate route list and detail screens.
+// Also provides admin CRUD methods (create, update, delete) and setter assignment.
 export { routeService } from "./routes.service";
-export type { RouteFilters } from "./routes.service";
+export type {
+  RouteFilters,
+  CreateRouteData,
+  UpdateRouteData,
+  GymSetter,
+} from "./routes.service";
 
 // gymService — fetches gym directory, gym details, and sets home gym.
 export { gymService } from "./gyms.service";

@@ -30,6 +30,11 @@
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     from: jest.fn(),
+    // functions.invoke is used by generateQrToken to call the sign-qr
+    // Edge Function — needs its own mock separate from the PostgREST chain.
+    functions: {
+      invoke: jest.fn(),
+    },
   },
 }));
 
@@ -40,7 +45,7 @@ import { routeService } from "../routes.service";
 // Extract the mock so we can configure return values per-test.
 // jest.requireMock returns the already-mocked module without re-running the factory.
 const { supabase } = jest.requireMock<{
-  supabase: { from: jest.Mock };
+  supabase: { from: jest.Mock; functions: { invoke: jest.Mock } };
 }>("@/lib/supabase");
 
 describe("routeService", () => {
@@ -382,6 +387,147 @@ describe("routeService", () => {
       await expect(
         routeService.getCandidateRoutes("gym-1", 8, 12)
       ).rejects.toEqual({ message: "Connection refused", code: "PGRST000" });
+    });
+  });
+
+  // ── createRoute ──────────────────────────────────────────────────
+
+  describe("createRoute", () => {
+    it("inserts a route without RETURNING", async () => {
+      // Same INSERT-without-RETURNING pattern as eventsService.createEvent.
+      // We avoid chaining .select() after .insert() because RLS policies
+      // may differ between INSERT and SELECT — safer to skip RETURNING.
+      const chainMock = {
+        insert: jest
+          .fn()
+          .mockResolvedValueOnce({ data: null, error: null }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const routeData = {
+        gym_id: "gym-1",
+        name: "New Crimper",
+        canonical_grade: 14,
+        color: "#EF4444",
+        wall_section: "South",
+        setter_id: "setter-1",
+      };
+
+      await routeService.createRoute(routeData);
+
+      expect(supabase.from).toHaveBeenCalledWith("routes");
+      expect(chainMock.insert).toHaveBeenCalledWith(routeData);
+    });
+  });
+
+  // ── updateRoute ─────────────────────────────────────────────────
+
+  describe("updateRoute", () => {
+    it("patches a route by ID with partial data", async () => {
+      // update().eq() chain — update returns an intermediate builder,
+      // then .eq() filters to the specific route and fires the request.
+      const eqMock = jest
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: null });
+      const chainMock = {
+        update: jest.fn().mockReturnValueOnce({ eq: eqMock }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await routeService.updateRoute("route-1", {
+        name: "Updated Name",
+        status: "retiring_soon",
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith("routes");
+      expect(chainMock.update).toHaveBeenCalledWith({
+        name: "Updated Name",
+        status: "retiring_soon",
+      });
+      expect(eqMock).toHaveBeenCalledWith("id", "route-1");
+    });
+  });
+
+  // ── deleteRoute ─────────────────────────────────────────────────
+
+  describe("deleteRoute", () => {
+    it("deletes a route by ID", async () => {
+      // delete().eq() chain — same pattern as eventsService.deleteEvent.
+      // RLS restricts this to gym_admin+ roles in Postgres.
+      const eqMock = jest
+        .fn()
+        .mockResolvedValueOnce({ data: null, error: null });
+      const chainMock = {
+        delete: jest.fn().mockReturnValueOnce({ eq: eqMock }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await routeService.deleteRoute("route-1");
+
+      expect(supabase.from).toHaveBeenCalledWith("routes");
+      expect(chainMock.delete).toHaveBeenCalled();
+      expect(eqMock).toHaveBeenCalledWith("id", "route-1");
+    });
+  });
+
+  // ── getGymSetters ───────────────────────────────────────────────
+
+  describe("getGymSetters", () => {
+    it("fetches users with setter/admin roles at a gym with profile join", async () => {
+      // Queries user_gym_roles and joins profiles to get display names.
+      // The .in('role', [...]) filter limits to roles that can set routes:
+      // setters, gym admins, and super admins all qualify.
+      const mockSetters = [
+        {
+          user_id: "setter-1",
+          role: "setter",
+          profile: { id: "setter-1", display_name: "RouteSetterPro" },
+        },
+      ];
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValueOnce({
+          data: mockSetters,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await routeService.getGymSetters("gym-1");
+
+      expect(supabase.from).toHaveBeenCalledWith("user_gym_roles");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "user_id, role, profile:profiles(id, display_name)"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("gym_id", "gym-1");
+      expect(chainMock.in).toHaveBeenCalledWith("role", [
+        "setter",
+        "gym_admin",
+        "super_admin",
+      ]);
+      expect(result.data).toEqual(mockSetters);
+    });
+  });
+
+  // ── generateQrToken ─────────────────────────────────────────────
+
+  describe("generateQrToken", () => {
+    it("invokes the sign-qr Edge Function with route_id", async () => {
+      // Uses supabase.functions.invoke() instead of PostgREST queries.
+      // The sign-qr function generates a signed JWT containing the route ID,
+      // which can be encoded into a QR code for quick scanning at the wall.
+      supabase.functions.invoke.mockResolvedValueOnce({
+        data: { token: "signed-jwt-token-123" },
+        error: null,
+      });
+
+      const result = await routeService.generateQrToken("route-1");
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith("sign-qr", {
+        body: { route_id: "route-1" },
+      });
+      expect(result.data).toEqual({ token: "signed-jwt-token-123" });
     });
   });
 

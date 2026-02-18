@@ -44,3 +44,13 @@ export { useLeaderboard } from "./useLeaderboard";
 
 // useAdminDashboard — admin dashboard data: route counts, ascents, recent activity.
 export { useAdminDashboard } from "./useAdminDashboard";
+
+// useAdminRoutes — admin route management: CRUD, setter assignment, QR generation.
+export {
+  useAdminRoutes,
+  useGymSetters,
+  useCreateRoute,
+  useUpdateRoute,
+  useDeleteRoute,
+  useGenerateQr,
+} from "./useAdminRoutes";
