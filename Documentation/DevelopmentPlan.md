@@ -3027,9 +3027,9 @@ Test count: +39 new tests (1027 total passing).
 
 ## Phase 17 — Onboarding
 
-### Step 17.1 — Optional Onboarding Flow
+### Step 17.1 — Optional Onboarding Flow ✅
 
-**Depends on:** Phase 3 (auth), Phase 4 (gyms)  
+**Depends on:** Phase 3 (auth), Phase 4 (gyms)
 **Relevant requirements:** FR-A5
 
 **What to test:**
@@ -3053,6 +3053,17 @@ Test count: +39 new tests (1027 total passing).
 - Skip/finish logic; flag in profile (`onboarding_completed`).
 
 **Acceptance:** Full onboarding flow works; preferences saved.
+
+**Implementation notes:**
+- Created `app/onboarding.tsx` — 4-step wizard (Welcome → Gym → Grade System → Done)
+- Modified `app/_layout.tsx` AuthGate to route new users to `/onboarding` based on `user.onboardingCompleted`
+- Added guard for null user (profile still loading after session restore)
+- Scoped to existing DB fields: `home_gym_id`, `preferred_grade_system`, `onboarding_completed` (no migration needed)
+- Climbing type and grade range steps skipped — those columns don't exist in the schema
+- Batch save on finish via `useUpdateProfile` → `refreshProfile()` → AuthGate redirects to `/(tabs)`
+- 11 AuthGate tests (6 existing updated + 5 new onboarding routing tests)
+- 20 onboarding screen tests (4 welcome + 5 gym + 4 grade + 7 done)
+- Files: `app/onboarding.tsx` (new), `app/__tests__/onboarding.test.tsx` (new), `app/_layout.tsx` (modified), `app/__tests__/_layout.test.tsx` (modified)
 
 ---
 

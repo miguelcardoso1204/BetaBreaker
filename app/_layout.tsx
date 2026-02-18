@@ -80,7 +80,7 @@ export const unstable_settings = {
  * the full Expo Router provider context.
  */
 export function AuthGate() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -93,17 +93,37 @@ export function AuthGate() {
     // register, forgot-password). segments[0] is the first path segment,
     // e.g. "(auth)" or "(tabs)".
     const inAuthGroup = segments[0] === "(auth)";
+    // Type assertion needed because the auto-generated router types
+    // (.expo/types/router.d.ts) may not include "onboarding" yet.
+    // The file app/onboarding.tsx exists, so this is a valid segment.
+    const inOnboarding = (segments[0] as string) === "onboarding";
 
     if (!isAuthenticated && !inAuthGroup) {
       // User is not logged in but is viewing a protected screen →
       // send them to login.
       router.replace("/(auth)/login");
-    } else if (isAuthenticated && inAuthGroup) {
-      // User just logged in but is still on the login/register screen →
-      // send them to the main app.
-      router.replace("/(tabs)");
+    } else if (isAuthenticated) {
+      // Wait for profile to load before making onboarding decisions.
+      // After session restore, isAuthenticated is true but user is null
+      // while the profile fetch is in flight. Routing without profile
+      // data would send everyone to onboarding on every app restart.
+      if (!user) return;
+
+      if (user.onboardingCompleted) {
+        // Returning user with completed onboarding — route to tabs if
+        // they're still in the auth group or stuck on the onboarding screen.
+        if (inAuthGroup || inOnboarding) {
+          router.replace("/(tabs)");
+        }
+      } else {
+        // New user who hasn't completed onboarding — route to the wizard
+        // unless they're already on it.
+        if (!inOnboarding) {
+          router.replace("/onboarding");
+        }
+      }
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, segments, user?.onboardingCompleted]);
 
   // Always render the navigator so child routes have a container.
   // Using <Stack> (instead of <Slot>) gives us push/pop navigation
@@ -119,6 +139,7 @@ export function AuthGate() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen name="gym" />
       <Stack.Screen name="settings" />
       <Stack.Screen

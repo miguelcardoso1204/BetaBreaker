@@ -14,10 +14,17 @@ import { render, screen } from "@testing-library/react-native";
 
 // ── Controllable mocks ──────────────────────────────────────────────
 
-// Auth state mock — tests set these before rendering AuthGate
-let mockAuthState = {
+// Auth state mock — tests set these before rendering AuthGate.
+// `user` is included because AuthGate checks `user.onboardingCompleted`
+// to decide whether to route to the onboarding wizard or the main app.
+let mockAuthState: {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: { onboardingCompleted: boolean } | null;
+} = {
   isAuthenticated: false,
   isLoading: false,
+  user: null,
 };
 
 jest.mock("@/hooks/useAuth", () => ({
@@ -70,6 +77,7 @@ describe("AuthGate", () => {
     mockAuthState = {
       isAuthenticated: false,
       isLoading: false,
+      user: null,
     };
     mockSegments = [];
     mockReplace.mockClear();
@@ -80,7 +88,7 @@ describe("AuthGate", () => {
     // This prevents the infinite remount loop that happens when the root
     // layout conditionally returns <Redirect> instead of a navigator.
     // Stack (vs Slot) also enables push/pop navigation between groups.
-    mockAuthState = { isAuthenticated: false, isLoading: true };
+    mockAuthState = { isAuthenticated: false, isLoading: true, user: null };
     render(<AuthGate />);
     expect(screen.getByTestId("stack")).toBeOnTheScreen();
   });
@@ -89,7 +97,7 @@ describe("AuthGate", () => {
     // During session restoration from SecureStore, we don't know if the
     // user is logged in yet. Navigating prematurely would flash the login
     // screen before redirecting to tabs.
-    mockAuthState = { isAuthenticated: false, isLoading: true };
+    mockAuthState = { isAuthenticated: false, isLoading: true, user: null };
     render(<AuthGate />);
     expect(mockReplace).not.toHaveBeenCalled();
   });
@@ -97,7 +105,7 @@ describe("AuthGate", () => {
   it("navigates to login when not authenticated and outside auth group", () => {
     // User is on a protected screen (e.g. tabs) but has no session →
     // redirect them to the login screen.
-    mockAuthState = { isAuthenticated: false, isLoading: false };
+    mockAuthState = { isAuthenticated: false, isLoading: false, user: null };
     mockSegments = ["(tabs)"];
     render(<AuthGate />);
     expect(mockReplace).toHaveBeenCalledWith("/(auth)/login");
@@ -106,26 +114,104 @@ describe("AuthGate", () => {
   it("does not navigate when already in auth group and not authenticated", () => {
     // User is already on the login screen and not logged in →
     // no redirect needed, they're where they should be.
-    mockAuthState = { isAuthenticated: false, isLoading: false };
+    mockAuthState = { isAuthenticated: false, isLoading: false, user: null };
     mockSegments = ["(auth)"];
     render(<AuthGate />);
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("navigates to tabs when authenticated and still in auth group", () => {
-    // User just logged in but the URL still shows (auth)/login →
-    // redirect them to the main app.
-    mockAuthState = { isAuthenticated: true, isLoading: false };
+  it("navigates to tabs when authenticated with completed onboarding and still in auth group", () => {
+    // User just logged in, has completed onboarding, but URL still shows
+    // (auth)/login → send them to the main app.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: true },
+    };
     mockSegments = ["(auth)"];
     render(<AuthGate />);
     expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
   });
 
-  it("does not navigate when authenticated and already in tabs", () => {
-    // User is logged in and already viewing the main app →
-    // no redirect needed.
-    mockAuthState = { isAuthenticated: true, isLoading: false };
+  it("does not navigate when authenticated with completed onboarding and already in tabs", () => {
+    // User is logged in, has completed onboarding, and is viewing tabs →
+    // no redirect needed — they're exactly where they should be.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: true },
+    };
     mockSegments = ["(tabs)"];
+    render(<AuthGate />);
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  // ── Onboarding routing tests ────────────────────────────────────────
+  // These verify that new users (onboardingCompleted: false) are sent to
+  // the onboarding wizard before they can access the main app.
+
+  it("navigates to onboarding when authenticated with incomplete onboarding and in auth group", () => {
+    // New user just signed up → still in (auth) group, hasn't done
+    // onboarding yet. Send them to the wizard, not straight to tabs.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: false },
+    };
+    mockSegments = ["(auth)"];
+    render(<AuthGate />);
+    expect(mockReplace).toHaveBeenCalledWith("/onboarding");
+  });
+
+  it("navigates to onboarding when authenticated with incomplete onboarding and in tabs", () => {
+    // Edge case: new user somehow landed in tabs (e.g., deep link)
+    // but hasn't completed onboarding → redirect to wizard.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: false },
+    };
+    mockSegments = ["(tabs)"];
+    render(<AuthGate />);
+    expect(mockReplace).toHaveBeenCalledWith("/onboarding");
+  });
+
+  it("navigates to tabs when authenticated with completed onboarding and on onboarding screen", () => {
+    // User just finished onboarding (refreshProfile updated the flag) →
+    // still on /onboarding screen. Redirect to the main app.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: true },
+    };
+    mockSegments = ["onboarding"];
+    render(<AuthGate />);
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+  });
+
+  it("does not navigate when authenticated with incomplete onboarding and already on onboarding", () => {
+    // User is on the onboarding screen and hasn't finished yet →
+    // let them stay. No redirect needed.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: { onboardingCompleted: false },
+    };
+    mockSegments = ["onboarding"];
+    render(<AuthGate />);
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate when authenticated but user profile is still loading", () => {
+    // After session restore, useAuth returns isAuthenticated=true but
+    // user=null while the profile fetch is in flight. We must wait for
+    // the profile before deciding where to route.
+    mockAuthState = {
+      isAuthenticated: true,
+      isLoading: false,
+      user: null,
+    };
+    mockSegments = ["(auth)"];
     render(<AuthGate />);
     expect(mockReplace).not.toHaveBeenCalled();
   });
