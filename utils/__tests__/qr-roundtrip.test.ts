@@ -25,7 +25,16 @@ import { verifyQrToken } from '../qr';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('QR keypair roundtrip', () => {
+// Check whether the env file exists before defining the suite.
+// In CI the file won't be present (it contains secrets), so we skip
+// gracefully instead of failing the entire test run.
+const envPath = path.resolve(__dirname, '../../supabase/.env.local');
+const hasEnvFile = fs.existsSync(envPath);
+
+// `describe.skipIf` isn't available in Jest, so we use conditional describe.
+const describeIfEnv = hasEnvFile ? describe : describe.skip;
+
+describeIfEnv('QR keypair roundtrip', () => {
   // The private key JWK loaded from supabase/.env.local
   let privateKeyJwk: Record<string, string>;
 
@@ -33,7 +42,6 @@ describe('QR keypair roundtrip', () => {
     // Read the private key from supabase/.env.local — the same file the
     // Edge Function reads in production (via Deno.env). We parse it manually
     // here since Jest doesn't auto-load .env files.
-    const envPath = path.resolve(__dirname, '../../supabase/.env.local');
     const envContent = fs.readFileSync(envPath, 'utf-8');
 
     // Find the QR_PRIVATE_KEY line and extract the JSON value.
