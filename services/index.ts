@@ -66,3 +66,10 @@ export type { CreateSessionData, UpdateSessionData } from "./calendar.service";
 
 // Consensus service — grade consensus RPCs for admin grade comparison view (Step 15.4).
 export { consensusService } from "./consensus.service";
+
+// Seasons service — season CRUD + route archival for admin season management (Step 15.6).
+export { seasonsService } from "./seasons.service";
+export type { CreateSeasonData } from "./seasons.service";
+
+// Audit service — read-only audit log queries for admin change history (Step 15.7).
+export { auditService } from "./audit.service";

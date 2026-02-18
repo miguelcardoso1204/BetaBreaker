@@ -509,6 +509,24 @@ export const MAINTENANCE_TICKET_STATUSES = ['open', 'in_progress', 'resolved'] a
 /** Union type for maintenance ticket lifecycle status. */
 export type MaintenanceTicketStatus = typeof MAINTENANCE_TICKET_STATUSES[number];
 
+/* ── Season Statuses ──────────────────────────────────────────────── */
+
+/**
+ * Lifecycle statuses for gym seasons.
+ *
+ * Seasons are named time periods (e.g., "Spring 2026") that organize
+ * a gym's route rotation schedule. A season starts as 'active' and
+ * transitions to 'closed' when the gym admin ends the season — which
+ * also batch-archives all active routes, naturally freezing the leaderboard.
+ *
+ *   active — season is currently running (routes are live)
+ *   closed — season has ended (routes archived, leaderboard frozen)
+ */
+export const SEASON_STATUSES = ['active', 'closed'] as const;
+
+/** Union type for season lifecycle status. */
+export type SeasonStatus = typeof SEASON_STATUSES[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',

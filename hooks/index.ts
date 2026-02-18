@@ -67,3 +67,14 @@ export {
 
 // useGradeConsensus — grade consensus queries for admin grade comparison view (Step 15.4).
 export { useRoutesGradeConsensus, useGradeSubmissions } from "./useGradeConsensus";
+
+// useSeasons — season management: list, create, close (+ archive routes), delete (Step 15.6).
+export {
+  useSeasons,
+  useCreateSeason,
+  useCloseSeason,
+  useDeleteSeason,
+} from "./useSeasons";
+
+// useAuditLog — read-only audit log query for admin change history (Step 15.7).
+export { useAuditLog } from "./useAuditLog";

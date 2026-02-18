@@ -2855,9 +2855,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 15.6 — Season Reset & Archive
+### Step 15.6 — Season Reset & Archive ✅
 
-**Depends on:** Phase 2 (Step 2.8), Step 15.2  
+**Depends on:** Phase 2 (Step 2.8), Step 15.2
 **Relevant requirements:** FR-I4
 
 **What to test:**
@@ -2878,11 +2878,20 @@ Test count: +39 new tests (1027 total passing).
 
 **Acceptance:** Season lifecycle works; leaderboard correctly freezes.
 
+**Implementation notes:**
+- Files created: `services/seasons.service.ts`, `services/__tests__/seasons.service.test.ts`, `hooks/useSeasons.ts`, `hooks/__tests__/useSeasons.test.tsx`, `app/(admin)/seasons.tsx`, `app/(admin)/__tests__/seasons.test.tsx`
+- Files modified: `lib/constants.ts` (SEASON_STATUSES), `services/index.ts`, `hooks/index.ts`
+- No new migration needed — `seasons` table already exists from Step 2.8
+- Season close is a compound operation: closeSeason (status → 'closed') then archiveGymRoutes (batch UPDATE routes to 'archived'). Two separate idempotent calls, not a transaction.
+- Leaderboard freezing is a natural consequence — archived routes can't receive new ascents, so no snapshot table needed
+- Screen has filter tabs (All/Active/Closed), create form, close season with Alert confirmation, delete closed seasons
+- Tests: 5 service + 8 hook + 10 screen = 23 new; 158 suites, 1298 unit tests passing
+
 ---
 
-### Step 15.7 — Audit Log View
+### Step 15.7 — Audit Log View ✅
 
-**Depends on:** Phase 2 (Step 2.8), Step 15.1  
+**Depends on:** Phase 2 (Step 2.8), Step 15.1
 **Relevant requirements:** FR-O3
 
 **What to test:**
@@ -2901,6 +2910,13 @@ Test count: +39 new tests (1027 total passing).
 - Detail view showing before/after values.
 
 **Acceptance:** Audit log accurately reflects all tracked changes.
+
+**Implementation notes:**
+- Files created: `services/audit.service.ts`, `services/__tests__/audit.service.test.ts`, `hooks/useAuditLog.ts`, `hooks/__tests__/useAuditLog.test.tsx`, `app/(admin)/audit-log.tsx`, `app/(admin)/__tests__/audit-log.test.tsx`
+- Files modified: `services/index.ts`, `hooks/index.ts`
+- Read-only service — only `getAuditLog(gymId)` with actor profile join, no mutations needed
+- Screen shows filter tabs (All/Grade/Status/Tag), action badges (color-coded), actor name with "System" fallback for null, old→new value formatting from JSONB
+- Tests: 2 service + 3 hook + 8 screen = 13 new; 160 suites, 1311 unit tests passing
 
 ---
 
