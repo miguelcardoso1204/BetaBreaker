@@ -120,6 +120,7 @@ export function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="gym" />
+      <Stack.Screen name="settings" />
       <Stack.Screen
         name="start-session"
         options={{ presentation: "modal" }}

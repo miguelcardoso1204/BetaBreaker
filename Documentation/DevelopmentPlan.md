@@ -2990,9 +2990,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 16.3 — Settings Screen
+### Step 16.3 — Settings Screen ✅
 
-**Depends on:** Steps 16.1, Phase 10 (notification preferences)  
+**Depends on:** Steps 16.1, Phase 10 (notification preferences)
 **Relevant requirements:** FR-A5, FR-E4, FR-J3, FR-Q1
 
 **What to test:**
@@ -3014,6 +3014,14 @@ Test count: +39 new tests (1027 total passing).
 - Sign out button.
 
 **Acceptance:** All settings persist and take effect.
+
+**Implementation notes:**
+- Created `app/settings/_layout.tsx` — Stack navigator with `headerShown: false` (each screen manages its own header)
+- Created `app/settings/index.tsx` — settings hub with grade system picker (immediate persistence via `useUpdateProfile`), navigation rows for notification preferences and community guidelines, disabled language row with "Coming Soon" badge, about section with app version, and sign out with Alert confirmation
+- Registered `settings` route in `app/_layout.tsx` AuthGate Stack
+- Added settings gear icon (`IconButton` + `Settings` from lucide-react-native) to `app/(tabs)/profile.tsx` view-mode header, navigates to `/settings`
+- Language row disabled (i18n deferred to Phase 18); Privacy Policy and Terms rows disabled (no URLs defined yet)
+- Total new tests: 12 (settings index) + 2 (profile settings nav) = 14 new tests; total unit tests: 1362
 
 ---
 

@@ -23,6 +23,25 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { Alert } from "react-native";
 
+// Mock expo-router — needed for the settings gear icon navigation
+const mockPush = jest.fn();
+
+jest.mock("expo-router", () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
+// Mock lucide-react-native — Settings icon used in the profile header.
+// Jest can't process SVG transforms from Lucide, so we stub all icons
+// that the profile screen imports.
+jest.mock("lucide-react-native", () => {
+  const { View } = require("react-native");
+  return {
+    Settings: (props: any) => <View testID="icon-settings" {...props} />,
+  };
+});
+
 // ── Mocks ────────────────────────────────────────────────────────────
 
 // Default mock values — tests override these as needed
@@ -592,5 +611,18 @@ describe("ProfileScreen", () => {
       ]),
     );
     alertSpy.mockRestore();
+  });
+
+  // ── Settings navigation tests ──────────────────────────────────────
+
+  it("renders settings icon button in view mode", () => {
+    render(<ProfileScreen />);
+    expect(screen.getByTestId("settings-button")).toBeOnTheScreen();
+  });
+
+  it("tapping settings icon navigates to /settings", () => {
+    render(<ProfileScreen />);
+    fireEvent.press(screen.getByTestId("settings-button"));
+    expect(mockPush).toHaveBeenCalledWith("/settings");
   });
 });

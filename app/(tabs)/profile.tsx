@@ -39,6 +39,8 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import { useRouter } from "expo-router";
+import { Settings } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useUserBadges,
@@ -58,6 +60,7 @@ import {
   useDeleteAccount,
 } from "@/hooks/useProfile";
 import { Avatar } from "@/components/ui/Avatar";
+import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
 import { ProfileBadges } from "@/components/badges/ProfileBadges";
 import { BadgePicker } from "@/components/badges/BadgePicker";
@@ -79,6 +82,7 @@ const GRADE_SYSTEMS: { value: GradeSystem; label: string }[] = [
 ];
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, isLoading: authLoading, signOut, refreshProfile } = useAuth();
 
   // Fetch gamification data — all hooks disabled when user is null
@@ -388,16 +392,26 @@ export default function ProfileScreen() {
                 variant={user.tier === "pro" ? "success" : "default"}
               />
             </View>
-            {/* Edit Profile button */}
-            <Pressable
-              onPress={handleStartEditing}
-              testID="edit-profile-button"
-              className="mt-3 px-4 py-2 rounded-lg bg-surface"
-            >
-              <Text className="text-text-primary font-semibold">
-                Edit Profile
-              </Text>
-            </Pressable>
+            {/* Action row: Edit Profile + Settings gear */}
+            <View className="flex-row items-center gap-3 mt-3">
+              <Pressable
+                onPress={handleStartEditing}
+                testID="edit-profile-button"
+                className="px-4 py-2 rounded-lg bg-surface"
+              >
+                <Text className="text-text-primary font-semibold">
+                  Edit Profile
+                </Text>
+              </Pressable>
+              <IconButton
+                icon={Settings}
+                label="Settings"
+                onPress={() => router.push("/settings" as any)}
+                size={22}
+                color="#9CA3AF"
+                testID="settings-button"
+              />
+            </View>
           </>
         )}
       </View>
