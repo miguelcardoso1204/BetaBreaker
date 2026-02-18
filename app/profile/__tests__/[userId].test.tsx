@@ -3,15 +3,21 @@
  *
  * Tests the screen that displays another user's profile when
  * navigated to via app/profile/[userId]. Shows:
- *   - Avatar (lg) + display name
+ *   - Avatar (lg) + display name + tier badge
  *   - Follow button (self-contained FollowButton component)
  *   - Follow counts: "X followers · Y following"
+ *   - Profile stats: total sends + max grade
+ *   - Streak card: current + longest streak with status badge
+ *   - Pinned badges: inline BadgeIcon row
+ *   - Recent sends: FeedItem list
  *   - Loading/error states
  *
  * Mock strategy:
  *   - expo-router: provides userId via useLocalSearchParams
- *   - useProfile: custom query wrapping profileService.getById
- *   - useSocial hooks: follow counts + follow button state
+ *   - @tanstack/react-query useQuery: dispatched by queryKey for profile data
+ *   - @/hooks/useSocial: follow counts, toggle, recent ascents
+ *   - @/hooks/useBadges: earned badges, pinned badges, streak
+ *   - @/hooks/useProfile: profile stats
  *   - Native modules: lucide-react-native, expo-image
  */
 
@@ -26,15 +32,14 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({ back: mockBack }),
 }));
 
-// Mock TanStack Query — the screen uses useQuery internally
-// for profile fetching. We mock at the hook level via __mockData.
+// Mock TanStack Query — the screen uses useQuery directly for profile fetch.
+// Other data comes through dedicated hooks (mocked separately below).
 jest.mock("@/services/profile.service", () => ({
   profileService: {
     getById: jest.fn(),
   },
 }));
 
-// Mock the query hook — screen wraps profileService in useQuery
 jest.mock("@tanstack/react-query", () => {
   const actual = jest.requireActual("@tanstack/react-query");
   const mockProfileData = {
@@ -45,7 +50,7 @@ jest.mock("@tanstack/react-query", () => {
   return {
     ...actual,
     useQuery: (options: any) => {
-      // If this is the profile query, return mock data
+      // Profile query — controlled via __mockProfileData
       if (
         options.queryKey &&
         options.queryKey[0] === "profile" &&
@@ -53,14 +58,42 @@ jest.mock("@tanstack/react-query", () => {
       ) {
         return mockProfileData;
       }
-      // For other queries (like useIsFollowing), return defaults
+      // Default for any other useQuery calls (e.g., useIsFollowing inside FollowButton)
       return { data: null, isLoading: false, error: null };
     },
     __mockProfileData: mockProfileData,
   };
 });
 
-// Mock useSocial hooks — control follow state and counts
+// ── Mock data containers ─────────────────────────────────────────
+// Mutable objects that tests can modify to control what hooks return.
+
+const mockStatsReturn = {
+  data: null as any | null,
+  isLoading: false,
+};
+
+const mockStreakReturn = {
+  data: null as any | null,
+  isLoading: false,
+};
+
+const mockUserBadgesReturn = {
+  data: null as any[] | null,
+  isLoading: false,
+};
+
+const mockPinnedBadgesReturn = {
+  data: null as any | null,
+  isLoading: false,
+};
+
+const mockRecentAscentsReturn = {
+  data: null as any[] | null,
+  isLoading: false,
+};
+
+// Mock useSocial hooks — follow counts, toggle, and recent ascents
 jest.mock("@/hooks/useSocial", () => ({
   useFollowCounts: () => ({
     followers: 42,
@@ -73,6 +106,19 @@ jest.mock("@/hooks/useSocial", () => ({
     toggleFollow: jest.fn(),
     isPending: false,
   }),
+  useUserRecentAscents: () => mockRecentAscentsReturn,
+}));
+
+// Mock useBadges hooks — earned badges, pinned badges, streak
+jest.mock("@/hooks/useBadges", () => ({
+  useUserBadges: () => mockUserBadgesReturn,
+  usePinnedBadges: () => mockPinnedBadgesReturn,
+  useUserStreak: () => mockStreakReturn,
+}));
+
+// Mock useProfile hooks — profile stats
+jest.mock("@/hooks/useProfile", () => ({
+  useProfileStats: () => mockStatsReturn,
 }));
 
 // Mock useAuth
@@ -115,7 +161,30 @@ function resetMockData() {
   __mockProfileData.data = null;
   __mockProfileData.isLoading = false;
   __mockProfileData.error = null;
+
+  mockStatsReturn.data = null;
+  mockStatsReturn.isLoading = false;
+
+  mockStreakReturn.data = null;
+  mockStreakReturn.isLoading = false;
+
+  mockUserBadgesReturn.data = null;
+  mockUserBadgesReturn.isLoading = false;
+
+  mockPinnedBadgesReturn.data = null;
+  mockPinnedBadgesReturn.isLoading = false;
+
+  mockRecentAscentsReturn.data = null;
+  mockRecentAscentsReturn.isLoading = false;
 }
+
+/** Standard profile data used in most tests */
+const baseProfile = {
+  id: "user-2",
+  display_name: "Alex Climber",
+  avatar_url: "https://img.com/alex.jpg",
+  tier: "pro",
+};
 
 // ── Tests ────────────────────────────────────────────────────────
 
@@ -125,6 +194,8 @@ describe("UserProfileScreen", () => {
     resetMockData();
   });
 
+  // ── Existing tests ──────────────────────────────────────────────
+
   it("shows loading state", () => {
     __mockProfileData.isLoading = true;
     render(<UserProfileScreen />);
@@ -132,24 +203,14 @@ describe("UserProfileScreen", () => {
   });
 
   it("renders user display name and avatar", () => {
-    __mockProfileData.data = {
-      id: "user-2",
-      display_name: "Alex Climber",
-      avatar_url: "https://img.com/alex.jpg",
-      tier: "free",
-    };
+    __mockProfileData.data = baseProfile;
     render(<UserProfileScreen />);
 
     expect(screen.getByText("Alex Climber")).toBeOnTheScreen();
   });
 
   it("renders follow counts", () => {
-    __mockProfileData.data = {
-      id: "user-2",
-      display_name: "Alex Climber",
-      avatar_url: null,
-      tier: "free",
-    };
+    __mockProfileData.data = baseProfile;
     render(<UserProfileScreen />);
 
     expect(screen.getByText(/42 followers/)).toBeOnTheScreen();
@@ -157,12 +218,7 @@ describe("UserProfileScreen", () => {
   });
 
   it("shows FollowButton", () => {
-    __mockProfileData.data = {
-      id: "user-2",
-      display_name: "Alex Climber",
-      avatar_url: null,
-      tier: "free",
-    };
+    __mockProfileData.data = baseProfile;
     render(<UserProfileScreen />);
 
     // FollowButton renders a Button with testID="follow-button"
@@ -175,5 +231,126 @@ describe("UserProfileScreen", () => {
 
     expect(screen.getByTestId("error-state")).toBeOnTheScreen();
     expect(screen.getByText("User not found")).toBeOnTheScreen();
+  });
+
+  // ── Tier badge ──────────────────────────────────────────────────
+
+  it("renders tier badge when user has a tier", () => {
+    __mockProfileData.data = baseProfile;
+    render(<UserProfileScreen />);
+
+    // The Badge component renders the tier label (capitalized)
+    expect(screen.getByText("Pro")).toBeOnTheScreen();
+  });
+
+  // ── Stats section ───────────────────────────────────────────────
+
+  it("renders total sends and max grade from stats", () => {
+    __mockProfileData.data = baseProfile;
+    // Stats RPC returns an array with one row
+    mockStatsReturn.data = [{ total_sends: 47, max_grade: 18 }];
+    render(<UserProfileScreen />);
+
+    expect(screen.getByText("47")).toBeOnTheScreen();
+    expect(screen.getByText(/Total Sends/)).toBeOnTheScreen();
+    // canonical_grade 18 in v-scale is "V7"
+    expect(screen.getByText("V7")).toBeOnTheScreen();
+    expect(screen.getByText(/Max Grade/)).toBeOnTheScreen();
+  });
+
+  it("renders dash when stats have no sends", () => {
+    __mockProfileData.data = baseProfile;
+    mockStatsReturn.data = [{ total_sends: 0, max_grade: null }];
+    render(<UserProfileScreen />);
+
+    // Zero sends renders "0", null max grade renders "—"
+    expect(screen.getByText("0")).toBeOnTheScreen();
+    expect(screen.getByText("—")).toBeOnTheScreen();
+  });
+
+  // ── Streak section ──────────────────────────────────────────────
+
+  it("renders streak card with current and longest streak", () => {
+    __mockProfileData.data = baseProfile;
+    mockStreakReturn.data = {
+      current_streak: 5,
+      longest_streak: 8,
+      last_active_date: "2026-02-16",
+    };
+    render(<UserProfileScreen />);
+
+    expect(screen.getByTestId("streak-card")).toBeOnTheScreen();
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByText("8")).toBeOnTheScreen();
+    expect(screen.getByText(/Current Streak/)).toBeOnTheScreen();
+    expect(screen.getByText(/Longest Streak/)).toBeOnTheScreen();
+  });
+
+  // ── Pinned badges ──────────────────────────────────────────────
+
+  it("renders pinned badges with badge names", () => {
+    __mockProfileData.data = baseProfile;
+    // userBadges includes full badge objects via resource embedding
+    mockUserBadgesReturn.data = [
+      { badge_id: "b1", badge: { id: "b1", name: "First V0", icon_key: "badge-v0" } },
+      { badge_id: "b2", badge: { id: "b2", name: "Flash Master", icon_key: "badge-flash" } },
+      { badge_id: "b3", badge: { id: "b3", name: "Streak Week", icon_key: "badge-streak" } },
+    ];
+    // Pinned badge IDs — only b1 and b2 are pinned
+    mockPinnedBadgesReturn.data = { pinned_badge_ids: ["b1", "b2"] };
+    render(<UserProfileScreen />);
+
+    expect(screen.getByText("First V0")).toBeOnTheScreen();
+    expect(screen.getByText("Flash Master")).toBeOnTheScreen();
+    // b3 is not pinned, so it shouldn't appear in the pinned section
+    expect(screen.queryByText("Streak Week")).not.toBeOnTheScreen();
+  });
+
+  it("shows empty state when no pinned badges", () => {
+    __mockProfileData.data = baseProfile;
+    mockUserBadgesReturn.data = [];
+    mockPinnedBadgesReturn.data = { pinned_badge_ids: [] };
+    render(<UserProfileScreen />);
+
+    expect(screen.getByText(/No pinned badges/)).toBeOnTheScreen();
+  });
+
+  // ── Recent sends ───────────────────────────────────────────────
+
+  it("renders recent sends as FeedItem entries", () => {
+    __mockProfileData.data = baseProfile;
+    mockRecentAscentsReturn.data = [
+      {
+        id: "ascent-1",
+        user_id: "user-2",
+        status: "sent",
+        attempts: 3,
+        created_at: "2026-02-15T10:00:00Z",
+        route: { name: "Crimpy Arete", canonical_grade: 10, color: "#EF4444" },
+        profile: { display_name: "Alex Climber", avatar_url: null },
+      },
+      {
+        id: "ascent-2",
+        user_id: "user-2",
+        status: "flashed",
+        attempts: 1,
+        created_at: "2026-02-14T09:00:00Z",
+        route: { name: "Slab City", canonical_grade: 6, color: "#22C55E" },
+        profile: { display_name: "Alex Climber", avatar_url: null },
+      },
+    ];
+    render(<UserProfileScreen />);
+
+    // FeedItem renders route names and action verbs
+    expect(screen.getByText(/Crimpy Arete/)).toBeOnTheScreen();
+    expect(screen.getByText(/Slab City/)).toBeOnTheScreen();
+  });
+
+  it("shows empty state when no recent sends", () => {
+    __mockProfileData.data = baseProfile;
+    mockRecentAscentsReturn.data = [];
+    render(<UserProfileScreen />);
+
+    expect(screen.getByText(/No recent sends/)).toBeOnTheScreen();
   });
 });

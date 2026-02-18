@@ -267,4 +267,65 @@ describe("socialService", () => {
       expect(chainMock.limit).toHaveBeenCalledWith(50);
     });
   });
+
+  // ── getUserRecentAscents ────────────────────────────────────────
+
+  describe("getUserRecentAscents", () => {
+    it("queries route_ascents with eq filter, order, and limit 10", async () => {
+      const mockAscents = [
+        {
+          id: "ascent-1",
+          user_id: "user-2",
+          status: "sent",
+          attempts: 1,
+          created_at: "2026-02-10T14:00:00Z",
+          route: { name: "Crimpy Arete", canonical_grade: 10, color: "#EF4444" },
+          profile: { display_name: "Alex", avatar_url: null },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValueOnce({
+          data: mockAscents,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await socialService.getUserRecentAscents("user-2");
+
+      expect(supabase.from).toHaveBeenCalledWith("route_ascents");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "id, user_id, status, attempts, created_at, route:routes(name, canonical_grade, color), profile:profiles(display_name, avatar_url)"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("user_id", "user-2");
+      expect(chainMock.order).toHaveBeenCalledWith("created_at", {
+        ascending: false,
+      });
+      expect(chainMock.limit).toHaveBeenCalledWith(10);
+      expect(result.data).toEqual(mockAscents);
+    });
+
+    it("passes through errors from Supabase", async () => {
+      const mockError = { message: "DB error", code: "500" };
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValueOnce({
+          data: null,
+          error: mockError,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await socialService.getUserRecentAscents("user-2");
+
+      expect(result.error).toEqual(mockError);
+      expect(result.data).toBeNull();
+    });
+  });
 });

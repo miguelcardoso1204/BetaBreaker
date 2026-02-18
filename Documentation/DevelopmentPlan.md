@@ -2959,9 +2959,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 16.2 — Other Users' Profile Screen
+### Step 16.2 — Other Users' Profile Screen ✅
 
-**Depends on:** Step 16.1, Phase 9 (follow system)  
+**Depends on:** Step 16.1, Phase 9 (follow system)
 **Relevant requirements:** FR-G5
 
 **What to test:**
@@ -2980,6 +2980,13 @@ Test count: +39 new tests (1027 total passing).
 - Recent activity feed for that user.
 
 **Acceptance:** Can view other users' profiles and follow/unfollow.
+
+**Implementation notes:**
+- Added `socialService.getUserRecentAscents(userId)` — single-user recent ascents query (limit 10), same select shape as `getActivityFeed` but with `.eq()` instead of `.in()`
+- Added `useUserRecentAscents(userId)` hook in `hooks/useSocial.ts` — TanStack Query wrapper with key `["ascents", "recent", userId]`
+- Expanded `app/profile/[userId].tsx` from minimal centered View to full ScrollView with 7 sections: header, avatar+name+tier, follow counts, stats, streak, pinned badges, recent sends
+- Reused existing hooks (`useProfileStats`, `useUserStreak`, `useUserBadges`, `usePinnedBadges`) and components (`StreakCard`, `BadgeIcon`, `Badge`, `FeedItem`) — no new components needed
+- Total new tests: 12 (2 service + 2 hook + 8 screen), total for file: 13 screen tests
 
 ---
 

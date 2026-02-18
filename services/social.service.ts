@@ -114,4 +114,21 @@ export const socialService = {
       .order("created_at", { ascending: false })
       .limit(50);
   },
+
+  /**
+   * Fetch recent ascents for a single user.
+   * Same select shape as getActivityFeed but uses .eq() for one user
+   * and limits to 10 entries. Used on the public profile screen to
+   * show a "Recent Sends" section.
+   */
+  getUserRecentAscents(userId: string) {
+    return supabase
+      .from("route_ascents")
+      .select(
+        "id, user_id, status, attempts, created_at, route:routes(name, canonical_grade, color), profile:profiles(display_name, avatar_url)"
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(10);
+  },
 };

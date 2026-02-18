@@ -24,6 +24,7 @@ jest.mock("@/services/social.service", () => ({
     getFollowCounts: jest.fn(),
     getFollowing: jest.fn(),
     getActivityFeed: jest.fn(),
+    getUserRecentAscents: jest.fn(),
   },
 }));
 
@@ -41,6 +42,7 @@ import {
   useToggleFollow,
   useFollowCounts,
   useActivityFeed,
+  useUserRecentAscents,
 } from "../useSocial";
 
 const { socialService } = jest.requireMock<{
@@ -51,6 +53,7 @@ const { socialService } = jest.requireMock<{
     getFollowCounts: jest.Mock;
     getFollowing: jest.Mock;
     getActivityFeed: jest.Mock;
+    getUserRecentAscents: jest.Mock;
   };
 }>("@/services/social.service");
 
@@ -281,5 +284,53 @@ describe("useActivityFeed", () => {
     expect(result.current.feed).toEqual([]);
     // Should NOT call getActivityFeed when following nobody
     expect(socialService.getActivityFeed).not.toHaveBeenCalled();
+  });
+});
+
+// ── useUserRecentAscents tests ───────────────────────────────────
+
+describe("useUserRecentAscents", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns recent ascents for a specific user", async () => {
+    const mockAscents = [
+      {
+        id: "ascent-1",
+        user_id: "user-2",
+        status: "sent",
+        attempts: 1,
+        created_at: "2026-02-15T10:00:00Z",
+        route: { name: "Crimpy Arete", canonical_grade: 10, color: "#EF4444" },
+        profile: { display_name: "Alex", avatar_url: null },
+      },
+    ];
+
+    socialService.getUserRecentAscents.mockResolvedValueOnce({
+      data: mockAscents,
+      error: null,
+    });
+
+    const { result } = renderHook(() => useUserRecentAscents("user-2"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data).toEqual(mockAscents);
+    expect(socialService.getUserRecentAscents).toHaveBeenCalledWith("user-2");
+  });
+
+  it("is disabled when userId is null", () => {
+    const { result } = renderHook(() => useUserRecentAscents(null), {
+      wrapper: createWrapper(),
+    });
+
+    // Query should not fire — stays in loading state with no service call
+    expect(socialService.getUserRecentAscents).not.toHaveBeenCalled();
+    expect(result.current.data).toBeUndefined();
   });
 });

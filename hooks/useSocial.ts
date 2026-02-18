@@ -127,6 +127,26 @@ export function useFollowCounts(userId: string) {
  * Returns empty array early when following nobody — no need
  * to hit route_ascents with an empty IN clause.
  */
+/**
+ * Fetch recent ascents for a single user.
+ * Used on the public profile screen to show a "Recent Sends" section.
+ * Returns the 10 most recent ascents with route and profile data.
+ *
+ * Disabled when userId is null/undefined — won't fire until a valid
+ * userId is available.
+ */
+export function useUserRecentAscents(userId: string | undefined | null) {
+  return useQuery({
+    queryKey: ["ascents", "recent", userId],
+    queryFn: async () => {
+      const result = await socialService.getUserRecentAscents(userId!);
+      if (result.error) throw result.error;
+      return result.data ?? [];
+    },
+    enabled: !!userId,
+  });
+}
+
 export function useActivityFeed() {
   const { user } = useAuth();
   const userId = user?.id;
