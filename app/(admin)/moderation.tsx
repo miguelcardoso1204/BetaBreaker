@@ -30,6 +30,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useReports, useResolveReport } from "@/hooks/useModeration";
 
 /**
@@ -46,19 +47,17 @@ function formatDate(dateString: string): string {
 }
 
 /**
- * Maps target_type to a human-readable label.
+ * Maps target_type to a translation key.
  * target_type is stored as lowercase in the DB ('video', 'feedback', 'user').
  */
-function formatTargetType(type: string): string {
-  const labels: Record<string, string> = {
-    video: "Video",
-    feedback: "Beta Tip",
-    user: "User",
-  };
-  return labels[type] ?? type;
-}
+const TARGET_TYPE_KEYS: Record<string, string> = {
+  video: "admin.moderation.typeVideo",
+  feedback: "admin.moderation.typeBetaTip",
+  user: "admin.moderation.typeUser",
+};
 
 export default function ModerationScreen() {
+  const { t } = useTranslation();
   // Fetch only pending reports — the primary admin use case.
   // Resolved reports can be viewed via a separate "history" tab
   // in a future iteration.
@@ -82,7 +81,7 @@ export default function ModerationScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load reports"}
+          {error.message || t("admin.moderation.failedToLoad")}
         </Text>
       </View>
     );
@@ -96,7 +95,7 @@ export default function ModerationScreen() {
         testID="empty-state"
       >
         <Text className="text-text-secondary text-center text-base">
-          No pending reports
+          {t("admin.moderation.noReports")}
         </Text>
       </View>
     );
@@ -106,7 +105,7 @@ export default function ModerationScreen() {
   return (
     <View className="flex-1 bg-background" testID="moderation-screen">
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Moderation Queue ({reports.length})
+        {t("admin.moderation.title")} ({reports.length})
       </Text>
 
       <FlatList
@@ -118,7 +117,7 @@ export default function ModerationScreen() {
             {/* Reporter info + timestamp */}
             <View className="flex-row items-center justify-between mb-2">
               <Text className="text-text-primary font-medium">
-                {item.reporter?.display_name ?? "Unknown"}
+                {item.reporter?.display_name ?? t("common.unknown")}
               </Text>
               <Text className="text-text-secondary text-xs">
                 {formatDate(item.created_at)}
@@ -127,10 +126,10 @@ export default function ModerationScreen() {
 
             {/* Target type + reason */}
             <Text className="text-text-secondary text-sm mb-1">
-              Type: {formatTargetType(item.target_type)}
+              {t("admin.moderation.type")} {t(TARGET_TYPE_KEYS[item.target_type] ?? item.target_type)}
             </Text>
             <Text className="text-text-primary text-sm mb-3">
-              Reason: {item.reason}
+              {t("admin.moderation.reason")} {item.reason}
             </Text>
 
             {/* Action buttons — Dismiss (false alarm) or Reviewed (action taken) */}
@@ -143,7 +142,7 @@ export default function ModerationScreen() {
                 className="flex-1 py-2 rounded-lg border border-border items-center"
               >
                 <Text className="text-text-secondary font-medium">
-                  Dismiss
+                  {t("admin.moderation.dismiss")}
                 </Text>
               </Pressable>
 
@@ -154,7 +153,7 @@ export default function ModerationScreen() {
                 accessibilityRole="button"
                 className="flex-1 py-2 rounded-lg bg-accent items-center"
               >
-                <Text className="text-white font-medium">Reviewed</Text>
+                <Text className="text-white font-medium">{t("admin.moderation.reviewed")}</Text>
               </Pressable>
             </View>
           </View>

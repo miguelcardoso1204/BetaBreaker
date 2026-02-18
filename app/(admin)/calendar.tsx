@@ -32,6 +32,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { Plus, Trash2 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
@@ -54,6 +55,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function CalendarScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -140,10 +142,10 @@ export default function CalendarScreen() {
   }
 
   async function handleDeleteSession(sessionId: string) {
-    Alert.alert("Delete Session", "Remove this session from the calendar?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("admin.calendar.deleteSession"), t("admin.calendar.deleteSessionConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: () => deleteMutation.mutateAsync({ sessionId }),
       },
@@ -167,7 +169,7 @@ export default function CalendarScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load calendar"}
+          {error.message || t("admin.calendar.failedToLoad")}
         </Text>
       </View>
     );
@@ -177,7 +179,7 @@ export default function CalendarScreen() {
   return (
     <ScrollView className="flex-1 bg-background">
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Setting Calendar
+        {t("admin.calendar.title")}
       </Text>
 
       {/* ── Calendar Grid ──────────────────────────────────────── */}
@@ -204,7 +206,7 @@ export default function CalendarScreen() {
               className="bg-accent px-3 py-1.5 rounded-lg flex-row items-center"
             >
               <Plus size={16} color="white" />
-              <Text className="text-white font-medium ml-1">Add</Text>
+              <Text className="text-white font-medium ml-1">{t("common.add")}</Text>
             </Pressable>
           </View>
 
@@ -212,11 +214,11 @@ export default function CalendarScreen() {
           {showAddForm && (
             <View className="bg-surface rounded-lg p-3 mb-3">
               <Text className="text-text-primary font-medium mb-2">
-                New Session
+                {t("admin.calendar.newSession")}
               </Text>
 
               {/* Setter picker — simple list of pressable items */}
-              <Text className="text-text-secondary text-sm mb-1">Setter</Text>
+              <Text className="text-text-secondary text-sm mb-1">{t("admin.calendar.setter")}</Text>
               <View className="flex-row flex-wrap gap-2 mb-2">
                 {setters.map((setter: any) => (
                   <Pressable
@@ -243,12 +245,12 @@ export default function CalendarScreen() {
               </View>
 
               {/* Notes input */}
-              <Text className="text-text-secondary text-sm mb-1">Notes</Text>
+              <Text className="text-text-secondary text-sm mb-1">{t("admin.calendar.notes")}</Text>
               <TextInput
                 testID="notes-input"
                 value={newSessionNotes}
                 onChangeText={setNewSessionNotes}
-                placeholder="Optional notes..."
+                placeholder={t("admin.calendar.notesPlaceholder")}
                 placeholderTextColor="#9CA3AF"
                 className="bg-background rounded-lg px-3 py-2 text-text-primary mb-3"
               />
@@ -262,7 +264,7 @@ export default function CalendarScreen() {
                   accessibilityRole="button"
                   className="flex-1 bg-accent py-2 rounded-lg items-center"
                 >
-                  <Text className="text-white font-medium">Save</Text>
+                  <Text className="text-white font-medium">{t("common.save")}</Text>
                 </Pressable>
                 <Pressable
                   testID="cancel-add-button"
@@ -270,7 +272,7 @@ export default function CalendarScreen() {
                   accessibilityRole="button"
                   className="flex-1 bg-surface border border-text-secondary py-2 rounded-lg items-center"
                 >
-                  <Text className="text-text-primary font-medium">Cancel</Text>
+                  <Text className="text-text-primary font-medium">{t("common.cancel")}</Text>
                 </Pressable>
               </View>
             </View>
@@ -279,7 +281,7 @@ export default function CalendarScreen() {
           {/* ── Session List ─────────────────────────────────────── */}
           {selectedSessions.length === 0 ? (
             <Text className="text-text-secondary text-center py-4">
-              No sessions scheduled
+              {t("admin.calendar.noSessions")}
             </Text>
           ) : (
             selectedSessions.map((session: any) => (
@@ -289,7 +291,7 @@ export default function CalendarScreen() {
               >
                 <View className="flex-row items-center justify-between mb-1">
                   <Text className="text-text-primary font-medium">
-                    {session.setter?.display_name ?? "Unknown Setter"}
+                    {session.setter?.display_name ?? t("admin.calendar.unknownSetter")}
                   </Text>
                   <View className="flex-row items-center gap-2">
                     {/* Status badge */}
@@ -333,7 +335,7 @@ export default function CalendarScreen() {
                       accessibilityRole="button"
                     >
                       <Text className="text-white text-xs font-medium">
-                        Complete
+                        {t("admin.calendar.complete")}
                       </Text>
                     </Pressable>
                     <Pressable
@@ -345,7 +347,7 @@ export default function CalendarScreen() {
                       accessibilityRole="button"
                     >
                       <Text className="text-white text-xs font-medium">
-                        Cancel
+                        {t("common.cancel")}
                       </Text>
                     </Pressable>
                   </View>
@@ -360,7 +362,7 @@ export default function CalendarScreen() {
       {workload.length > 0 && (
         <View className="px-4 mb-6">
           <Text className="text-lg font-semibold text-text-primary mb-2">
-            Workload
+            {t("admin.calendar.workload")}
           </Text>
           {workload.map((entry: any) => (
             <View
@@ -371,7 +373,7 @@ export default function CalendarScreen() {
                 {entry.display_name}
               </Text>
               <Text className="text-text-secondary">
-                {entry.route_count} routes
+                {entry.route_count} {t("admin.calendar.routes")}
               </Text>
             </View>
           ))}

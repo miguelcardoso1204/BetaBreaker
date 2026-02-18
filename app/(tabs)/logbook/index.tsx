@@ -23,6 +23,7 @@
  */
 
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -32,6 +33,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { BookOpen, Bookmark } from "lucide-react-native";
+import i18n from "@/lib/i18n";
 import { useSessionHistory } from "@/hooks/useSessions";
 import { useSavedRoutesList } from "@/hooks/useSavedRoutes";
 import { canonicalToDisplay } from "@/utils/grades";
@@ -58,7 +60,7 @@ type Segment = "sessions" | "saved";
  */
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(i18n.language, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -68,6 +70,7 @@ function formatDate(dateStr: string): string {
 // ── Component ──────────────────────────────────────────────────────
 
 export default function LogbookScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   // Track which segment is active — "sessions" is the default view
   const [segment, setSegment] = useState<Segment>("sessions");
@@ -97,7 +100,7 @@ export default function LogbookScreen() {
               segment === "sessions" ? "text-white" : "text-text-secondary"
             }`}
           >
-            Sessions
+            {t("logbook.sessions")}
           </Text>
         </Pressable>
 
@@ -113,7 +116,7 @@ export default function LogbookScreen() {
               segment === "saved" ? "text-white" : "text-text-secondary"
             }`}
           >
-            Saved
+            {t("logbook.saved")}
           </Text>
         </Pressable>
       </View>
@@ -162,6 +165,7 @@ function SessionsSegment({
   isLoading,
   onPressSession,
 }: SessionsSegmentProps) {
+  const { t } = useTranslation();
   // Loading state — centered spinner
   if (isLoading) {
     return (
@@ -181,10 +185,10 @@ function SessionsSegment({
       <View className="flex-1 items-center justify-center px-8">
         <BookOpen size={64} color="#6B7280" />
         <Text className="text-text-primary text-lg font-semibold mt-4 text-center">
-          No sessions yet
+          {t("logbook.noSessions")}
         </Text>
         <Text className="text-text-secondary text-sm mt-2 text-center">
-          Start a climbing session to see your history here
+          {t("logbook.startSessionPrompt")}
         </Text>
       </View>
     );
@@ -217,19 +221,20 @@ function SessionsSegment({
             )}
           </View>
 
-          {/* Bottom row: ascent count + sends/flashes breakdown */}
+          {/* Bottom row: ascent count + sends/flashes breakdown.
+              i18next _one/_other suffixes handle pluralization. */}
           <View className="flex-row items-center gap-3">
             <Text className="text-text-secondary text-sm">
-              {item.ascentCount} {item.ascentCount === 1 ? "ascent" : "ascents"}
+              {t("logbook.ascentCount", { count: item.ascentCount })}
             </Text>
             {item.sends > 0 && (
               <Text className="text-text-secondary text-sm">
-                {item.sends} {item.sends === 1 ? "send" : "sends"}
+                {t("logbook.sendCount", { count: item.sends })}
               </Text>
             )}
             {item.flashes > 0 && (
               <Text className="text-text-secondary text-sm">
-                {item.flashes} {item.flashes === 1 ? "flash" : "flashes"}
+                {t("logbook.flashCount", { count: item.flashes })}
               </Text>
             )}
           </View>
@@ -254,6 +259,7 @@ interface SavedSegmentProps {
  * be added when route detail deep-linking is implemented (Phase 16).
  */
 function SavedSegment({ data, isLoading }: SavedSegmentProps) {
+  const { t } = useTranslation();
   // Loading state — centered spinner
   if (isLoading) {
     return (
@@ -273,10 +279,10 @@ function SavedSegment({ data, isLoading }: SavedSegmentProps) {
       <View className="flex-1 items-center justify-center px-8">
         <Bookmark size={64} color="#6B7280" />
         <Text className="text-text-primary text-lg font-semibold mt-4 text-center">
-          No saved routes yet
+          {t("logbook.noSavedRoutes")}
         </Text>
         <Text className="text-text-secondary text-sm mt-2 text-center">
-          Star routes to save them for later
+          {t("logbook.saveRoutesPrompt")}
         </Text>
       </View>
     );
@@ -294,7 +300,7 @@ function SavedSegment({ data, isLoading }: SavedSegmentProps) {
           {/* Top row: route name + save type badge */}
           <View className="flex-row justify-between items-center mb-1">
             <Text className="text-text-primary font-semibold text-base flex-1 mr-2">
-              {item.route?.name ?? "Unknown Route"}
+              {item.route?.name ?? t("common.unknownRoute")}
             </Text>
             <Badge
               label={item.save_type}

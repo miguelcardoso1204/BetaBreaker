@@ -39,6 +39,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Star } from "lucide-react-native";
 import { useRouteDetail } from "@/hooks/useRoutes";
 import { useIsFavorite, useToggleFavorite } from "@/hooks/useSavedRoutes";
@@ -91,6 +92,9 @@ function formatStatus(status: string): string {
 }
 
 export default function RouteDetailScreen() {
+  // i18n hook — provides t() for translating hardcoded strings.
+  const { t } = useTranslation();
+
   // Extract both the gymId (id) and routeId from the URL path.
   // Expo Router's file-based routing maps /gym/[id]/route/[routeId]
   // to this component with both params available.
@@ -163,7 +167,7 @@ export default function RouteDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4" testID="error-state">
         <Text className="text-error text-center">
-          {error.message || "Failed to load route"}
+          {error.message || t("route.failedToLoad")}
         </Text>
       </View>
     );
@@ -216,7 +220,7 @@ export default function RouteDetailScreen() {
                 feedback: gold when favorited, white when not. */}
             <IconButton
               icon={Star}
-              label={isFavorite ? "Unfavorite route" : "Favorite route"}
+              label={isFavorite ? t("route.unfavorite") : t("route.favorite")}
               onPress={() => toggleFavorite()}
               color={isFavorite ? "#F59E0B" : "#FFFFFF"}
               testID="favorite-button"
@@ -225,27 +229,27 @@ export default function RouteDetailScreen() {
 
           {/* Grade — converted from canonical integer to display string */}
           <Text className="text-text-secondary text-base">
-            Grade: {displayGrade}
+            {t("route.grade")} {displayGrade}
           </Text>
 
           {/* Set date — when the route was created/set on the wall */}
           {setDate && (
             <Text className="text-text-secondary text-sm">
-              Set on: {setDate}
+              {t("route.setOn")} {setDate}
             </Text>
           )}
 
           {/* Wall section — helps climbers physically locate the route */}
           {route.wall_section && (
             <Text className="text-text-secondary text-sm">
-              Wall: {route.wall_section}
+              {t("route.wall")} {route.wall_section}
             </Text>
           )}
 
           {/* Setter name — who set (created) this route */}
           {route.setter?.display_name && (
             <Text className="text-text-secondary text-sm">
-              Setter: {route.setter.display_name}
+              {t("route.setter")} {route.setter.display_name}
             </Text>
           )}
 
@@ -271,7 +275,7 @@ export default function RouteDetailScreen() {
           className="mx-4 mb-4 p-3 rounded-lg bg-warning/20"
         >
           <Text className="text-warning text-center font-semibold">
-            This route is retiring soon!
+            {t("route.retiringSoon")}
           </Text>
         </View>
       )}
@@ -283,7 +287,7 @@ export default function RouteDetailScreen() {
           upload (placeholder) in addition to the basic status/attempts. */}
       <View className="px-4 mb-4">
         <Button
-          label="Add Ascent"
+          label={t("route.addAscent")}
           variant="outline"
           onPress={() => {
             router.push(`/gym/${id}/route/${routeId}/ascent`);
@@ -298,7 +302,7 @@ export default function RouteDetailScreen() {
           is sorted by score descending (best tips first). */}
       <View className="px-4 mb-4">
         <Text className="text-lg font-bold text-text-primary mb-2">
-          Beta Tips{feedback.length > 0 ? ` (${feedback.length})` : ""}
+          {t("route.betaTips")}{feedback.length > 0 ? ` (${feedback.length})` : ""}
         </Text>
 
         {/* Composer — authenticated users can submit new tips */}
@@ -325,7 +329,7 @@ export default function RouteDetailScreen() {
         ) : (
           <View className="items-center py-8" testID="empty-feedback">
             <Text className="text-text-secondary text-center">
-              No beta tips yet — share your knowledge!
+              {t("route.noBetaTips")}
             </Text>
           </View>
         )}
@@ -338,7 +342,7 @@ export default function RouteDetailScreen() {
           when the user taps play — preventing excessive network usage. */}
       <View className="px-4 mb-4">
         <Text className="text-lg font-bold text-text-primary mb-2">
-          Video Submissions
+          {t("route.videoSubmissions")}
         </Text>
 
         {/* Upload button at the top of the section for quick access */}
@@ -371,7 +375,7 @@ export default function RouteDetailScreen() {
           ListEmptyComponent={
             <View className="items-center py-8" testID="empty-videos">
               <Text className="text-text-secondary text-center">
-                No beta videos yet — be the first to share!
+                {t("route.noVideos")}
               </Text>
             </View>
           }

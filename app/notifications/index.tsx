@@ -28,6 +28,7 @@
 
 import React from "react";
 import { View, Text, FlatList, ActivityIndicator, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Settings, ArrowLeft } from "lucide-react-native";
 import {
@@ -43,6 +44,7 @@ import type { NotificationItemData } from "@/components/notifications/Notificati
 import { IconButton } from "@/components/ui/IconButton";
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { notifications, isLoading } = useNotifications();
   const markAsRead = useMarkAsRead();
@@ -68,17 +70,17 @@ export default function NotificationsScreen() {
         <View className="flex-row items-center justify-between">
           <IconButton
             icon={ArrowLeft}
-            label="Go back"
+            label={t("common.goBack")}
             onPress={() => router.back()}
             size={24}
             color="#FFFFFF"
           />
           <Text className="text-text-primary text-xl font-bold flex-1 ml-3">
-            Notifications
+            {t("notifications.title")}
           </Text>
           <IconButton
             icon={Settings}
-            label="Notification settings"
+            label={t("notifications.notificationSettings")}
             onPress={() => router.push("/settings/notification-preferences")}
             size={22}
             color="#9CA3AF"
@@ -91,7 +93,7 @@ export default function NotificationsScreen() {
           className="self-end mt-2"
         >
           <Text className="text-primary text-sm font-medium">
-            Mark all read
+            {t("notifications.markAllRead")}
           </Text>
         </Pressable>
       </View>
@@ -116,7 +118,7 @@ export default function NotificationsScreen() {
       ) : (
         <View className="flex-1 items-center justify-center px-8">
           <Text className="text-text-secondary text-base text-center">
-            No notifications yet
+            {t("notifications.noNotifications")}
           </Text>
         </View>
       )}

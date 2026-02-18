@@ -11,8 +11,8 @@
 //   2. Navigation Rows — links to Notification Preferences and Community
 //      Guidelines, which are separate screens under app/settings/.
 //
-//   3. Language — disabled row showing "English" with a "Coming Soon" badge.
-//      i18n infrastructure (FR-Q1) is deferred to Phase 18.
+//   3. Language — interactive picker modal with supported languages.
+//      Uses changeLanguage() from lib/i18n.ts to switch + persist.
 //
 //   4. About — app version from expo-constants, plus disabled Privacy Policy
 //      and Terms of Service rows (no URLs defined yet).
@@ -20,9 +20,10 @@
 //   5. Sign Out — red-styled button with Alert confirmation before calling
 //      signOut() from useAuth.
 
-import React from "react";
-import { View, Text, ScrollView, Pressable, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, Pressable, Alert, Modal } from "react-native";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
 import {
   ArrowLeft,
@@ -31,23 +32,27 @@ import {
   BookOpen,
   Globe,
   LogOut,
+  Check,
 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateProfile } from "@/hooks/useProfile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
+import { changeLanguage, SUPPORTED_LANGUAGES } from "@/lib/i18n";
 import type { GradeSystem } from "@/utils/grades";
 
 // The three grade systems users can choose from — same set as the profile
 // edit mode, but here changes are persisted immediately on tap.
-const GRADE_SYSTEMS: { value: GradeSystem; label: string }[] = [
-  { value: "v-scale", label: "V-Scale" },
-  { value: "font", label: "Font" },
-  { value: "yds", label: "YDS" },
+// Translation keys are used for labels so they update when language changes.
+const GRADE_SYSTEMS: { value: GradeSystem; labelKey: string }[] = [
+  { value: "v-scale", labelKey: "gradeSystem.vScale" },
+  { value: "font", labelKey: "gradeSystem.font" },
+  { value: "yds", labelKey: "gradeSystem.yds" },
 ];
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const { user, signOut, refreshProfile } = useAuth();
 
   // useUpdateProfile takes refreshProfile as a param so that after a
@@ -63,6 +68,9 @@ export default function SettingsScreen() {
   const currentGradeSystem =
     (user?.preferredGradeSystem as GradeSystem) ?? "v-scale";
 
+  // Language picker modal visibility state
+  const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+
   /** Persist grade system change immediately (no save button needed). */
   function handleGradeChange(gs: GradeSystem) {
     if (!user || gs === currentGradeSystem) return;
@@ -74,17 +82,32 @@ export default function SettingsScreen() {
 
   /** Show confirmation dialog before signing out. */
   function handleSignOut() {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
+    Alert.alert(
+      t("settings.signOutConfirmTitle"),
+      t("settings.signOutConfirmBody"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("settings.signOut"),
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+          },
         },
-      },
-    ]);
+      ]
+    );
   }
+
+  /** Handle language selection from the picker modal. */
+  async function handleLanguageSelect(code: string) {
+    setLanguagePickerVisible(false);
+    await changeLanguage(code);
+  }
+
+  // Find the display name for the current language
+  const currentLanguageName =
+    SUPPORTED_LANGUAGES.find((l) => l.code === i18n.language)?.name ??
+    "English";
 
   return (
     <ScrollView
@@ -95,20 +118,20 @@ export default function SettingsScreen() {
       <View className="px-4 pt-14 pb-4 flex-row items-center">
         <IconButton
           icon={ArrowLeft}
-          label="Go back"
+          label={t("common.goBack")}
           onPress={() => router.back()}
           size={24}
           color="#FFFFFF"
         />
         <Text className="text-text-primary text-xl font-bold ml-3">
-          Settings
+          {t("settings.title")}
         </Text>
       </View>
 
       {/* ── Grade System ────────────────────────────────────────────── */}
       <View className="px-4 py-3">
         <Text className="text-text-secondary text-sm font-semibold uppercase tracking-wide mb-2">
-          Grade System
+          {t("settings.gradeSystem")}
         </Text>
         <View className="flex-row gap-2">
           {GRADE_SYSTEMS.map((gs) => (
@@ -127,7 +150,7 @@ export default function SettingsScreen() {
                     : "text-text-primary"
                 }
               >
-                {gs.label}
+                {t(gs.labelKey)}
               </Text>
             </Pressable>
           ))}
@@ -137,7 +160,7 @@ export default function SettingsScreen() {
       {/* ── Navigation Rows ──────────────────────────────────────────── */}
       <View className="mt-4">
         <Text className="text-text-secondary text-sm font-semibold uppercase tracking-wide px-4 mb-2">
-          Preferences
+          {t("settings.preferences")}
         </Text>
 
         {/* Notification Preferences */}
@@ -147,7 +170,7 @@ export default function SettingsScreen() {
         >
           <Bell size={20} color="#9CA3AF" />
           <Text className="text-text-primary text-base flex-1 ml-3">
-            Notification Preferences
+            {t("settings.notificationPreferences")}
           </Text>
           <ChevronRight size={20} color="#6B7280" />
         </Pressable>
@@ -159,49 +182,56 @@ export default function SettingsScreen() {
         >
           <BookOpen size={20} color="#9CA3AF" />
           <Text className="text-text-primary text-base flex-1 ml-3">
-            Community Guidelines
+            {t("settings.communityGuidelines")}
           </Text>
           <ChevronRight size={20} color="#6B7280" />
         </Pressable>
 
-        {/* Language — disabled with "Coming Soon" badge.
-            i18n is deferred to Phase 18 (FR-Q1). */}
-        <View className="flex-row items-center px-4 py-4 border-b border-surface opacity-50">
+        {/* Language — interactive picker that opens a modal */}
+        <Pressable
+          testID="language-row"
+          onPress={() => setLanguagePickerVisible(true)}
+          className="flex-row items-center px-4 py-4 border-b border-surface"
+        >
           <Globe size={20} color="#9CA3AF" />
           <View className="flex-1 ml-3">
-            <Text className="text-text-primary text-base">Language</Text>
-            <Text className="text-text-secondary text-sm">English</Text>
+            <Text className="text-text-primary text-base">
+              {t("settings.language")}
+            </Text>
+            <Text className="text-text-secondary text-sm">
+              {currentLanguageName}
+            </Text>
           </View>
-          <Badge label="Coming Soon" variant="default" />
-        </View>
+          <ChevronRight size={20} color="#6B7280" />
+        </Pressable>
       </View>
 
       {/* ── About ────────────────────────────────────────────────────── */}
       <View className="mt-4">
         <Text className="text-text-secondary text-sm font-semibold uppercase tracking-wide px-4 mb-2">
-          About
+          {t("settings.about")}
         </Text>
 
         <View className="px-4 py-4 border-b border-surface">
           <Text className="text-text-primary text-base">
-            Version {appVersion}
+            {t("settings.version", { version: appVersion })}
           </Text>
         </View>
 
         {/* Privacy Policy — placeholder, no URL defined yet */}
         <View className="flex-row items-center px-4 py-4 border-b border-surface opacity-50">
           <Text className="text-text-primary text-base flex-1">
-            Privacy Policy
+            {t("settings.privacyPolicy")}
           </Text>
-          <Badge label="Coming Soon" variant="default" />
+          <Badge label={t("common.comingSoon")} variant="default" />
         </View>
 
         {/* Terms of Service — placeholder, no URL defined yet */}
         <View className="flex-row items-center px-4 py-4 border-b border-surface opacity-50">
           <Text className="text-text-primary text-base flex-1">
-            Terms of Service
+            {t("settings.termsOfService")}
           </Text>
-          <Badge label="Coming Soon" variant="default" />
+          <Badge label={t("common.comingSoon")} variant="default" />
         </View>
       </View>
 
@@ -213,9 +243,58 @@ export default function SettingsScreen() {
           className="flex-row items-center justify-center py-3 rounded-lg bg-red-100"
         >
           <LogOut size={20} color="#DC2626" />
-          <Text className="text-red-600 font-semibold ml-2">Sign Out</Text>
+          <Text className="text-red-600 font-semibold ml-2">
+            {t("settings.signOut")}
+          </Text>
         </Pressable>
       </View>
+
+      {/* ── Language Picker Modal ──────────────────────────────────── */}
+      {/* A simple bottom-sheet style modal with the list of supported
+          languages. Tapping one calls changeLanguage() which switches
+          the language and persists to SecureStore. */}
+      <Modal
+        visible={languagePickerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguagePickerVisible(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50 justify-end"
+          onPress={() => setLanguagePickerVisible(false)}
+        >
+          <Pressable className="bg-background rounded-t-2xl pb-8 pt-4 px-4">
+            <Text className="text-text-primary text-lg font-bold mb-4 text-center">
+              {t("settings.languagePickerTitle")}
+            </Text>
+
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const isActive = i18n.language === lang.code;
+              return (
+                <Pressable
+                  key={lang.code}
+                  testID={`language-option-${lang.code}`}
+                  onPress={() => handleLanguageSelect(lang.code)}
+                  className={`flex-row items-center px-4 py-4 rounded-lg mb-2 ${
+                    isActive ? "bg-accent/10" : ""
+                  }`}
+                >
+                  <Text
+                    className={`text-base flex-1 ${
+                      isActive
+                        ? "text-accent font-semibold"
+                        : "text-text-primary"
+                    }`}
+                  >
+                    {lang.name}
+                  </Text>
+                  {isActive && <Check size={20} color="#7C3AED" />}
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }

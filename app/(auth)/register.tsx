@@ -34,6 +34,7 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { useTranslation } from "react-i18next";
 import { Mail, User } from "lucide-react-native";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -78,15 +79,25 @@ function getPasswordStrength(password: string): number {
  * `as const` makes TypeScript treat these as literal types (not just
  * `string`), which gives better autocomplete and catches typos.
  */
+// labelKey stores the i18n translation key instead of a hardcoded string.
+// The actual t() call happens inside the component where useTranslation()
+// is available — module-level code can't call hooks, so we store the key
+// here and resolve it at render time.
 const strengthConfig = [
-  { label: "", color: "#6B6B80" },       // 0: no criteria met (gray)
-  { label: "Weak", color: "#EF4444" },   // 1: one criterion (red)
-  { label: "Fair", color: "#F59E0B" },   // 2: two criteria (amber)
-  { label: "Strong", color: "#22C55E" }, // 3: three criteria (green)
-  { label: "Strong", color: "#22C55E" }, // 4: all four criteria (green)
+  { labelKey: "", color: "#6B6B80" },                              // 0: no criteria met (gray)
+  { labelKey: "auth.register.strengthWeak", color: "#EF4444" },    // 1: one criterion (red)
+  { labelKey: "auth.register.strengthFair", color: "#F59E0B" },    // 2: two criteria (amber)
+  { labelKey: "auth.register.strengthStrong", color: "#22C55E" },  // 3: three criteria (green)
+  { labelKey: "auth.register.strengthStrong", color: "#22C55E" },  // 4: all four criteria (green)
 ] as const;
 
 export default function RegisterScreen() {
+  // useTranslation() gives us the `t` function for looking up i18n strings.
+  // Keys like "auth.register.title" map to values in locales/en.json (or
+  // whichever language is active). This decouples user-facing text from
+  // the component code so we can add new languages without editing JSX.
+  const { t } = useTranslation();
+
   // API-level error from Supabase (e.g., "User already registered").
   // Separate from form validation errors — this only appears after the
   // form passes Zod validation but Supabase rejects the signup attempt.
@@ -130,7 +141,7 @@ export default function RegisterScreen() {
   // we WANT the strength indicator to update on every keystroke.
   const password = watch("password");
   const strength = getPasswordStrength(password || "");
-  const { label: strengthLabel, color: strengthColor } = strengthConfig[strength];
+  const { labelKey: strengthLabelKey, color: strengthColor } = strengthConfig[strength];
 
   /**
    * Called when the form passes Zod validation.
@@ -178,12 +189,12 @@ export default function RegisterScreen() {
             Same "BB" monogram as the login screen for brand consistency.
             Will be replaced with the actual logo asset in a later phase. */}
         <View className="items-center mb-10">
-          <Text className="text-text-primary text-6xl font-bold mb-2">BB</Text>
+          <Text className="text-text-primary text-6xl font-bold mb-2">{t("auth.register.logo")}</Text>
           <Text className="text-text-primary text-3xl font-bold">
-            Sign up!
+            {t("auth.register.title")}
           </Text>
           <Text className="text-text-secondary text-base mt-1">
-            Make part of this amazing community!
+            {t("auth.register.subtitle")}
           </Text>
         </View>
 
@@ -199,10 +210,10 @@ export default function RegisterScreen() {
             name="email"
             render={({ field: { onChange, value } }) => (
               <AppTextInput
-                label="Email Address"
+                label={t("auth.register.emailLabel")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="your@email.com"
+                placeholder={t("auth.register.emailPlaceholder")}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon={Mail}
@@ -220,10 +231,10 @@ export default function RegisterScreen() {
             name="displayName"
             render={({ field: { onChange, value } }) => (
               <AppTextInput
-                label="Your Name"
+                label={t("auth.register.nameLabel")}
                 value={value ?? ""}
                 onChangeText={onChange}
-                placeholder="@yourname"
+                placeholder={t("auth.register.namePlaceholder")}
                 autoCapitalize="words"
                 leftIcon={User}
                 error={errors.displayName?.message}
@@ -239,10 +250,10 @@ export default function RegisterScreen() {
             name="password"
             render={({ field: { onChange, value } }) => (
               <AppTextInput
-                label="Password"
+                label={t("auth.register.passwordLabel")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="Enter password"
+                placeholder={t("auth.register.passwordPlaceholder")}
                 secureTextEntry
                 error={errors.password?.message}
                 testID="password-input"
@@ -277,7 +288,7 @@ export default function RegisterScreen() {
                 />
               ))}
               <Text style={{ color: strengthColor }} className="text-xs ml-1">
-                {strengthLabel}
+                {strengthLabelKey ? t(strengthLabelKey) : ""}
               </Text>
             </View>
           ) : null}
@@ -300,7 +311,7 @@ export default function RegisterScreen() {
             3. If valid -> calls onSubmit with typed, validated data
             The `loading` prop shows a spinner during the async signUp call. */}
         <Button
-          label="Sign up"
+          label={t("auth.register.signUp")}
           onPress={handleSubmit(onSubmit)}
           size="lg"
           loading={isSubmitting}
@@ -315,7 +326,7 @@ export default function RegisterScreen() {
           <View className="flex-row items-center mb-6">
             <Divider className="flex-1" />
             <Text className="text-text-muted text-sm mx-4">
-              Or sign up with
+              {t("auth.register.orSignUpWith")}
             </Text>
             <Divider className="flex-1" />
           </View>
@@ -340,11 +351,11 @@ export default function RegisterScreen() {
             Text component, making the text itself the tappable element. */}
         <View className="flex-row justify-center mt-8">
           <Text className="text-text-secondary text-sm">
-            Already have an account?{" "}
+            {t("auth.register.hasAccount")}
           </Text>
           <Link href="/(auth)/login" asChild>
             <Text className="text-accent-light text-sm font-semibold">
-              Sign in
+              {t("auth.register.signIn")}
             </Text>
           </Link>
         </View>

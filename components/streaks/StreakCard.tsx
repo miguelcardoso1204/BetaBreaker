@@ -21,6 +21,7 @@
 
 import React from "react";
 import { Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/Badge";
 import type { StreakStatus } from "@/utils/streaks";
 
@@ -49,14 +50,16 @@ export interface StreakCardProps {
 //   - At Risk (amber) → gentle urgency to climb this week
 //   - Broken (red)    → clear signal the streak ended
 //   - None (purple)   → neutral, no pressure on new users
+// Maps each status to a Badge variant and an i18n key. The key is resolved
+// inside the component via t() so translations stay reactive to language changes.
 const statusBadgeMap: Record<
   StreakStatus,
-  { variant: "success" | "warning" | "error" | "default"; label: string }
+  { variant: "success" | "warning" | "error" | "default"; key: string }
 > = {
-  active: { variant: "success", label: "Active" },
-  at_risk: { variant: "warning", label: "At Risk" },
-  broken: { variant: "error", label: "Broken" },
-  none: { variant: "default", label: "No Streak" },
+  active: { variant: "success", key: "streaks.active" },
+  at_risk: { variant: "warning", key: "streaks.atRisk" },
+  broken: { variant: "error", key: "streaks.broken" },
+  none: { variant: "default", key: "streaks.noStreak" },
 };
 
 /**
@@ -85,6 +88,8 @@ export function StreakCard({
   status,
   testID,
 }: StreakCardProps) {
+  // useTranslation hook provides t() for looking up i18n keys from locales/
+  const { t } = useTranslation();
   const badgeInfo = statusBadgeMap[status];
 
   return (
@@ -96,8 +101,8 @@ export function StreakCard({
           <Text className="text-text-primary text-2xl font-bold">
             {currentStreak}
           </Text>
-          <Text className="text-text-secondary text-sm">Current Streak</Text>
-          <Text className="text-text-secondary text-xs">weeks</Text>
+          <Text className="text-text-secondary text-sm">{t("streaks.currentStreak")}</Text>
+          <Text className="text-text-secondary text-xs">{t("streaks.weeks")}</Text>
         </View>
 
         {/* Longest streak column */}
@@ -105,14 +110,14 @@ export function StreakCard({
           <Text className="text-text-primary text-2xl font-bold">
             {longestStreak}
           </Text>
-          <Text className="text-text-secondary text-sm">Longest Streak</Text>
-          <Text className="text-text-secondary text-xs">weeks</Text>
+          <Text className="text-text-secondary text-sm">{t("streaks.longestStreak")}</Text>
+          <Text className="text-text-secondary text-xs">{t("streaks.weeks")}</Text>
         </View>
       </View>
 
       {/* Status badge — centered below the numbers */}
       <View className="items-center mt-2">
-        <Badge label={badgeInfo.label} variant={badgeInfo.variant} />
+        <Badge label={t(badgeInfo.key)} variant={badgeInfo.variant} />
       </View>
     </View>
   );

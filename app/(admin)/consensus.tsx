@@ -29,6 +29,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Filter } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useRoutesGradeConsensus } from "@/hooks/useGradeConsensus";
@@ -38,6 +39,7 @@ import GradeConsensusCard from "@/components/admin/GradeConsensusCard";
 const DIVERGENCE_THRESHOLD = 2;
 
 export default function ConsensusScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -82,7 +84,7 @@ export default function ConsensusScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load consensus data"}
+          {error.message || t("admin.consensus.failedToLoad")}
         </Text>
       </View>
     );
@@ -93,27 +95,27 @@ export default function ConsensusScreen() {
     <View className="flex-1 bg-background">
       {/* ── Header ─────────────────────────────────────────────── */}
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Grade Consensus
+        {t("admin.consensus.title")}
       </Text>
 
       {/* ── Summary Stats ──────────────────────────────────────── */}
       <View className="flex-row px-4 mb-3 gap-3">
         <View className="bg-surface rounded-lg px-3 py-2 flex-1">
-          <Text className="text-text-secondary text-xs">Routes</Text>
+          <Text className="text-text-secondary text-xs">{t("admin.consensus.routes")}</Text>
           <Text className="text-text-primary font-bold text-lg">
             {routes.length}
           </Text>
           <Text className="text-text-secondary text-xs">
-            {stats.withConsensus} with consensus
+            {stats.withConsensus} {t("admin.consensus.withConsensus")}
           </Text>
         </View>
         <View className="bg-surface rounded-lg px-3 py-2 flex-1">
-          <Text className="text-text-secondary text-xs">Divergent</Text>
+          <Text className="text-text-secondary text-xs">{t("admin.consensus.divergent")}</Text>
           <Text className="text-text-primary font-bold text-lg">
             {stats.divergent}
           </Text>
           <Text className="text-text-secondary text-xs">
-            {stats.divergent} divergent
+            {stats.divergent} {t("admin.consensus.divergentLower")}
           </Text>
         </View>
       </View>
@@ -136,7 +138,7 @@ export default function ConsensusScreen() {
               divergentOnly ? "text-white" : "text-text-primary"
             }`}
           >
-            {divergentOnly ? "Divergent Only" : "All Routes"}
+            {divergentOnly ? t("admin.consensus.divergentOnly") : t("admin.consensus.allRoutes")}
           </Text>
         </Pressable>
       </View>
@@ -145,7 +147,7 @@ export default function ConsensusScreen() {
       {filteredRoutes.length === 0 ? (
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-text-secondary text-center">
-            No routes to display
+            {t("admin.consensus.noRoutes")}
           </Text>
         </View>
       ) : (

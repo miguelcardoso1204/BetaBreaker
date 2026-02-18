@@ -31,6 +31,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useRouteFilterStore } from "@/stores/routeFilterStore";
 import { RouteCard } from "@/components/routes/RouteCard";
@@ -38,6 +39,9 @@ import { FilterBar } from "@/components/routes/FilterBar";
 import type { RouteStatus } from "@/lib/constants";
 
 export default function GymRoutesScreen() {
+  // i18n hook — provides t() for translating hardcoded strings.
+  const { t } = useTranslation();
+
   // Extract gymId from the URL path. Expo Router's file-based routing
   // makes /gym/[id]/routes map to this component with params.id = gymId.
   const { id: gymId } = useLocalSearchParams<{ id: string }>();
@@ -130,7 +134,7 @@ export default function GymRoutesScreen() {
       {error && !isLoading && (
         <View className="flex-1 items-center justify-center px-4" testID="error-state">
           <Text className="text-error text-center">
-            {error.message || "Failed to load routes"}
+            {error.message || t("route.failedToLoad")}
           </Text>
         </View>
       )}
@@ -138,7 +142,7 @@ export default function GymRoutesScreen() {
       {/* Empty state — no routes match the current filters */}
       {!isLoading && !error && routes?.length === 0 && (
         <View className="flex-1 items-center justify-center" testID="empty-state">
-          <Text className="text-text-secondary text-center">No routes found</Text>
+          <Text className="text-text-secondary text-center">{t("route.noRoutesFound")}</Text>
         </View>
       )}
 

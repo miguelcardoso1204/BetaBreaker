@@ -16,6 +16,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { View, Text, FlatList, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,6 +30,7 @@ import type { ActivityFeedItem } from "@/components/social/FeedItem";
 import type { GradeSystem } from "@/utils/grades";
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { feed, isLoading } = useActivityFeed();
   const { count } = useUnreadCount();
@@ -50,7 +52,7 @@ export default function HomeScreen() {
       <View className="px-4 pt-14 pb-2">
         <View className="flex-row items-center justify-between">
           <Text className="text-text-primary text-2xl font-bold flex-1">
-            Welcome Back
+            {t("home.welcomeBack")}
           </Text>
           {/* Bell icon — tapping opens the notification center */}
           <NotificationBell
@@ -59,7 +61,9 @@ export default function HomeScreen() {
           />
         </View>
         <Text className="text-text-secondary text-base mt-1">
-          {user?.displayName ? `${user.displayName}, while you were away...` : "While you were away..."}
+          {user?.displayName
+            ? t("home.whileAwayUser", { name: user.displayName })
+            : t("home.whileAway")}
         </Text>
       </View>
 
@@ -108,7 +112,7 @@ export default function HomeScreen() {
           )}
           <View className="flex-1 items-center justify-center">
             <Text className="text-text-secondary text-base text-center">
-              Follow climbers to see their activity
+              {t("home.followPrompt")}
             </Text>
           </View>
         </View>

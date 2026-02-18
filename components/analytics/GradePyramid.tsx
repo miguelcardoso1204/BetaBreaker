@@ -33,6 +33,7 @@
 
 import React from "react";
 import { Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/lib/constants";
 import type { GradePyramidEntry } from "@/services/sessions.service";
@@ -56,12 +57,14 @@ export interface GradePyramidProps {
  * so the screen never renders an empty/broken chart.
  */
 export function GradePyramid({ data, gradeSystem, testID }: GradePyramidProps) {
+  const { t } = useTranslation();
+
   // Handle empty state — user has no sends in the selected period.
   if (data.length === 0) {
     return (
       <View testID={testID} className="py-8 items-center">
         <Text className="text-text-secondary text-sm">
-          No sends yet for this period
+          {t("analytics.noSendsYet")}
         </Text>
       </View>
     );

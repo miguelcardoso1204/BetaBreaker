@@ -24,6 +24,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Text, View, Modal, Pressable, ScrollView } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BadgeIcon } from "@/components/ui/BadgeIcon";
 
 /**
@@ -79,6 +80,10 @@ export function BadgePicker({
   onClose,
   visible,
 }: BadgePickerProps) {
+  // useTranslation hook gives us the t() function for looking up
+  // translated strings by key from the current locale's JSON file.
+  const { t } = useTranslation();
+
   // Local state tracks which badges are currently selected in the picker.
   // Initialized from pinnedIds when the modal opens.
   const [selected, setSelected] = useState<string[]>(pinnedIds);
@@ -132,16 +137,16 @@ export function BadgePicker({
           {/* Header with title and Close button */}
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-text-primary text-lg font-bold">
-              Select Badges to Pin
+              {t("badges.selectBadges")}
             </Text>
             <Pressable onPress={onClose}>
-              <Text className="text-text-secondary text-sm">Close</Text>
+              <Text className="text-text-secondary text-sm">{t("common.close")}</Text>
             </Pressable>
           </View>
 
           {/* Selection count indicator */}
           <Text className="text-text-secondary text-sm mb-3">
-            {selected.length} / {maxPins} selected
+            {t("badges.selectedCount", { selected: selected.length, max: maxPins })}
           </Text>
 
           {/* Badge grid — scrollable for users with many earned badges */}
@@ -172,7 +177,7 @@ export function BadgePicker({
                         className="absolute -top-1 -right-1 bg-accent rounded-full w-5 h-5 items-center justify-center"
                       >
                         <Text className="text-white text-xs font-bold">
-                          ✓
+                          {t("badges.checkmark")}
                         </Text>
                       </View>
                     )}
@@ -187,7 +192,7 @@ export function BadgePicker({
             onPress={handleSave}
             className="bg-accent rounded-lg py-3 items-center"
           >
-            <Text className="text-white font-semibold text-base">Save</Text>
+            <Text className="text-white font-semibold text-base">{t("common.save")}</Text>
           </Pressable>
         </View>
       </View>

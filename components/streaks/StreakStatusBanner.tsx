@@ -19,6 +19,7 @@
 
 import React from "react";
 import { Text } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
 import type { StreakStatus } from "@/utils/streaks";
 
@@ -55,6 +56,9 @@ export function StreakStatusBanner({
   decayedFrom,
   testID,
 }: StreakStatusBannerProps) {
+  // useTranslation hook provides t() for looking up i18n keys from locales/
+  const { t } = useTranslation();
+
   // Active and none statuses don't need a banner — nothing to communicate.
   // Returning null means React renders nothing (no DOM node at all).
   if (status === "active" || status === "none") {
@@ -69,13 +73,15 @@ export function StreakStatusBanner({
 
   if (status === "at_risk") {
     borderColor = "border-warning";
+    // When decayedFrom is set, interpolate the frozen count into the message.
+    // Otherwise, show the generic at-risk nudge.
     message = decayedFrom
-      ? `Your streak is frozen at ${decayedFrom}. Climb this week to keep it going!`
-      : "Climb this week to keep your streak alive!";
+      ? t("streaks.frozenMessage", { count: decayedFrom })
+      : t("streaks.atRiskMessage");
   } else {
     // status === "broken"
     borderColor = "border-error";
-    message = "Your streak has ended. Start a new one today!";
+    message = t("streaks.brokenMessage");
   }
 
   return (

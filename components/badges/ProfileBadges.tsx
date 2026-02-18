@@ -20,6 +20,7 @@
 
 import React from "react";
 import { Text, View, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { BadgeIcon } from "@/components/ui/BadgeIcon";
 
 /**
@@ -63,6 +64,10 @@ export function ProfileBadges({
   onManagePress,
   maxPins,
 }: ProfileBadgesProps) {
+  // useTranslation hook gives us the t() function for looking up
+  // translated strings by key from the current locale's JSON file.
+  const { t } = useTranslation();
+
   // Calculate how many empty placeholder slots to render.
   // If the user has pinned 2 of 3 slots, show 1 empty slot.
   const emptySlotCount = Math.max(0, maxPins - pinnedBadges.length);
@@ -72,10 +77,10 @@ export function ProfileBadges({
       {/* Section header with Edit button */}
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-text-primary text-base font-semibold">
-          Pinned Badges
+          {t("badges.pinnedBadges")}
         </Text>
         <Pressable onPress={onManagePress}>
-          <Text className="text-accent text-sm font-medium">Edit</Text>
+          <Text className="text-accent text-sm font-medium">{t("badges.edit")}</Text>
         </Pressable>
       </View>
 

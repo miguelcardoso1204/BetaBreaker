@@ -25,6 +25,7 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { ThumbsUp, ThumbsDown, Trash2, Flag } from "lucide-react-native";
 import { Avatar } from "@/components/ui/Avatar";
+import { useTranslation } from "react-i18next";
 
 /**
  * Shape of a feedback row with its author profile joined via PostgREST.

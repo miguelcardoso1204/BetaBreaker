@@ -31,6 +31,7 @@ import {
   FlatList,
   SafeAreaView,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Mountain, Check } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateProfile } from "@/hooks/useProfile";
@@ -38,17 +39,20 @@ import { useGyms } from "@/hooks/useGyms";
 import { Button } from "@/components/ui/Button";
 import type { GradeSystem } from "@/utils/grades";
 
-// The three grade systems users can choose from — same as profile.tsx
-const GRADE_SYSTEMS: { value: GradeSystem; label: string }[] = [
-  { value: "v-scale", label: "V-Scale" },
-  { value: "font", label: "Font" },
-  { value: "yds", label: "YDS" },
+// The three grade systems users can choose from — same as profile.tsx.
+// Uses labelKey instead of label so that t() can be called at render time
+// (GRADE_SYSTEMS is defined outside the component, where hooks aren't available).
+const GRADE_SYSTEMS: { value: GradeSystem; labelKey: string }[] = [
+  { value: "v-scale", labelKey: "gradeSystem.vScale" },
+  { value: "font", labelKey: "gradeSystem.font" },
+  { value: "yds", labelKey: "gradeSystem.yds" },
 ];
 
 /** Total number of steps in the wizard, used for progress dots. */
 const TOTAL_STEPS = 4;
 
 export default function OnboardingScreen() {
+  const { t } = useTranslation();
   const { user, refreshProfile } = useAuth();
   const updateProfile = useUpdateProfile(refreshProfile);
   const { data: gyms } = useGyms();
@@ -119,20 +123,20 @@ export default function OnboardingScreen() {
           <View className="flex-1 items-center justify-center">
             <Mountain size={64} color="#7C3AED" />
             <Text className="text-text-primary text-2xl font-bold mt-6 text-center">
-              Welcome to Beta Breaker
+              {t("onboarding.welcome")}
             </Text>
             <Text className="text-text-secondary text-base mt-3 text-center">
-              Track your climbing, share beta, compete with friends.
+              {t("onboarding.welcomeSubtitle")}
             </Text>
             <View className="mt-10 w-full">
               <Button
-                label="Let's get started"
+                label={t("onboarding.letsGetStarted")}
                 onPress={() => setStep(1)}
                 size="lg"
               />
             </View>
             <Pressable onPress={handleSkipAll} className="mt-4 py-2">
-              <Text className="text-text-secondary underline">Skip setup</Text>
+              <Text className="text-text-secondary underline">{t("onboarding.skipSetup")}</Text>
             </Pressable>
           </View>
         )}
@@ -141,10 +145,10 @@ export default function OnboardingScreen() {
         {step === 1 && (
           <View className="flex-1">
             <Text className="text-text-primary text-2xl font-bold mb-1">
-              Select Your Home Gym
+              {t("onboarding.selectHomeGym")}
             </Text>
             <Text className="text-text-secondary text-sm mb-4">
-              You can change this later in settings.
+              {t("onboarding.changeGymLater")}
             </Text>
 
             {/* FlatList of available gyms — tap to select, tap again to deselect */}
@@ -181,7 +185,7 @@ export default function OnboardingScreen() {
             {/* Bottom action buttons */}
             <View className="py-4">
               <Button
-                label="Next"
+                label={t("common.next")}
                 onPress={() => setStep(2)}
                 size="lg"
               />
@@ -192,7 +196,7 @@ export default function OnboardingScreen() {
                 }}
                 className="mt-3 py-2 items-center"
               >
-                <Text className="text-text-secondary">Skip</Text>
+                <Text className="text-text-secondary">{t("common.skip")}</Text>
               </Pressable>
             </View>
           </View>
@@ -202,10 +206,10 @@ export default function OnboardingScreen() {
         {step === 2 && (
           <View className="flex-1 justify-center">
             <Text className="text-text-primary text-2xl font-bold mb-1">
-              Grade System
+              {t("onboarding.gradeSystem")}
             </Text>
             <Text className="text-text-secondary text-sm mb-6">
-              How do you read grades?
+              {t("onboarding.gradeSystemPrompt")}
             </Text>
 
             {/* 3-option row — same pattern as profile.tsx grade picker */}
@@ -228,14 +232,14 @@ export default function OnboardingScreen() {
                         : "text-text-primary"
                     }
                   >
-                    {gs.label}
+                    {t(gs.labelKey)}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
             <Button
-              label="Next"
+              label={t("common.next")}
               onPress={() => setStep(3)}
               size="lg"
             />
@@ -247,29 +251,29 @@ export default function OnboardingScreen() {
           <View className="flex-1 items-center justify-center">
             <Check size={64} color="#22C55E" />
             <Text className="text-text-primary text-2xl font-bold mt-6 text-center">
-              You're all set!
+              {t("onboarding.allSet")}
             </Text>
 
             {/* Summary of selections */}
             <View className="mt-6 w-full bg-surface rounded-lg p-4">
               <View className="flex-row justify-between mb-2">
-                <Text className="text-text-secondary">Home Gym</Text>
+                <Text className="text-text-secondary">{t("profile.homeGym")}</Text>
                 <Text className="text-text-primary font-semibold">
-                  {selectedGymName ?? "No gym selected"}
+                  {selectedGymName ?? t("onboarding.noGymSelected")}
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-text-secondary">Grade System</Text>
+                <Text className="text-text-secondary">{t("onboarding.gradeSystem")}</Text>
                 <Text className="text-text-primary font-semibold">
-                  {GRADE_SYSTEMS.find((gs) => gs.value === selectedGradeSystem)
-                    ?.label ?? selectedGradeSystem}
+                  {t(GRADE_SYSTEMS.find((gs) => gs.value === selectedGradeSystem)
+                    ?.labelKey ?? selectedGradeSystem)}
                 </Text>
               </View>
             </View>
 
             <View className="mt-10 w-full">
               <Button
-                label="Get Started"
+                label={t("onboarding.getStarted")}
                 onPress={handleFinish}
                 size="lg"
                 loading={updateProfile.isPending}

@@ -24,6 +24,7 @@
 
 import React from "react";
 import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useBilling } from "@/hooks/useBilling";
 import { GYM_BILLING_RATE_EUR } from "@/lib/constants";
 
@@ -58,6 +59,7 @@ function statusColor(status: string): string {
 }
 
 export default function BillingScreen() {
+  const { t } = useTranslation();
   // TODO: Replace with actual gym ID from admin context/navigation params.
   // For now, this serves as the hook integration point.
   const gymId = null;
@@ -82,7 +84,7 @@ export default function BillingScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load billing data"}
+          {error.message || t("admin.billing.failedToLoad")}
         </Text>
       </View>
     );
@@ -96,7 +98,7 @@ export default function BillingScreen() {
         testID="empty-state"
       >
         <Text className="text-text-secondary text-center text-base">
-          No billing history yet
+          {t("admin.billing.noHistory")}
         </Text>
       </View>
     );
@@ -106,19 +108,19 @@ export default function BillingScreen() {
   return (
     <View className="flex-1 bg-background" testID="billing-screen">
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Billing
+        {t("admin.billing.title")}
       </Text>
 
       {/* Current month projection widget */}
       <View className="mx-4 mb-4 bg-surface rounded-lg p-4" testID="current-month-widget">
         <Text className="text-text-secondary text-sm mb-1">
-          Current Month
+          {t("admin.billing.currentMonth")}
         </Text>
         <Text className="text-text-primary text-lg font-semibold">
-          {activeUsers} active user{activeUsers !== 1 ? "s" : ""}
+          {activeUsers} {t("admin.billing.activeUser", { count: activeUsers })}
         </Text>
         <Text className="text-text-secondary text-sm mt-1">
-          Projected: €{projectedBill.toFixed(2)} (€
+          {t("admin.billing.projected")} €{projectedBill.toFixed(2)} (€
           {GYM_BILLING_RATE_EUR.toFixed(2)}/user)
         </Text>
       </View>
@@ -144,8 +146,7 @@ export default function BillingScreen() {
 
             {/* Active users + total due */}
             <Text className="text-text-secondary text-sm">
-              {item.active_user_count} active user
-              {item.active_user_count !== 1 ? "s" : ""} · €
+              {item.active_user_count} {t("admin.billing.activeUser", { count: item.active_user_count })} · €
               {parseFloat(item.total_due_eur).toFixed(2)}
             </Text>
           </View>

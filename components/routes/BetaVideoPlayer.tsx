@@ -31,6 +31,7 @@ import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useEvent } from "expo";
 import { Play, AlertCircle, Trash2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 export interface BetaVideoPlayerProps {
   /** Public Supabase Storage URL for the video */
@@ -63,6 +64,8 @@ export function BetaVideoPlayer({
   isOwner,
   onDelete,
 }: BetaVideoPlayerProps) {
+  const { t } = useTranslation();
+
   // Controls whether the video player is initialized.
   // Starts false — the player is only created when the user taps play.
   const [isActive, setIsActive] = useState(false);
@@ -119,9 +122,9 @@ export function BetaVideoPlayer({
           <View className="bg-gray-800 rounded-xl items-center justify-center aspect-video">
             <AlertCircle size={32} color="#EF4444" />
             <Text className="text-red-400 mt-2 font-medium">
-              Failed to load video
+              {t("video.failedToLoad")}
             </Text>
-            <Text className="text-gray-400 text-sm mt-1">Tap to retry</Text>
+            <Text className="text-gray-400 text-sm mt-1">{t("video.tapToRetry")}</Text>
           </View>
         </Pressable>
       ) : status === "loading" || status === "idle" ? (
@@ -132,7 +135,7 @@ export function BetaVideoPlayer({
           className="bg-gray-800 rounded-xl items-center justify-center aspect-video"
         >
           <ActivityIndicator size="large" color="#7C3AED" />
-          <Text className="text-gray-400 mt-2">Loading video...</Text>
+          <Text className="text-gray-400 mt-2">{t("video.loadingVideo")}</Text>
         </View>
       ) : (
         // READY STATE: Player is loaded — show the native VideoView.
@@ -170,7 +173,7 @@ export function BetaVideoPlayer({
             testID="delete-video-button"
             onPress={onDelete}
             accessibilityRole="button"
-            accessibilityLabel="Delete video"
+            accessibilityLabel={t("video.deleteVideo")}
             className="p-2"
           >
             <Trash2 size={18} color="#EF4444" />

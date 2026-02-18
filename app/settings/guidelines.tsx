@@ -18,6 +18,7 @@
 
 import React from "react";
 import { ScrollView, View, Text } from "react-native";
+import { useTranslation } from "react-i18next";
 
 /**
  * A single guideline section with a bold heading and body paragraph.
@@ -43,47 +44,35 @@ function Section({
 }
 
 export default function GuidelinesScreen() {
+  const { t } = useTranslation();
+
   return (
     <ScrollView
       className="flex-1 bg-background"
       contentContainerStyle={{ padding: 16 }}
     >
       <Text className="text-2xl font-bold text-text-primary mb-6">
-        Community Guidelines
+        {t("guidelines.title")}
       </Text>
 
       <Text className="text-text-secondary text-base mb-6 leading-6">
-        Beta Breaker is a community of climbers helping each other improve.
-        To keep things positive and productive, please follow these guidelines.
+        {t("guidelines.intro")}
       </Text>
 
-      <Section title="Be Respectful">
-        Treat other climbers with respect regardless of skill level,
-        experience, or background. Constructive feedback on beta tips is
-        encouraged, but personal attacks, insults, or discriminatory
-        language will not be tolerated. Everyone was a beginner once.
+      <Section title={t("guidelines.respectTitle")}>
+        {t("guidelines.respectBody")}
       </Section>
 
-      <Section title="No Spam">
-        Keep content relevant to climbing and the gym community. Do not post
-        promotional content, repetitive messages, or off-topic material in
-        beta tips or feedback. Commercial promotions should go through
-        official gym channels.
+      <Section title={t("guidelines.spamTitle")}>
+        {t("guidelines.spamBody")}
       </Section>
 
-      <Section title="Safety First">
-        Never share beta that encourages dangerous or reckless climbing
-        practices. Tips should promote safe technique and proper use of
-        equipment. If you see advice that could lead to injury, report it
-        immediately.
+      <Section title={t("guidelines.safetyTitle")}>
+        {t("guidelines.safetyBody")}
       </Section>
 
-      <Section title="Report Violations">
-        If you encounter content that violates these guidelines, use the
-        report button (flag icon) on the offending content. Select the
-        appropriate reason and our moderation team will review it. False
-        reports waste moderator time, so please only report genuine
-        violations.
+      <Section title={t("guidelines.reportTitle")}>
+        {t("guidelines.reportBody")}
       </Section>
     </ScrollView>
   );

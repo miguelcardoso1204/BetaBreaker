@@ -16,6 +16,7 @@
 
 import React from "react";
 import { Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 /**
  * Props for the ChallengeProgress component.
@@ -50,6 +51,8 @@ export function ChallengeProgress({
   target,
   testID,
 }: ChallengeProgressProps) {
+  const { t } = useTranslation();
+
   // Calculate fill percentage, capped at 100% to prevent overflow.
   // Math.min ensures we don't exceed 100% even if current > target.
   const percentage = target > 0 ? Math.min((current / target) * 100, 100) : 0;
@@ -69,7 +72,7 @@ export function ChallengeProgress({
       </View>
       {/* Text label showing "current / target" */}
       <Text className="text-text-secondary text-xs mt-1 text-right">
-        {current} / {target}
+        {t("challenges.progress", { current, target })}
       </Text>
     </View>
   );

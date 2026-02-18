@@ -38,6 +38,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Minus, Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
@@ -59,10 +60,12 @@ import type { AscentStatus, StyleTagKey } from "@/lib/constants";
  * constant, but duplicating 3 strings is simpler than a shared import
  * for two screens in different parts of the app tree.
  */
-const STATUS_LABELS: Record<AscentStatus, string> = {
-  flash: "Flash",
-  send: "Send",
-  attempt: "Attempt",
+// NOTE: Labels are translation keys resolved via t() at render time.
+// This lets us keep the static map outside the component while supporting i18n.
+const STATUS_LABEL_KEYS: Record<AscentStatus, string> = {
+  flash: "session.flash",
+  send: "session.send",
+  attempt: "session.attempt",
 };
 
 // ── Constants ────────────────────────────────────────────────────────
@@ -73,6 +76,9 @@ const MAX_COMMENT_LENGTH = 200;
 // ── Component ────────────────────────────────────────────────────────
 
 export default function AscentFormScreen() {
+  // i18n hook — provides t() for translating hardcoded strings.
+  const { t } = useTranslation();
+
   // ── URL params ──────────────────────────────────────────────────
   const { id, routeId } = useLocalSearchParams<{
     id: string;
@@ -216,7 +222,7 @@ export default function AscentFormScreen() {
           unselected buttons get a subtle border. */}
       <View className="px-4 mb-4">
         <Text className="text-text-primary text-base font-medium mb-2">
-          Result
+          {t("route.result")}
         </Text>
         <View className="flex-row gap-3">
           {ASCENT_STATUSES.map((s) => {
@@ -226,7 +232,7 @@ export default function AscentFormScreen() {
                 key={s}
                 onPress={() => handleStatusSelect(s)}
                 accessibilityRole="button"
-                accessibilityLabel={`${STATUS_LABELS[s]} status`}
+                accessibilityLabel={`${t(STATUS_LABEL_KEYS[s])} status`}
                 accessibilityState={{ selected: isSelected }}
                 testID={`status-${s}`}
                 className={`flex-1 items-center py-3 rounded-xl ${
@@ -240,7 +246,7 @@ export default function AscentFormScreen() {
                     isSelected ? "text-white" : "text-text-secondary"
                   }`}
                 >
-                  {STATUS_LABELS[s]}
+                  {t(STATUS_LABEL_KEYS[s])}
                 </Text>
               </Pressable>
             );
@@ -253,7 +259,7 @@ export default function AscentFormScreen() {
           (a flash is by definition a first-attempt completion). */}
       <View className="flex-row items-center justify-between px-4 mb-4">
         <Text className="text-text-primary text-base font-medium">
-          Attempts
+          {t("session.attempts")}
         </Text>
         <View className="flex-row items-center gap-4">
           <Pressable
@@ -261,7 +267,7 @@ export default function AscentFormScreen() {
             onPress={() => setAttempts((prev) => Math.max(1, prev - 1))}
             disabled={attempts <= 1 || status === "flash"}
             accessibilityRole="button"
-            accessibilityLabel="Decrease attempts"
+            accessibilityLabel={t("session.decreaseAttempts")}
             className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
               attempts <= 1 || status === "flash" ? "opacity-30" : ""
             }`}
@@ -281,7 +287,7 @@ export default function AscentFormScreen() {
             onPress={() => setAttempts((prev) => Math.min(99, prev + 1))}
             disabled={status === "flash"}
             accessibilityRole="button"
-            accessibilityLabel="Increase attempts"
+            accessibilityLabel={t("session.increaseAttempts")}
             className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
               status === "flash" ? "opacity-30" : ""
             }`}
@@ -297,7 +303,7 @@ export default function AscentFormScreen() {
           difficulty perception (1 = easy for the grade, 5 = very hard). */}
       <View className="px-4 mb-4">
         <Text className="text-text-primary text-base font-medium mb-2">
-          How would you rate this route?
+          {t("route.howWouldYouRate")}
         </Text>
         <StarRating value={starRating} onChange={setStarRating} />
       </View>
@@ -317,13 +323,13 @@ export default function AscentFormScreen() {
           multiline support with a character counter. */}
       <View className="px-4 mb-4">
         <Text className="text-text-primary text-base font-medium mb-2">
-          Comments
+          {t("route.comments")}
         </Text>
         <TextInput
           testID="comment-input"
           value={comment}
           onChangeText={(text) => setComment(text.slice(0, MAX_COMMENT_LENGTH))}
-          placeholder="Share your beta, conditions, or thoughts..."
+          placeholder={t("route.commentsPlaceholder")}
           placeholderTextColor="#6B7280"
           multiline
           numberOfLines={4}
@@ -356,7 +362,7 @@ export default function AscentFormScreen() {
           (no style_tags column exists). Phase 9+ will add persistence. */}
       <View className="px-4 mb-6">
         <Text className="text-text-primary text-base font-medium mb-2">
-          Climbing Style
+          {t("route.climbingStyle")}
         </Text>
         <View className="flex-row flex-wrap gap-2">
           {STYLE_TAGS.map((tag) => {
@@ -385,7 +391,7 @@ export default function AscentFormScreen() {
           selected (star rating, tags, and comment are all optional). */}
       <View className="px-4 pb-8">
         <Button
-          label="Add Ascent"
+          label={t("route.addAscent")}
           onPress={handleSubmit}
           size="lg"
           disabled={status === null}

@@ -27,9 +27,10 @@
 
 import "../global.css";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { I18nextProvider } from "react-i18next";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -40,6 +41,7 @@ import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePushTokenRegistration } from "@/hooks/usePushTokenRegistration";
 import { useColorScheme } from "@/components/useColorScheme";
 import { queryClient } from "@/lib/queryClient";
+import i18n, { initI18n } from "@/lib/i18n";
 import { useOfflineStore } from "@/stores/offlineStore";
 
 // Keep the splash screen visible while we load fonts and check auth state.
@@ -203,6 +205,15 @@ export default function RootLayout() {
   });
   const colorScheme = useColorScheme();
 
+  // Track whether i18n has finished initializing. This runs in parallel
+  // with font loading so there's no extra wait. The splash screen stays
+  // visible until BOTH fonts and i18n are ready.
+  const [i18nReady, setI18nReady] = useState(false);
+
+  useEffect(() => {
+    initI18n().then(() => setI18nReady(true));
+  }, []);
+
   // If font loading fails, throw the error so ErrorBoundary catches it.
   // useEffect ensures this runs after render, which is required for
   // error boundaries to intercept the thrown error properly.
@@ -220,33 +231,36 @@ export default function RootLayout() {
     useOfflineStore.getState().hydrate();
   }, []);
 
-  // Hide splash screen once fonts are loaded.
+  // Hide splash screen once fonts AND i18n are loaded.
   // We don't wait for auth — the AuthGate handles that by returning null
   // (which keeps the splash visible since nothing replaces it).
   useEffect(() => {
-    if (loaded) {
+    if (loaded && i18nReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, i18nReady]);
 
-  // Don't render anything until fonts are loaded.
+  // Don't render anything until fonts and i18n are loaded.
   // The splash screen is still showing, so this is invisible to the user.
-  if (!loaded) {
+  if (!loaded || !i18nReady) {
     return null;
   }
 
   // Wrap the app in providers and render the auth gate.
   // QueryClientProvider → enables useQuery/useMutation in any child component
+  // I18nextProvider → provides translation context to useTranslation() hooks
   // SyncManager → subscribes to NetInfo, drains offline queue on reconnect
   // ThemeProvider → provides dark/light colors to React Navigation's UI
   // AuthGate → decides which route group (auth vs tabs) to show
   return (
     <QueryClientProvider client={queryClient}>
-      <SyncManager />
-      <PushTokenManager />
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <AuthGate />
-      </ThemeProvider>
+      <I18nextProvider i18n={i18n}>
+        <SyncManager />
+        <PushTokenManager />
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <AuthGate />
+        </ThemeProvider>
+      </I18nextProvider>
     </QueryClientProvider>
   );
 }

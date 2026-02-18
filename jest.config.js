@@ -36,7 +36,7 @@ module.exports = {
       // syntax directly, so Babel must transpile it. We add `jose` to the
       // allow-list alongside the other ESM-only packages from the preset.
       transformIgnorePatterns: [
-        '/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|jose))',
+        '/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|jose|i18next|react-i18next))',
         '/node_modules/react-native-reanimated/plugin/',
       ],
 

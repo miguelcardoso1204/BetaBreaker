@@ -23,6 +23,7 @@
 // "Scan Again" or navigates away.
 
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
@@ -45,6 +46,7 @@ type ScanState =
 // ── Component ────────────────────────────────────────────────────────
 
 export default function ScanScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   // Camera permission hook from expo-camera. Returns the current permission
@@ -147,23 +149,21 @@ export default function ScanScreen() {
         <Camera size={64} color="#7C3AED" strokeWidth={1.5} />
 
         <Text className="text-foreground text-xl font-bold mt-6 text-center">
-          Camera Access Required
+          {t("scan.cameraAccessRequired")}
         </Text>
 
         <Text className="text-muted-foreground text-base mt-3 text-center leading-6">
-          To scan QR codes on climbing routes, Beta Breaker needs access
-          to your camera. Your camera feed is processed locally and never
-          recorded or uploaded.
+          {t("scan.cameraPermissionBody")}
         </Text>
 
         <Pressable
           onPress={requestPermission}
           className="bg-accent rounded-xl px-8 py-4 mt-8"
           accessibilityRole="button"
-          accessibilityLabel="Grant camera permission"
+          accessibilityLabel={t("scan.grantCameraPermission")}
         >
           <Text className="text-white font-semibold text-base">
-            Grant Permission
+            {t("scan.grantPermission")}
           </Text>
         </Pressable>
       </View>
@@ -196,7 +196,7 @@ export default function ScanScreen() {
                 style={{ backgroundColor: 'transparent' }}
               />
               <Text className="text-white text-base mt-4 font-medium">
-                Point at a route QR code
+                {t("scan.pointAtQR")}
               </Text>
             </View>
           )}
@@ -205,7 +205,7 @@ export default function ScanScreen() {
           {scanState.status === 'verifying' && (
             <View className="bg-black/70 rounded-2xl px-8 py-6 items-center">
               <Text className="text-white text-lg font-semibold">
-                Verifying...
+                {t("scan.verifying")}
               </Text>
             </View>
           )}
@@ -215,7 +215,7 @@ export default function ScanScreen() {
             <View className="bg-black/80 rounded-2xl px-8 py-6 mx-6 items-center">
               <CheckCircle size={48} color="#22C55E" strokeWidth={2} />
               <Text className="text-white text-xl font-bold mt-3">
-                Route Found!
+                {t("scan.routeFound")}
               </Text>
 
               {/* Action buttons row */}
@@ -227,7 +227,7 @@ export default function ScanScreen() {
                   accessibilityRole="button"
                 >
                   <Eye size={18} color="#FFFFFF" strokeWidth={2} />
-                  <Text className="text-white font-semibold">View Route</Text>
+                  <Text className="text-white font-semibold">{t("scan.viewRoute")}</Text>
                 </Pressable>
 
                 {/* Quick Log button — opens QuickLogSheet inline */}
@@ -237,7 +237,7 @@ export default function ScanScreen() {
                   accessibilityRole="button"
                 >
                   <ClipboardList size={18} color="#FFFFFF" strokeWidth={2} />
-                  <Text className="text-white font-semibold">Quick Log</Text>
+                  <Text className="text-white font-semibold">{t("scan.quickLog")}</Text>
                 </Pressable>
 
                 {/* Comp Score button — shown only when the scanned route is
@@ -250,7 +250,7 @@ export default function ScanScreen() {
                     accessibilityRole="button"
                   >
                     <Trophy size={18} color="#FFFFFF" strokeWidth={2} />
-                    <Text className="text-white font-semibold">Comp Score</Text>
+                    <Text className="text-white font-semibold">{t("scan.compScore")}</Text>
                   </Pressable>
                 )}
               </View>
@@ -262,7 +262,7 @@ export default function ScanScreen() {
                 accessibilityRole="button"
               >
                 <RotateCcw size={16} color="#9CA3AF" strokeWidth={2} />
-                <Text className="text-gray-400 text-sm">Scan Again</Text>
+                <Text className="text-gray-400 text-sm">{t("scan.scanAgain")}</Text>
               </Pressable>
             </View>
           )}
@@ -272,7 +272,7 @@ export default function ScanScreen() {
             <View className="bg-black/80 rounded-2xl px-8 py-6 mx-6 items-center">
               <XCircle size={48} color="#EF4444" strokeWidth={2} />
               <Text className="text-white text-lg font-bold mt-3">
-                Invalid QR Code
+                {t("scan.invalidQR")}
               </Text>
               <Text className="text-gray-400 text-sm mt-2 text-center">
                 {scanState.message}
@@ -285,7 +285,7 @@ export default function ScanScreen() {
                 accessibilityRole="button"
               >
                 <RotateCcw size={18} color="#FFFFFF" strokeWidth={2} />
-                <Text className="text-white font-semibold">Scan Again</Text>
+                <Text className="text-white font-semibold">{t("scan.scanAgain")}</Text>
               </Pressable>
             </View>
           )}

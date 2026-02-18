@@ -32,6 +32,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PromoCodeInput } from "@/components/subscription/PromoCodeInput";
 import { IAP_PRODUCT_IDS } from "@/lib/constants";
@@ -47,16 +48,17 @@ interface PaywallProps {
 }
 
 /**
- * Human-readable descriptions for each Pro feature.
- * Maps feature identifiers to benefit text displayed in the paywall.
+ * Maps feature identifiers to i18n keys for Pro benefit descriptions.
+ * Used to look up the translated feature name for the paywall subtitle.
  */
-const FEATURE_LABELS: Record<EntitlementFeature, string> = {
-  analytics: "Full analytics dashboard",
-  unlimited_beta: "Unlimited beta video uploads",
-  extra_badges: "Display up to 3 profile badges",
+const FEATURE_LABEL_KEYS: Record<EntitlementFeature, string> = {
+  analytics: "subscription.featureAnalytics",
+  unlimited_beta: "subscription.featureVideos",
+  extra_badges: "subscription.featureBadges",
 };
 
 export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
+  const { t } = useTranslation();
   const { purchaseMutation, restoreMutation } = useSubscription();
 
   // Auto-dismiss the paywall when the purchase succeeds.
@@ -71,21 +73,21 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={styles.container}>
         {/* Header */}
-        <Text style={styles.title}>Upgrade to Pro</Text>
+        <Text style={styles.title}>{t("subscription.upgradeToPro")}</Text>
         <Text style={styles.subtitle}>
-          Unlock {FEATURE_LABELS[feature].toLowerCase()} and more
+          {t("subscription.unlockFeature", { feature: t(FEATURE_LABEL_KEYS[feature]).toLowerCase() })}
         </Text>
 
         {/* Benefits list — shows all Pro perks, not just the triggered one */}
         <View style={styles.benefitsList}>
           <Text style={styles.benefitItem}>
-            {"\u2713"} Full analytics dashboard
+            {"\u2713"} {t("subscription.featureAnalytics")}
           </Text>
           <Text style={styles.benefitItem}>
-            {"\u2713"} Unlimited beta video uploads
+            {"\u2713"} {t("subscription.featureVideos")}
           </Text>
           <Text style={styles.benefitItem}>
-            {"\u2713"} Display up to 3 profile badges
+            {"\u2713"} {t("subscription.featureBadges")}
           </Text>
         </View>
 
@@ -97,7 +99,7 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
           }
           disabled={purchaseMutation.isPending}
         >
-          <Text style={styles.subscribeButtonText}>Subscribe</Text>
+          <Text style={styles.subscribeButtonText}>{t("subscription.subscribe")}</Text>
         </Pressable>
 
         {/* Loading indicator while purchase/verification is in progress */}
@@ -112,7 +114,7 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
         {/* Error message if purchase or verification failed */}
         {purchaseMutation.isError && (
           <Text style={styles.errorText}>
-            Purchase failed. Please try again.
+            {t("subscription.purchaseFailed")}
           </Text>
         )}
 
@@ -122,7 +124,7 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
           onPress={() => restoreMutation.mutate()}
           disabled={restoreMutation.isPending}
         >
-          <Text style={styles.restoreText}>Restore Purchases</Text>
+          <Text style={styles.restoreText}>{t("subscription.restorePurchases")}</Text>
         </Pressable>
 
         {/* Promo code input — expandable section for trial codes */}
@@ -130,7 +132,7 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
 
         {/* Dismiss link — lets the user close without purchasing */}
         <Pressable style={styles.dismissButton} onPress={onDismiss}>
-          <Text style={styles.dismissText}>Not now</Text>
+          <Text style={styles.dismissText}>{t("subscription.notNow")}</Text>
         </Pressable>
       </View>
     </Modal>

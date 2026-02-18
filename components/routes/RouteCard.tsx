@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/Badge";
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/lib/constants";
 import type { RouteStatus } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -81,6 +82,8 @@ export function RouteCard({
   onPress,
   isSent = false,
 }: RouteCardProps) {
+  const { t } = useTranslation();
+
   // Convert the canonical integer grade to a human-readable string
   // in the user's preferred system (e.g., 12 → "V4" for v-scale).
   const gradeDisplay = canonicalToDisplay(route.canonical_grade, userGradeSystem);
@@ -109,7 +112,7 @@ export function RouteCard({
               className={`w-2 h-2 rounded-full ${statusDotClass[route.status]}`}
             />
             <Text className="text-white font-bold text-base" numberOfLines={1}>
-              {route.name ?? "Unnamed Route"}
+              {route.name ?? t("route.unnamedRoute")}
             </Text>
           </View>
 

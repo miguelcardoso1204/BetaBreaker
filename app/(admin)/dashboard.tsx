@@ -23,6 +23,7 @@
 
 import React from "react";
 import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 import type { RecentActivityItem } from "@/services/dashboard.service";
@@ -60,6 +61,7 @@ function StatWidget({ value, label }: { value: number; label: string }) {
 }
 
 export default function DashboardScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -89,7 +91,7 @@ export default function DashboardScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load dashboard"}
+          {error.message || t("admin.dashboard.failedToLoad")}
         </Text>
       </View>
     );
@@ -103,7 +105,7 @@ export default function DashboardScreen() {
         testID="empty-state"
       >
         <Text className="text-text-secondary text-center text-base">
-          No activity yet
+          {t("admin.dashboard.noActivity")}
         </Text>
       </View>
     );
@@ -113,19 +115,19 @@ export default function DashboardScreen() {
   return (
     <View className="flex-1 bg-background" testID="dashboard-screen">
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Dashboard
+        {t("admin.dashboard.title")}
       </Text>
 
       {/* Stat widgets row — three key metrics side by side */}
       <View className="flex-row gap-3 px-4 mb-4">
-        <StatWidget value={activeRoutes} label="Active Routes" />
-        <StatWidget value={retiringRoutes} label="Retiring Soon" />
-        <StatWidget value={totalAscents} label="Total Ascents" />
+        <StatWidget value={activeRoutes} label={t("admin.dashboard.activeRoutes")} />
+        <StatWidget value={retiringRoutes} label={t("admin.dashboard.retiringSoon")} />
+        <StatWidget value={totalAscents} label={t("admin.dashboard.totalAscents")} />
       </View>
 
       {/* Recent Activity section header */}
       <Text className="text-lg font-semibold text-text-primary px-4 mb-2">
-        Recent Activity
+        {t("admin.dashboard.recentActivity")}
       </Text>
 
       {/* Activity feed — latest ascents at this gym */}
@@ -138,7 +140,7 @@ export default function DashboardScreen() {
             {/* Top row: climber name + status badge */}
             <View className="flex-row items-center justify-between mb-1">
               <Text className="text-text-primary font-medium">
-                {item.climber?.display_name ?? "Unknown"}
+                {item.climber?.display_name ?? t("common.unknown")}
               </Text>
               <View
                 className={`px-2 py-0.5 rounded-full ${statusColor(item.status)}`}
@@ -151,7 +153,7 @@ export default function DashboardScreen() {
 
             {/* Bottom row: route name + grade */}
             <Text className="text-text-secondary text-sm">
-              {item.route?.name ?? "Unknown Route"}
+              {item.route?.name ?? t("common.unknownRoute")}
               {item.route?.canonical_grade != null &&
                 ` · ${canonicalToDisplay(item.route.canonical_grade, "v-scale")}`}
             </Text>

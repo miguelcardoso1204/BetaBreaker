@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Divider } from "@/components/ui/Divider";
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/utils/grades";
+import { useTranslation } from "react-i18next";
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -132,6 +133,9 @@ export function SessionSummary({
   gradeSystem = "v-scale",
   testID,
 }: SessionSummaryProps) {
+  // useTranslation provides the t() function for resolving i18n keys.
+  const { t } = useTranslation();
+
   // Determine if we have grade data to display.
   // Object.keys returns string[], so we check length to see if there
   // are any entries. An empty object {} or undefined should hide the section.
@@ -155,7 +159,7 @@ export function SessionSummary({
       {/* "Session Summary" on the left, date on the right. flexDirection
           row + justify-between is the standard RN pattern for this layout. */}
       <View className="flex-row justify-between items-center">
-        <Text className="text-lg font-bold text-white">Session Summary</Text>
+        <Text className="text-lg font-bold text-white">{t("session.summary")}</Text>
         <Text className="text-sm text-text-secondary">{date}</Text>
       </View>
 
@@ -165,10 +169,10 @@ export function SessionSummary({
       {/* Duration and total ascent count side by side. */}
       <View className="flex-row justify-between items-center mb-3">
         <Text className="text-sm text-text-secondary">
-          Duration: {formatDuration(durationMinutes)}
+          {t("session.duration", { duration: formatDuration(durationMinutes) })}
         </Text>
         <Text className="text-sm text-text-secondary">
-          {totalAscents} {totalAscents === 1 ? "ascent" : "ascents"}
+          {t("session.ascentCount", { count: totalAscents })}
         </Text>
       </View>
 
@@ -177,9 +181,9 @@ export function SessionSummary({
           Arranged in a row with gaps between each badge. Each badge shows
           the count + label for quick scanning. */}
       <View className="flex-row gap-2">
-        <Badge label={`${flashes} Flash`} variant="success" />
-        <Badge label={`${sends} Send`} variant="default" />
-        <Badge label={`${attempts} Attempt`} variant="warning" />
+        <Badge label={`${flashes} ${t("session.flash")}`} variant="success" />
+        <Badge label={`${sends} ${t("session.send")}`} variant="default" />
+        <Badge label={`${attempts} ${t("session.attempt")}`} variant="warning" />
       </View>
 
       {/* ── Grade Distribution (optional) ──────────────────────── */}
@@ -190,7 +194,7 @@ export function SessionSummary({
         <>
           <Divider className="my-3" />
           <Text className="text-sm font-semibold text-white mb-2">
-            Grade Distribution
+            {t("session.gradeDistribution")}
           </Text>
 
           {gradeEntries.map(([canonical, count]) => {

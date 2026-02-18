@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/Button";
 import { AppTextInput } from "@/components/ui/TextInput";
 import { ASCENT_STATUSES } from "@/lib/constants";
 import type { AscentStatus } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -54,15 +55,14 @@ export interface QuickLogSheetProps {
 // ── Display labels for status buttons ────────────────────────────────
 
 /**
- * Map from AscentStatus values to user-friendly display labels.
- * The DB stores lowercase "flash"/"send"/"attempt", but the UI shows
- * capitalized versions for readability. Using a record ensures we
- * handle all statuses defined in ASCENT_STATUSES.
+ * Map from AscentStatus values to i18n translation keys.
+ * The DB stores lowercase "flash"/"send"/"attempt"; these keys resolve
+ * to localized display labels via the t() function at render time.
  */
-const STATUS_LABELS: Record<AscentStatus, string> = {
-  flash: "Flash",
-  send: "Send",
-  attempt: "Attempt",
+const STATUS_LABEL_KEYS: Record<AscentStatus, string> = {
+  flash: "session.flash",
+  send: "session.send",
+  attempt: "session.attempt",
 };
 
 // ── Component ────────────────────────────────────────────────────────
@@ -72,6 +72,9 @@ export function QuickLogSheet({
   visible,
   onDismiss,
 }: QuickLogSheetProps) {
+  // useTranslation provides the t() function for resolving i18n keys.
+  const { t } = useTranslation();
+
   // ── Local form state ─────────────────────────────────────────────
   // These values reset every time the sheet is dismissed (via useEffect).
   // null status means "nothing selected yet" — the confirm button is
@@ -165,7 +168,7 @@ export function QuickLogSheet({
           // accessibilityRole="button" tells screen readers this is tappable.
           // The label explains what tapping does.
           accessibilityRole="button"
-          accessibilityLabel="Close sheet"
+          accessibilityLabel={t("session.closeSheet")}
         />
 
         {/* Sheet container — dark surface card with rounded top corners.
@@ -175,7 +178,7 @@ export function QuickLogSheet({
         <View className="bg-surface rounded-t-2xl px-6 pt-6 pb-8">
           {/* ── Title ──────────────────────────────────────────── */}
           <Text className="text-text-primary text-xl font-bold mb-6">
-            Log Ascent
+            {t("session.logAscent")}
           </Text>
 
           {/* ── Status Selection Row ───────────────────────────── */}
@@ -192,7 +195,7 @@ export function QuickLogSheet({
                   key={s}
                   onPress={() => handleStatusSelect(s)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${STATUS_LABELS[s]} status`}
+                  accessibilityLabel={`${t(STATUS_LABEL_KEYS[s])} status`}
                   accessibilityState={{ selected: isSelected }}
                   className={`flex-1 items-center py-3 rounded-xl ${
                     isSelected
@@ -205,7 +208,7 @@ export function QuickLogSheet({
                       isSelected ? "text-white" : "text-text-secondary"
                     }`}
                   >
-                    {STATUS_LABELS[s]}
+                    {t(STATUS_LABEL_KEYS[s])}
                   </Text>
                 </Pressable>
               );
@@ -218,7 +221,7 @@ export function QuickLogSheet({
               Disabled when status is "flash" — a flash is always 1 attempt. */}
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-text-primary text-base font-medium">
-              Attempts
+              {t("session.attempts")}
             </Text>
 
             <View className="flex-row items-center gap-4">
@@ -229,7 +232,7 @@ export function QuickLogSheet({
                 onPress={() => setAttempts((prev) => Math.max(1, prev - 1))}
                 disabled={attempts <= 1 || status === "flash"}
                 accessibilityRole="button"
-                accessibilityLabel="Decrease attempts"
+                accessibilityLabel={t("session.decreaseAttempts")}
                 className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
                   attempts <= 1 || status === "flash" ? "opacity-30" : ""
                 }`}
@@ -252,7 +255,7 @@ export function QuickLogSheet({
                 onPress={() => setAttempts((prev) => Math.min(99, prev + 1))}
                 disabled={status === "flash"}
                 accessibilityRole="button"
-                accessibilityLabel="Increase attempts"
+                accessibilityLabel={t("session.increaseAttempts")}
                 className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
                   status === "flash" ? "opacity-30" : ""
                 }`}
@@ -269,7 +272,7 @@ export function QuickLogSheet({
             label="Notes"
             value={notes}
             onChangeText={setNotes}
-            placeholder="Notes (optional)"
+            placeholder={t("session.notesPlaceholder")}
             autoCapitalize="sentences"
           />
 
@@ -277,7 +280,7 @@ export function QuickLogSheet({
           {/* Primary CTA that submits the log. Disabled until a status
               is selected. Shows loading state during the mutation. */}
           <Button
-            label="Log Ascent"
+            label={t("session.logAscent")}
             onPress={handleConfirm}
             size="lg"
             // Disable when no status is selected — the user must make a choice.

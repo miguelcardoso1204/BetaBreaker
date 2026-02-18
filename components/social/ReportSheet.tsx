@@ -30,6 +30,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Modal, Pressable, Text, View } from "react-native";
 import { useCreateReport } from "@/hooks/useModeration";
 
@@ -50,15 +51,16 @@ export interface ReportSheetProps {
 
 /**
  * Fixed set of report reasons shown as tappable options.
- * These map to common community guideline violations and
- * are stored as-is in the content_reports.reason column.
+ * Each entry has a `value` (stored in content_reports.reason in
+ * English, regardless of locale) and a `labelKey` (i18n key for
+ * the user-facing translated label).
  */
 const REPORT_REASONS = [
-  "Inappropriate content",
-  "Spam",
-  "Harassment",
-  "Dangerous activity",
-  "Other",
+  { value: "Inappropriate content", labelKey: "social.reasonInappropriate" },
+  { value: "Spam", labelKey: "social.reasonSpam" },
+  { value: "Harassment", labelKey: "social.reasonHarassment" },
+  { value: "Dangerous activity", labelKey: "social.reasonDangerous" },
+  { value: "Other", labelKey: "social.reasonOther" },
 ] as const;
 
 // ── Component ─────────────────────────────────────────────────────────
@@ -69,6 +71,8 @@ export function ReportSheet({
   targetType,
   targetId,
 }: ReportSheetProps) {
+  const { t } = useTranslation();
+
   // Selected reason — null means nothing picked yet (submit disabled).
   const [selectedReason, setSelectedReason] = useState<string | null>(null);
 
@@ -125,7 +129,7 @@ export function ReportSheet({
           className="absolute inset-0 bg-black/50"
           onPress={onDismiss}
           accessibilityRole="button"
-          accessibilityLabel="Close report sheet"
+          accessibilityLabel={t("social.closeReportSheet")}
         />
 
         {/* Sheet content */}
@@ -136,31 +140,31 @@ export function ReportSheet({
             // The sheet auto-dismisses after 1.5 seconds.
             <View className="items-center py-6">
               <Text className="text-text-primary text-lg font-bold">
-                Report submitted
+                {t("social.reportSubmitted")}
               </Text>
               <Text className="text-text-secondary text-sm mt-2">
-                Thank you for helping keep our community safe.
+                {t("social.reportThankYou")}
               </Text>
             </View>
           ) : (
             // ── Reason picker state ────────────────────────────────
             <>
               <Text className="text-text-primary text-xl font-bold mb-2">
-                Report Content
+                {t("social.reportContent")}
               </Text>
               <Text className="text-text-secondary text-sm mb-4">
-                Why are you reporting this?
+                {t("social.reportReason")}
               </Text>
 
               {/* Reason list — each reason is a tappable row.
                   The selected reason gets an accent border/background
                   to indicate the current choice. */}
-              {REPORT_REASONS.map((reason) => {
-                const isSelected = selectedReason === reason;
+              {REPORT_REASONS.map(({ value, labelKey }) => {
+                const isSelected = selectedReason === value;
                 return (
                   <Pressable
-                    key={reason}
-                    onPress={() => setSelectedReason(reason)}
+                    key={value}
+                    onPress={() => setSelectedReason(value)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
                     className={`py-3 px-4 rounded-lg mb-2 ${
@@ -176,7 +180,7 @@ export function ReportSheet({
                           : "text-text-primary"
                       }`}
                     >
-                      {reason}
+                      {t(labelKey)}
                     </Text>
                   </Pressable>
                 );
@@ -201,7 +205,7 @@ export function ReportSheet({
                       : "text-white/50"
                   }`}
                 >
-                  {isPending ? "Submitting..." : "Submit Report"}
+                  {isPending ? t("social.submitting") : t("social.submitReport")}
                 </Text>
               </Pressable>
             </>

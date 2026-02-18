@@ -32,6 +32,7 @@ import type { LucideIcon } from "lucide-react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -54,15 +55,17 @@ const ICON_MAP: Record<string, LucideIcon> = {
 };
 
 /**
- * Maps each tab route name to its human-readable label.
- * "index" → "Home" because the file is named index.tsx (Expo Router's
- * convention for the default route in a group), but users see "Home".
+ * Maps each tab route name to its i18n translation key.
+ * "index" → "tabs.home" because the file is named index.tsx (Expo Router's
+ * convention for the default route in a group), but users see the localized "Home".
+ * We store keys here instead of display strings — the t() function resolves
+ * them to the user's language at render time.
  */
-const LABEL_MAP: Record<string, string> = {
-  index: "Home",
-  map: "Map",
-  leaderboards: "Leaderboards",
-  profile: "Profile",
+const LABEL_KEY_MAP: Record<string, string> = {
+  index: "tabs.home",
+  map: "tabs.map",
+  leaderboards: "tabs.leaderboards",
+  profile: "tabs.profile",
 };
 
 /**
@@ -104,6 +107,9 @@ const FAB_SHADOW = Platform.select({
  */
 export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const router = useRouter();
+  // useTranslation gives us the t() function to resolve i18n keys at render time.
+  // This must be called inside the component so it re-renders on language change.
+  const { t } = useTranslation();
 
   // Tracks whether the FAB action menu is visible (opened via long press).
   // The menu appears as a card above the FAB with additional actions like
@@ -183,7 +189,8 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
     const isFocused = state.index === index;
     const color = isFocused ? ACTIVE_COLOR : INACTIVE_COLOR;
     const Icon = ICON_MAP[route.name];
-    const label = LABEL_MAP[route.name];
+    // Resolve the translation key to a localized label at render time
+    const label = t(LABEL_KEY_MAP[route.name]);
 
     return (
       <Pressable
@@ -234,7 +241,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           // accessibilityRole="button" (not "tab") because the FAB
           // isn't a tab — it's an action button that opens a modal.
           accessibilityRole="button"
-          accessibilityLabel="Start Session"
+          accessibilityLabel={t("session.startSession")}
           // The FAB is a 56x56 circle with accent background.
           // marginTop: -28 pulls it up by half its height, creating
           // the raised/floating effect above the tab bar edge.
@@ -298,7 +305,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
             >
               <ScanLine size={20} color={ACTIVE_COLOR} strokeWidth={2} />
               <Text className="text-foreground text-sm font-medium">
-                Scan QR Code
+                {t("scan.scanQR")}
               </Text>
             </Pressable>
           </View>

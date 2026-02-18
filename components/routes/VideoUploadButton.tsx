@@ -37,6 +37,7 @@ import {
   VIDEO_MAX_DURATION_SECONDS,
 } from '@/utils/videoValidation';
 import { OwnershipModal } from './OwnershipModal';
+import { useTranslation } from 'react-i18next';
 
 export interface VideoUploadButtonProps {
   /** The route this video will be associated with. */
@@ -57,6 +58,7 @@ function mimeToExtension(mimeType: string): string {
 }
 
 export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const uploadMutation = useUploadVideo(routeId);
 
@@ -102,7 +104,7 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
       if (!validation.valid) {
         // Show all errors to the user so they can fix everything at once
         Alert.alert(
-          'Video Not Accepted',
+          t('video.notAccepted'),
           validation.errors.join('\n')
         );
         return;
@@ -119,9 +121,9 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
    * Show the source selection dialog.
    */
   const handlePress = useCallback(() => {
-    Alert.alert('Add Beta Video', 'Choose a source', [
+    Alert.alert(t('video.addBetaVideo'), t('video.chooseSource'), [
       {
-        text: 'Record Video',
+        text: t('video.recordVideo'),
         onPress: async () => {
           const result = await ImagePicker.launchCameraAsync({
             mediaTypes: ['videos'],
@@ -132,7 +134,7 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
         },
       },
       {
-        text: 'Choose from Library',
+        text: t('video.chooseFromLibrary'),
         onPress: async () => {
           const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['videos'],
@@ -140,7 +142,7 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
           handlePickResult(result);
         },
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   }, [handlePickResult]);
 
@@ -178,7 +180,7 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
         onPress={isUploading ? undefined : handlePress}
         disabled={isUploading}
         accessibilityRole="button"
-        accessibilityLabel={isUploading ? 'Uploading video' : 'Add beta video'}
+        accessibilityLabel={isUploading ? t('video.uploading') : t('video.addBetaVideo')}
         accessibilityState={{ disabled: isUploading }}
         className={`items-center justify-center py-6 rounded-xl border-2 border-dashed border-border ${
           isUploading ? 'opacity-50' : ''
@@ -187,12 +189,12 @@ export function VideoUploadButton({ routeId }: VideoUploadButtonProps) {
         {isUploading ? (
           <>
             <ActivityIndicator size="small" color="#7C3AED" />
-            <Text className="text-text-secondary mt-2">Uploading...</Text>
+            <Text className="text-text-secondary mt-2">{t("video.uploading")}</Text>
           </>
         ) : (
           <>
             <Video size={28} color="#6B7280" />
-            <Text className="text-text-secondary mt-2">Add Beta Video</Text>
+            <Text className="text-text-secondary mt-2">{t("video.addBetaVideo")}</Text>
           </>
         )}
       </Pressable>

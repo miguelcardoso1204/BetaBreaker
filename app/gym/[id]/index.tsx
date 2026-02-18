@@ -39,6 +39,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { Star, MapPin, Clock, ChevronRight } from "lucide-react-native";
 import { useGym, useSetHomeGym } from "@/hooks/useGyms";
 import { useAuth } from "@/hooks/useAuth";
@@ -49,6 +50,9 @@ import { Card } from "@/components/ui/Card";
 import { IconButton } from "@/components/ui/IconButton";
 
 export default function GymMainScreen() {
+  // i18n hook — provides t() for translating hardcoded strings.
+  const { t } = useTranslation();
+
   // Extract gymId from the URL path. Expo Router's file-based routing
   // maps /gym/[id] to this component with params.id = gymId.
   const { id: gymId } = useLocalSearchParams<{ id: string }>();
@@ -124,7 +128,7 @@ export default function GymMainScreen() {
                 Pressing calls useSetHomeGym mutation with userId + gymId. */}
             <IconButton
               icon={Star}
-              label={isHomeGym ? "Remove home gym" : "Set as home gym"}
+              label={isHomeGym ? t("gym.removeHomeGym") : t("gym.setAsHomeGym")}
               onPress={() =>
                 setHomeGym({ userId: user!.id, gymId })
               }
@@ -148,7 +152,7 @@ export default function GymMainScreen() {
           <View className="flex-row items-center gap-2" testID="gym-hours">
             <Clock size={16} color="#9CA3AF" />
             <Text className="text-text-secondary text-sm">
-              Hours not available
+              {t("gym.hoursNotAvailable")}
             </Text>
           </View>
 
@@ -171,7 +175,7 @@ export default function GymMainScreen() {
           label changes to indicate they can continue browsing routes. */}
       <View className="px-4 mt-2">
         <Button
-          label={isActive ? "View Routes" : "Start Session"}
+          label={isActive ? t("gym.viewRoutes") : t("session.startSession")}
           size="lg"
           onPress={() => {
             if (!isActive) {
@@ -196,7 +200,7 @@ export default function GymMainScreen() {
         >
           <View className="flex-row items-center justify-between">
             <Text className="text-text-primary text-base font-semibold">
-              Routes
+              {t("gym.routes")}
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />
           </View>
@@ -210,7 +214,7 @@ export default function GymMainScreen() {
         >
           <View className="flex-row items-center justify-between">
             <Text className="text-text-primary text-base font-semibold">
-              Leaderboards
+              {t("gym.leaderboards")}
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />
           </View>
@@ -220,15 +224,15 @@ export default function GymMainScreen() {
         <Card
           onPress={() => {
             Alert.alert(
-              "Coming Soon",
-              "Style Analysis will be available in a future update."
+              t("common.comingSoon"),
+              t("gym.styleAnalysisComingSoon")
             );
           }}
           testID="style-analysis-card"
         >
           <View className="flex-row items-center justify-between">
             <Text className="text-text-primary text-base font-semibold">
-              Style Analysis
+              {t("gym.styleAnalysis")}
             </Text>
             <ChevronRight size={20} color="#9CA3AF" />
           </View>

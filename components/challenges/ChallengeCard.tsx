@@ -25,6 +25,7 @@
 
 import React from "react";
 import { Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ChallengeProgress } from "./ChallengeProgress";
@@ -56,16 +57,17 @@ export interface ChallengeCardProps {
 }
 
 // ── Status → Badge mapping ──────────────────────────────────────────
-// Maps each challenge status to a Badge variant and label for consistent
-// visual treatment across all challenge cards.
+// Maps each challenge status to a Badge variant and i18n key for consistent
+// visual treatment across all challenge cards. The key is resolved to a
+// translated string at render time via t(), so the map stays static.
 const statusBadgeMap: Record<
   ChallengeCardProps["status"],
-  { variant: "success" | "error" | "default"; label: string }
+  { variant: "success" | "error" | "default"; key: string }
 > = {
-  active: { variant: "success", label: "Active" },
-  completed: { variant: "success", label: "Completed" },
-  expired: { variant: "error", label: "Expired" },
-  upcoming: { variant: "default", label: "Upcoming" },
+  active: { variant: "success", key: "challenges.active" },
+  completed: { variant: "success", key: "challenges.completed" },
+  expired: { variant: "error", key: "challenges.expired" },
+  upcoming: { variant: "default", key: "challenges.upcoming" },
 };
 
 /**
@@ -94,6 +96,7 @@ export function ChallengeCard({
   rewardBadge,
   testID,
 }: ChallengeCardProps) {
+  const { t } = useTranslation();
   const badgeInfo = statusBadgeMap[status];
 
   return (
@@ -103,7 +106,7 @@ export function ChallengeCard({
         <Text className="text-text-primary text-base font-semibold flex-1 mr-2">
           {name}
         </Text>
-        <Badge label={badgeInfo.label} variant={badgeInfo.variant} />
+        <Badge label={t(badgeInfo.key)} variant={badgeInfo.variant} />
       </View>
 
       {/* Description (optional) */}

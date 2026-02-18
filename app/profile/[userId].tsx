@@ -26,6 +26,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react-native";
@@ -43,6 +44,7 @@ import { canonicalToDisplay } from "@/utils/grades";
 import { deriveStreakStatus } from "@/utils/streakStatus";
 
 export default function UserProfileScreen() {
+  const { t } = useTranslation();
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const router = useRouter();
 
@@ -114,7 +116,7 @@ export default function UserProfileScreen() {
         className="flex-1 items-center justify-center bg-background px-4"
       >
         <Text className="text-red-500 text-center">
-          {error instanceof Error ? error.message : "Failed to load profile"}
+          {error instanceof Error ? error.message : t("profile.failedToLoad")}
         </Text>
       </View>
     );
@@ -129,7 +131,7 @@ export default function UserProfileScreen() {
           testID="back-button"
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("common.goBack")}
           className="p-2"
         >
           <ArrowLeft size={24} color="#FFFFFF" />
@@ -147,7 +149,7 @@ export default function UserProfileScreen() {
         />
         <View className="flex-row items-center mt-3 gap-2">
           <Text className="text-text-primary text-xl font-bold">
-            {profile?.display_name ?? "Unknown User"}
+            {profile?.display_name ?? t("common.unknownUser")}
           </Text>
           {tierLabel && <Badge label={tierLabel} />}
         </View>
@@ -157,9 +159,9 @@ export default function UserProfileScreen() {
       <View className="flex-row justify-center px-4 pb-6">
         <Text className="text-text-secondary text-sm">
           <Text className="text-text-primary font-bold">{followers}</Text>
-          {" followers · "}
+          {" "}{t("profile.followers")}{" · "}
           <Text className="text-text-primary font-bold">{following}</Text>
-          {" following"}
+          {" "}{t("profile.following")}
         </Text>
       </View>
 
@@ -169,13 +171,13 @@ export default function UserProfileScreen() {
           <Text className="text-text-primary text-2xl font-bold">
             {totalSends}
           </Text>
-          <Text className="text-text-secondary text-sm">Total Sends</Text>
+          <Text className="text-text-secondary text-sm">{t("profile.totalSends")}</Text>
         </View>
         <View className="items-center">
           <Text className="text-text-primary text-2xl font-bold">
             {maxGrade}
           </Text>
-          <Text className="text-text-secondary text-sm">Max Grade</Text>
+          <Text className="text-text-secondary text-sm">{t("profile.maxGrade")}</Text>
         </View>
       </View>
 
@@ -192,7 +194,7 @@ export default function UserProfileScreen() {
       {/* Pinned badges */}
       <View className="py-4 mx-4 border-b border-surface">
         <Text className="text-text-secondary text-sm font-semibold mb-3">
-          Pinned Badges
+          {t("profile.pinnedBadges")}
         </Text>
         {pinnedBadges.length > 0 ? (
           <View className="flex-row gap-4">
@@ -207,7 +209,7 @@ export default function UserProfileScreen() {
           </View>
         ) : (
           <Text className="text-text-secondary text-sm">
-            No pinned badges yet
+            {t("profile.noPinnedBadges")}
           </Text>
         )}
       </View>
@@ -215,7 +217,7 @@ export default function UserProfileScreen() {
       {/* Recent sends */}
       <View className="py-4">
         <Text className="text-text-secondary text-sm font-semibold mb-2 mx-4">
-          Recent Sends
+          {t("profile.recentSends")}
         </Text>
         {recentAscents && recentAscents.length > 0 ? (
           recentAscents.map((ascent: any) => (
@@ -223,7 +225,7 @@ export default function UserProfileScreen() {
           ))
         ) : (
           <Text className="text-text-secondary text-sm mx-4">
-            No recent sends yet
+            {t("profile.noRecentSends")}
           </Text>
         )}
       </View>

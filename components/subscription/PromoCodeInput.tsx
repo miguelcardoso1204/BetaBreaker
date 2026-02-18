@@ -24,6 +24,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useTrials } from "@/hooks/useTrials";
 
 interface PromoCodeInputProps {
@@ -32,6 +33,7 @@ interface PromoCodeInputProps {
 }
 
 export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
+  const { t } = useTranslation();
   // Whether the input field is visible (starts collapsed)
   const [expanded, setExpanded] = useState(false);
   // The promo code text the user is typing
@@ -54,7 +56,7 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
         style={styles.toggleButton}
         onPress={() => setExpanded(true)}
       >
-        <Text style={styles.toggleText}>Have a promo code?</Text>
+        <Text style={styles.toggleText}>{t("subscription.havePromoCode")}</Text>
       </Pressable>
     );
   }
@@ -64,7 +66,7 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Enter promo code"
+        placeholder={t("subscription.promoPlaceholder")}
         value={code}
         onChangeText={setCode}
         autoCapitalize="characters"
@@ -81,7 +83,7 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
         onPress={() => redeemMutation.mutate(code.trim())}
         disabled={!code.trim() || redeemMutation.isPending}
       >
-        <Text style={styles.redeemButtonText}>Redeem</Text>
+        <Text style={styles.redeemButtonText}>{t("subscription.redeem")}</Text>
       </Pressable>
 
       {/* Loading spinner while the Edge Function processes the code */}
@@ -97,14 +99,14 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
       {redeemMutation.isError && (
         <Text style={styles.errorText}>
           {(redeemMutation.error as Error)?.message ||
-            "Redemption failed. Please try again."}
+            t("subscription.redeemFailed")}
         </Text>
       )}
 
       {/* Success message (briefly visible before onSuccess dismisses) */}
       {redeemMutation.isSuccess && (
         <Text style={styles.successText}>
-          Promo code redeemed! Enjoy Pro.
+          {t("subscription.redeemSuccess")}
         </Text>
       )}
     </View>

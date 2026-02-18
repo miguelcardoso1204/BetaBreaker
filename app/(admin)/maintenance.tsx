@@ -36,6 +36,7 @@ import {
   Pressable,
 } from "react-native";
 import { Trash2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useMaintenanceTickets,
@@ -55,18 +56,19 @@ const STATUS_COLORS: Record<string, string> = {
 
 // ── Filter tab definitions ───────────────────────────────────────────
 // Each tab has a key matching the ticket status (or "all" for no filter)
-// and a human-readable label for the tab button text.
+// and an i18n key resolved at render time via t() for language switching.
 const FILTER_TABS = [
-  { key: "all", label: "All" },
-  { key: "open", label: "Open" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "resolved", label: "Resolved" },
+  { key: "all", i18nKey: "common.all" },
+  { key: "open", i18nKey: "admin.maintenance.open" },
+  { key: "in_progress", i18nKey: "admin.maintenance.inProgress" },
+  { key: "resolved", i18nKey: "admin.maintenance.resolved" },
 ] as const;
 
 // Type for the active filter — either "all" or one of the ticket statuses
 type FilterKey = (typeof FILTER_TABS)[number]["key"];
 
 export default function MaintenanceScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -84,7 +86,7 @@ export default function MaintenanceScreen() {
   // every render — only recalculates when tickets or filter changes.
   const filteredTickets = useMemo(() => {
     if (activeFilter === "all") return tickets;
-    return tickets.filter((t: any) => t.status === activeFilter);
+    return tickets.filter((ticket: any) => ticket.status === activeFilter);
   }, [tickets, activeFilter]);
 
   // ── Handlers ──────────────────────────────────────────────────────
@@ -125,7 +127,7 @@ export default function MaintenanceScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load tickets"}
+          {error.message || t("admin.maintenance.failedToLoad")}
         </Text>
       </View>
     );
@@ -136,7 +138,7 @@ export default function MaintenanceScreen() {
     <View className="flex-1 bg-background">
       {/* ── Header ─────────────────────────────────────────────── */}
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Maintenance Tickets
+        {t("admin.maintenance.title")}
       </Text>
 
       {/* ── Filter Tabs ────────────────────────────────────────── */}
@@ -159,7 +161,7 @@ export default function MaintenanceScreen() {
                 activeFilter === tab.key ? "text-white" : "text-text-primary"
               }`}
             >
-              {tab.label}
+              {t(tab.i18nKey)}
             </Text>
           </Pressable>
         ))}
@@ -169,7 +171,7 @@ export default function MaintenanceScreen() {
       {filteredTickets.length === 0 ? (
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-text-secondary text-center">
-            No maintenance tickets
+            {t("admin.maintenance.noTickets")}
           </Text>
         </View>
       ) : (
@@ -225,7 +227,7 @@ export default function MaintenanceScreen() {
                     className="bg-amber-500 px-3 py-1.5 rounded-lg"
                   >
                     <Text className="text-white text-xs font-medium">
-                      Start Work
+                      {t("admin.maintenance.startWork")}
                     </Text>
                   </Pressable>
                 )}
@@ -238,7 +240,7 @@ export default function MaintenanceScreen() {
                     className="bg-green-600 px-3 py-1.5 rounded-lg"
                   >
                     <Text className="text-white text-xs font-medium">
-                      Resolve
+                      {t("admin.maintenance.resolve")}
                     </Text>
                   </Pressable>
                 )}

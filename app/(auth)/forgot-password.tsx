@@ -29,6 +29,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
+import { useTranslation } from "react-i18next";
 import { Mail } from "lucide-react-native";
 
 import { authService } from "@/services/auth.service";
@@ -50,6 +51,12 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordScreen() {
+  // useTranslation() gives us the `t` function for looking up i18n strings.
+  // Keys like "auth.forgotPassword.title" map to values in locales/en.json
+  // (or whichever language is active). This decouples user-facing text from
+  // the component code so we can add new languages without editing JSX.
+  const { t } = useTranslation();
+
   // Track whether the reset email was sent successfully.
   // When true, we swap the form for a success message.
   const [sent, setSent] = useState(false);
@@ -112,11 +119,10 @@ export default function ForgotPasswordScreen() {
         {/* -- Header Section -- */}
         <View className="items-center mb-10">
           <Text className="text-text-primary text-3xl font-bold">
-            Reset Password
+            {t("auth.forgotPassword.title")}
           </Text>
           <Text className="text-text-secondary text-base mt-2 text-center">
-            Enter your email and we&apos;ll send you a link to reset your
-            password.
+            {t("auth.forgotPassword.subtitle")}
           </Text>
         </View>
 
@@ -129,7 +135,7 @@ export default function ForgotPasswordScreen() {
           // provides a visual cue that the action succeeded.
           <View className="bg-success/10 rounded-lg p-4 mb-6">
             <Text className="text-success text-sm text-center">
-              Check your email for a password reset link.
+              {t("auth.forgotPassword.checkEmail")}
             </Text>
           </View>
         ) : (
@@ -143,10 +149,10 @@ export default function ForgotPasswordScreen() {
               name="email"
               render={({ field: { onChange, value } }) => (
                 <AppTextInput
-                  label="Email Address"
+                  label={t("auth.forgotPassword.emailLabel")}
                   value={value}
                   onChangeText={onChange}
-                  placeholder="your@email.com"
+                  placeholder={t("auth.forgotPassword.emailPlaceholder")}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   leftIcon={Mail}
@@ -172,7 +178,7 @@ export default function ForgotPasswordScreen() {
                 If valid, calls onSubmit which triggers the API call.
                 The `loading` prop shows a spinner during the async operation. */}
             <Button
-              label="Send Reset Link"
+              label={t("auth.forgotPassword.sendResetLink")}
               onPress={handleSubmit(onSubmit)}
               size="lg"
               loading={isSubmitting}
@@ -188,7 +194,7 @@ export default function ForgotPasswordScreen() {
         <View className="flex-row justify-center mt-6">
           <Link href="/(auth)/login" asChild>
             <Text className="text-accent-light text-sm font-semibold">
-              Back to Login
+              {t("auth.forgotPassword.backToLogin")}
             </Text>
           </Link>
         </View>

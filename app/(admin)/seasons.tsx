@@ -37,6 +37,7 @@ import {
   TextInput,
   Alert,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -55,15 +56,17 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 // ── Filter tab definitions ───────────────────────────────────────────
+// Labels are translation keys — resolved at render time via t()
 const FILTER_TABS = [
-  { key: "all", label: "All" },
-  { key: "active", label: "Active" },
-  { key: "closed", label: "Closed" },
+  { key: "all", labelKey: "common.all" },
+  { key: "active", labelKey: "admin.seasons.active" },
+  { key: "closed", labelKey: "admin.seasons.closed" },
 ] as const;
 
 type FilterKey = (typeof FILTER_TABS)[number]["key"];
 
 export default function SeasonsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -112,12 +115,12 @@ export default function SeasonsScreen() {
   /** Show confirmation alert before closing a season */
   function handleCloseSeason(seasonId: string) {
     Alert.alert(
-      "Close Season",
-      "This will archive all active routes for the gym. Are you sure you want to close this season?",
+      t("admin.seasons.closeSeason"),
+      t("admin.seasons.closeSeasonConfirm"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Close",
+          text: t("common.close"),
           style: "destructive",
           onPress: () => {
             closeSeason.mutateAsync({ seasonId, gymId: gymId! });
@@ -149,7 +152,7 @@ export default function SeasonsScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load seasons"}
+          {error.message || t("admin.seasons.failedToLoad")}
         </Text>
       </View>
     );
@@ -161,14 +164,14 @@ export default function SeasonsScreen() {
       {/* ── Header row: title + create button ─────────────────────── */}
       <View className="flex-row items-center justify-between px-4 pt-4 pb-2">
         <Text className="text-xl font-bold text-text-primary">
-          Season Management
+          {t("admin.seasons.title")}
         </Text>
         <Pressable
           onPress={() => setShowForm(!showForm)}
           accessibilityRole="button"
           className="bg-accent px-3 py-1.5 rounded-lg"
         >
-          <Text className="text-white text-sm font-medium">+ New Season</Text>
+          <Text className="text-white text-sm font-medium">{t("admin.seasons.newSeason")}</Text>
         </Pressable>
       </View>
 
@@ -178,21 +181,21 @@ export default function SeasonsScreen() {
       {showForm && (
         <View className="bg-surface mx-4 mb-3 p-3 rounded-lg">
           <TextInput
-            placeholder="Season name"
+            placeholder={t("admin.seasons.seasonName")}
             value={formName}
             onChangeText={setFormName}
             className="border border-text-secondary rounded-lg px-3 py-2 mb-2 text-text-primary"
             placeholderTextColor="#9CA3AF"
           />
           <TextInput
-            placeholder="Start date (YYYY-MM-DD)"
+            placeholder={t("admin.seasons.startDate")}
             value={formStartDate}
             onChangeText={setFormStartDate}
             className="border border-text-secondary rounded-lg px-3 py-2 mb-2 text-text-primary"
             placeholderTextColor="#9CA3AF"
           />
           <TextInput
-            placeholder="End date (YYYY-MM-DD)"
+            placeholder={t("admin.seasons.endDate")}
             value={formEndDate}
             onChangeText={setFormEndDate}
             className="border border-text-secondary rounded-lg px-3 py-2 mb-2 text-text-primary"
@@ -204,14 +207,14 @@ export default function SeasonsScreen() {
               accessibilityRole="button"
               className="bg-accent px-4 py-2 rounded-lg"
             >
-              <Text className="text-white text-sm font-medium">Save</Text>
+              <Text className="text-white text-sm font-medium">{t("common.save")}</Text>
             </Pressable>
             <Pressable
               onPress={() => setShowForm(false)}
               accessibilityRole="button"
               className="bg-surface border border-text-secondary px-4 py-2 rounded-lg"
             >
-              <Text className="text-text-primary text-sm font-medium">Cancel</Text>
+              <Text className="text-text-primary text-sm font-medium">{t("common.cancel")}</Text>
             </Pressable>
           </View>
         </View>
@@ -235,7 +238,7 @@ export default function SeasonsScreen() {
                 activeFilter === tab.key ? "text-white" : "text-text-primary"
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </Text>
           </Pressable>
         ))}
@@ -245,7 +248,7 @@ export default function SeasonsScreen() {
       {filteredSeasons.length === 0 ? (
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-text-secondary text-center">
-            No seasons
+            {t("admin.seasons.noSeasons")}
           </Text>
         </View>
       ) : (
@@ -289,7 +292,7 @@ export default function SeasonsScreen() {
                     className="bg-red-500 px-3 py-1.5 rounded-lg"
                   >
                     <Text className="text-white text-xs font-medium">
-                      Close Season
+                      {t("admin.seasons.closeSeason")}
                     </Text>
                   </Pressable>
                 )}

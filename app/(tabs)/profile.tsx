@@ -29,6 +29,7 @@
 // which ones to pin, respecting the tier limit (free: 1, pro: 3).
 
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Text,
   View,
@@ -74,14 +75,16 @@ import {
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/utils/grades";
 
-// The three grade systems users can choose from in the picker
-const GRADE_SYSTEMS: { value: GradeSystem; label: string }[] = [
-  { value: "v-scale", label: "V-Scale" },
-  { value: "font", label: "Font" },
-  { value: "yds", label: "YDS" },
+// The three grade systems users can choose from in the picker.
+// `labelKey` is a translation key resolved at render time via t().
+const GRADE_SYSTEMS: { value: GradeSystem; labelKey: string }[] = [
+  { value: "v-scale", labelKey: "gradeSystem.vScale" },
+  { value: "font", labelKey: "gradeSystem.font" },
+  { value: "yds", labelKey: "gradeSystem.yds" },
 ];
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, isLoading: authLoading, signOut, refreshProfile } = useAuth();
 
@@ -228,15 +231,15 @@ export default function ProfileScreen() {
   /** Export user data — confirm first, then trigger the mutation. */
   function handleExportData() {
     Alert.alert(
-      "Export My Data",
-      "This will generate a copy of all your data. Continue?",
+      t("profile.exportConfirmTitle"),
+      t("profile.exportConfirmBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Export",
+          text: t("common.export"),
           onPress: async () => {
             await exportData.mutateAsync();
-            Alert.alert("Export Complete", "Your data has been exported.");
+            Alert.alert(t("profile.exportCompleteTitle"), t("profile.exportCompleteBody"));
           },
         },
       ]
@@ -246,12 +249,12 @@ export default function ProfileScreen() {
   /** Delete account — double-confirm before triggering the mutation. */
   function handleDeleteAccount() {
     Alert.alert(
-      "Delete Account",
-      "This will permanently delete your account and all associated data. This action cannot be undone.",
+      t("profile.deleteConfirmTitle"),
+      t("profile.deleteConfirmBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             await deleteAccount.mutateAsync();
@@ -265,7 +268,7 @@ export default function ProfileScreen() {
   if (authLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary text-base">Loading...</Text>
+        <Text className="text-text-secondary text-base">{t("common.loading")}</Text>
       </View>
     );
   }
@@ -275,10 +278,10 @@ export default function ProfileScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <Text className="text-text-primary text-lg font-bold">
-          Please sign in
+          {t("profile.signIn")}
         </Text>
         <Text className="text-text-secondary text-sm mt-2">
-          Sign in to view your profile
+          {t("profile.signInPrompt")}
         </Text>
       </View>
     );
@@ -293,31 +296,31 @@ export default function ProfileScreen() {
           // ── Edit mode header ──────────────────────────────────────
           <View className="w-full px-4">
             <Text className="text-text-primary text-lg font-bold mb-4">
-              Edit Profile
+              {t("profile.editProfile")}
             </Text>
 
             {/* Display name input */}
-            <Text className="text-text-secondary text-sm mb-1">Display Name</Text>
+            <Text className="text-text-secondary text-sm mb-1">{t("profile.displayName")}</Text>
             <TextInput
               className="border border-border rounded-lg px-3 py-2 text-text-primary mb-3"
               value={editName}
               onChangeText={setEditName}
-              placeholder="Enter your name"
+              placeholder={t("profile.displayNamePlaceholder")}
               testID="edit-name-input"
             />
 
             {/* Avatar URL input — real image picker comes in Phase 12 */}
-            <Text className="text-text-secondary text-sm mb-1">Avatar URL</Text>
+            <Text className="text-text-secondary text-sm mb-1">{t("profile.avatarUrl")}</Text>
             <TextInput
               className="border border-border rounded-lg px-3 py-2 text-text-primary mb-3"
               value={editAvatarUrl}
               onChangeText={setEditAvatarUrl}
-              placeholder="https://example.com/avatar.png"
+              placeholder={t("profile.avatarUrlPlaceholder")}
               testID="edit-avatar-input"
             />
 
             {/* Grade system picker — 3-option pressable row */}
-            <Text className="text-text-secondary text-sm mb-1">Grade System</Text>
+            <Text className="text-text-secondary text-sm mb-1">{t("profile.gradeSystem")}</Text>
             <View className="flex-row gap-2 mb-3">
               {GRADE_SYSTEMS.map((gs) => (
                 <Pressable
@@ -337,21 +340,21 @@ export default function ProfileScreen() {
                         : "text-text-primary"
                     }
                   >
-                    {gs.label}
+                    {t(gs.labelKey)}
                   </Text>
                 </Pressable>
               ))}
             </View>
 
             {/* Home gym picker trigger */}
-            <Text className="text-text-secondary text-sm mb-1">Home Gym</Text>
+            <Text className="text-text-secondary text-sm mb-1">{t("profile.homeGym")}</Text>
             <Pressable
               onPress={() => setGymPickerVisible(true)}
               testID="edit-gym-picker"
               className="border border-border rounded-lg px-3 py-2 mb-4"
             >
               <Text className="text-text-primary">
-                {homeGymName ?? "Select a gym"}
+                {homeGymName ?? t("profile.selectGym")}
               </Text>
             </Pressable>
 
@@ -362,14 +365,14 @@ export default function ProfileScreen() {
                 testID="edit-cancel-button"
                 className="flex-1 py-3 items-center rounded-lg bg-surface"
               >
-                <Text className="text-text-primary font-semibold">Cancel</Text>
+                <Text className="text-text-primary font-semibold">{t("common.cancel")}</Text>
               </Pressable>
               <Pressable
                 onPress={handleSaveProfile}
                 testID="edit-save-button"
                 className="flex-1 py-3 items-center rounded-lg bg-accent"
               >
-                <Text className="text-white font-semibold">Save</Text>
+                <Text className="text-white font-semibold">{t("common.save")}</Text>
               </Pressable>
             </View>
           </View>
@@ -378,17 +381,17 @@ export default function ProfileScreen() {
           <>
             <Avatar
               uri={user.avatarUrl ?? undefined}
-              name={user.displayName ?? "Climber"}
+              name={user.displayName ?? t("profile.climber")}
               size="lg"
               testID="profile-avatar"
             />
             <Text className="text-text-primary text-xl font-bold mt-3">
-              {user.displayName ?? "Climber"}
+              {user.displayName ?? t("profile.climber")}
             </Text>
             {/* Tier badge — shows the user's subscription level */}
             <View className="mt-1">
               <Badge
-                label={user.tier === "pro" ? "Pro" : "Free"}
+                label={user.tier === "pro" ? t("profile.pro") : t("profile.free")}
                 variant={user.tier === "pro" ? "success" : "default"}
               />
             </View>
@@ -400,12 +403,12 @@ export default function ProfileScreen() {
                 className="px-4 py-2 rounded-lg bg-surface"
               >
                 <Text className="text-text-primary font-semibold">
-                  Edit Profile
+                  {t("profile.editProfile")}
                 </Text>
               </Pressable>
               <IconButton
                 icon={Settings}
-                label="Settings"
+                label={t("settings.title")}
                 onPress={() => router.push("/settings" as any)}
                 size={22}
                 color="#9CA3AF"
@@ -418,19 +421,19 @@ export default function ProfileScreen() {
 
       {/* Stats section — total sends and max grade */}
       <View className="px-4 py-3">
-        <Text className="text-text-primary text-lg font-bold mb-2">Stats</Text>
+        <Text className="text-text-primary text-lg font-bold mb-2">{t("profile.stats")}</Text>
         <View className="flex-row gap-4">
           <View className="flex-1 bg-surface rounded-lg p-3 items-center">
             <Text className="text-text-primary text-xl font-bold">
               {Number(totalSends)}
             </Text>
-            <Text className="text-text-secondary text-xs">Total Sends</Text>
+            <Text className="text-text-secondary text-xs">{t("profile.totalSends")}</Text>
           </View>
           <View className="flex-1 bg-surface rounded-lg p-3 items-center">
             <Text className="text-text-primary text-xl font-bold">
-              {maxGradeDisplay ?? "—"}
+              {maxGradeDisplay ?? t("profile.noMaxGrade")}
             </Text>
-            <Text className="text-text-secondary text-xs">Max Grade</Text>
+            <Text className="text-text-secondary text-xs">{t("profile.maxGrade")}</Text>
           </View>
         </View>
       </View>
@@ -457,9 +460,9 @@ export default function ProfileScreen() {
         />
       ) : (
         <View className="px-4 py-6 items-center">
-          <Text className="text-text-secondary text-sm">No badges yet</Text>
+          <Text className="text-text-secondary text-sm">{t("profile.noBadges")}</Text>
           <Text className="text-text-secondary text-xs mt-1">
-            Start climbing to earn achievements!
+            {t("profile.startClimbing")}
           </Text>
         </View>
       )}
@@ -469,7 +472,7 @@ export default function ProfileScreen() {
       {activeChallenges && activeChallenges.length > 0 && (
         <View className="mt-4">
           <Text className="text-text-primary text-lg font-bold px-4 mb-2">
-            Active Challenges
+            {t("profile.activeChallenges")}
           </Text>
           {activeChallenges.map((challenge: any) => {
             const progress = challengeProgress?.find(
@@ -499,7 +502,7 @@ export default function ProfileScreen() {
       {/* Account actions — export and delete at the bottom of the profile */}
       <View className="px-4 py-6 mt-4">
         <Text className="text-text-primary text-lg font-bold mb-3">
-          Account
+          {t("profile.account")}
         </Text>
 
         {/* Export data button */}
@@ -509,7 +512,7 @@ export default function ProfileScreen() {
           className="bg-surface rounded-lg py-3 items-center mb-3"
         >
           <Text className="text-text-primary font-semibold">
-            Export My Data
+            {t("profile.exportData")}
           </Text>
         </Pressable>
 
@@ -520,7 +523,7 @@ export default function ProfileScreen() {
           className="bg-red-100 rounded-lg py-3 items-center"
         >
           <Text className="text-red-600 font-semibold">
-            Delete Account
+            {t("profile.deleteAccount")}
           </Text>
         </Pressable>
       </View>
@@ -546,10 +549,10 @@ export default function ProfileScreen() {
           <View className="bg-background rounded-t-2xl p-4 max-h-[70%]">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-text-primary text-lg font-bold">
-                Select Home Gym
+                {t("profile.selectHomeGym")}
               </Text>
               <Pressable onPress={() => setGymPickerVisible(false)}>
-                <Text className="text-text-secondary text-sm">Close</Text>
+                <Text className="text-text-secondary text-sm">{t("common.close")}</Text>
               </Pressable>
             </View>
             <FlatList

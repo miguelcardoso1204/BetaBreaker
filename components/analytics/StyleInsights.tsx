@@ -36,6 +36,7 @@
 
 import React from "react";
 import { Text, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import Svg, {
   Polygon,
   Line,
@@ -115,12 +116,14 @@ function getTextAnchor(x: number): "start" | "middle" | "end" {
  * so the screen never renders an empty/broken chart.
  */
 export function StyleInsights({ data, testID }: StyleInsightsProps) {
+  const { t } = useTranslation();
+
   // Handle empty state — user has no tagged sends.
   if (data.length === 0) {
     return (
       <View testID={testID} className="py-8 items-center">
         <Text className="text-text-secondary text-sm">
-          No style data yet — send tagged routes to see your climbing profile
+          {t("analytics.noStyleData")}
         </Text>
       </View>
     );
@@ -150,7 +153,7 @@ export function StyleInsights({ data, testID }: StyleInsightsProps) {
         width={300}
         height={300}
         viewBox={`0 0 ${CENTER * 2} ${CENTER * 2}`}
-        accessibilityLabel="Style insights radar chart"
+        accessibilityLabel={t("analytics.styleInsightsLabel")}
       >
         {/* Concentric reference rings — background grid showing scale.
             Each ring is a regular polygon with the same number of sides

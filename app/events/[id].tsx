@@ -37,21 +37,24 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { CheckCircle, Clock, Trophy, BarChart3 } from "lucide-react-native";
 
 import { useEvent, useEventRoutes } from "@/hooks/useEvents";
 import { useUserEventScores, useCreateScore } from "@/hooks/useScores";
 
-/** Scoring model display labels (same as admin screen). */
-const SCORING_LABELS: Record<string, string> = {
-  tops_and_zones: "Tops & Zones",
-  points: "Points",
-  thousand_divide_by: "1000/Attempts",
-  redpoint: "Redpoint",
+/** Scoring model i18n keys — resolved via t() at render time since this
+ *  object is defined outside the component where hooks aren't available. */
+const SCORING_LABEL_KEYS: Record<string, string> = {
+  tops_and_zones: "events.scoringTopsAndZones",
+  points: "events.scoringPoints",
+  thousand_divide_by: "events.scoring1000Attempts",
+  redpoint: "events.scoringRedpoint",
 };
 
 export default function EventDetailScreen() {
+  const { t } = useTranslation();
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -82,7 +85,7 @@ export default function EventDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load event"}
+          {error.message || t("events.failedToLoad")}
         </Text>
       </View>
     );
@@ -92,7 +95,7 @@ export default function EventDetailScreen() {
   if (!event) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">Event not found</Text>
+        <Text className="text-text-secondary">{t("events.eventNotFound")}</Text>
       </View>
     );
   }
@@ -149,7 +152,9 @@ export default function EventDetailScreen() {
             </Text>
           </View>
           <Text className="text-text-secondary text-sm">
-            {SCORING_LABELS[event.scoring_model] ?? event.scoring_model}
+            {SCORING_LABEL_KEYS[event.scoring_model]
+              ? t(SCORING_LABEL_KEYS[event.scoring_model])
+              : event.scoring_model}
           </Text>
         </View>
 
@@ -165,18 +170,18 @@ export default function EventDetailScreen() {
           className="flex-row items-center gap-2 mt-3 bg-accent/20 px-4 py-3 rounded-lg"
         >
           <BarChart3 size={18} color="#7C3AED" strokeWidth={2} />
-          <Text className="text-accent font-medium">Scoreboard</Text>
+          <Text className="text-accent font-medium">{t("events.scoreboard")}</Text>
         </Pressable>
       </View>
 
       {/* ── Routes List ──────────────────────────────────────────── */}
       <Text className="text-lg font-bold text-text-primary mb-3">
-        Routes ({eventRoutes.length})
+        {t("events.routes", { count: eventRoutes.length })}
       </Text>
 
       {eventRoutes.length === 0 ? (
         <Text className="text-text-secondary text-sm mb-4">
-          No routes in this event yet
+          {t("events.noRoutes")}
         </Text>
       ) : (
         eventRoutes.map((er: any) => {
@@ -191,10 +196,10 @@ export default function EventDetailScreen() {
               <View className="flex-row items-center justify-between mb-2">
                 <View>
                   <Text className="text-text-primary font-medium">
-                    {er.route?.name ?? "Unknown route"}
+                    {er.route?.name ?? t("common.unknownRoute")}
                   </Text>
                   <Text className="text-text-secondary text-xs">
-                    Grade: {er.route?.canonical_grade ?? "?"}
+                    {t("route.grade")}: {er.route?.canonical_grade ?? "?"}
                   </Text>
                 </View>
               </View>
@@ -211,7 +216,7 @@ export default function EventDetailScreen() {
                     <View className="flex-row items-center gap-1">
                       <CheckCircle size={14} color="#22C55E" strokeWidth={2} />
                       <Text className="text-green-500 text-xs font-medium">
-                        Verified
+                        {t("common.verified")}
                       </Text>
                     </View>
                   ) : (
@@ -219,7 +224,7 @@ export default function EventDetailScreen() {
                     <View className="flex-row items-center gap-1">
                       <Clock size={14} color="#9CA3AF" strokeWidth={2} />
                       <Text className="text-text-secondary text-xs">
-                        Pending
+                        {t("common.pending")}
                       </Text>
                     </View>
                   )}
@@ -229,7 +234,7 @@ export default function EventDetailScreen() {
                 <View className="flex-row items-center gap-2">
                   <TextInput
                     className="flex-1 bg-background text-text-primary rounded-lg px-3 py-2 text-base"
-                    placeholder="Score"
+                    placeholder={t("events.score")}
                     placeholderTextColor="#9ca3af"
                     keyboardType="numeric"
                     value={scoreInputs[er.route_id] ?? ""}
@@ -246,7 +251,7 @@ export default function EventDetailScreen() {
                     testID={`submit-score-${er.route_id}`}
                     className="bg-accent px-4 py-2 rounded-lg"
                   >
-                    <Text className="text-white font-medium">Submit</Text>
+                    <Text className="text-white font-medium">{t("common.submit")}</Text>
                   </Pressable>
                 </View>
               )}

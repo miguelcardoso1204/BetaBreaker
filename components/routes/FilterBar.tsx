@@ -35,6 +35,7 @@ import {
   displayToCanonical,
 } from "@/utils/grades";
 import type { GradeSystem } from "@/lib/constants";
+import { useTranslation } from "react-i18next";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -66,6 +67,8 @@ export function FilterBar({
   onGradeMaxChange,
   onSortByChange,
 }: FilterBarProps) {
+  const { t } = useTranslation();
+
   // Track which grade picker modal is open: "min", "max", or null (closed).
   // Using a single state variable instead of two booleans avoids the
   // impossible state where both modals are open simultaneously.
@@ -78,15 +81,15 @@ export function FilterBar({
   // If no filter is set (undefined), show "Any" to indicate no restriction.
   const minLabel =
     gradeMin !== undefined
-      ? `Min: ${canonicalToDisplay(gradeMin, gradeSystem)}`
-      : "Min: Any";
+      ? t("filter.minLabel", { grade: canonicalToDisplay(gradeMin, gradeSystem) })
+      : t("filter.minAny");
   const maxLabel =
     gradeMax !== undefined
-      ? `Max: ${canonicalToDisplay(gradeMax, gradeSystem)}`
-      : "Max: Any";
+      ? t("filter.maxLabel", { grade: canonicalToDisplay(gradeMax, gradeSystem) })
+      : t("filter.maxAny");
 
   // Sort pill label — shows the current sort mode with a directional arrow
-  const sortLabel = sortBy === "newest" ? "Newest ↓" : "Grade ↑";
+  const sortLabel = sortBy === "newest" ? t("filter.sortNewest") : t("filter.sortGrade");
 
   /**
    * Handle grade selection from the picker modal.
@@ -158,13 +161,13 @@ export function FilterBar({
           {/* Header with title and close button */}
           <View className="flex-row items-center justify-between px-4 py-3 border-b border-surface">
             <Text className="text-white font-bold text-lg">
-              {activePicker === "min" ? "Min Grade" : "Max Grade"}
+              {activePicker === "min" ? t("filter.minGrade") : t("filter.maxGrade")}
             </Text>
             <Pressable
               testID="picker-close"
               onPress={() => setActivePicker(null)}
             >
-              <Text className="text-accent text-base">Close</Text>
+              <Text className="text-accent text-base">{t("common.close")}</Text>
             </Pressable>
           </View>
 
@@ -176,7 +179,7 @@ export function FilterBar({
               onPress={() => handleGradeSelect(null)}
               className="px-4 py-3 border-b border-surface"
             >
-              <Text className="text-white text-base">Any</Text>
+              <Text className="text-white text-base">{t("filter.any")}</Text>
             </Pressable>
 
             {/* One row per unique grade label */}

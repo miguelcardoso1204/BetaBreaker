@@ -22,6 +22,7 @@
 
 import React from "react";
 import { View, Text, ScrollView, Switch } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
 import {
@@ -32,33 +33,35 @@ import { IconButton } from "@/components/ui/IconButton";
 
 /**
  * Category definitions — each entry maps to a row in the preferences table.
- * The key matches the `category` column, and the label/description are
- * displayed in the UI.
+ * The key matches the `category` column. labelKey/descKey are i18n keys
+ * resolved at render time via t() (since this array is defined outside
+ * the component where hooks aren't available).
  */
 const CATEGORIES = [
   {
     key: "friends",
-    label: "Friends & Social",
-    description: "Friend requests, follows, and social activity",
+    labelKey: "notifications.categorySocial",
+    descKey: "notifications.categorySocialDesc",
   },
   {
     key: "routes",
-    label: "Routes & Gyms",
-    description: "New routes, route updates, and gym announcements",
+    labelKey: "notifications.categoryRoutes",
+    descKey: "notifications.categoryRoutesDesc",
   },
   {
     key: "comps",
-    label: "Competitions",
-    description: "Competition invites, results, and schedule changes",
+    labelKey: "notifications.categoryCompetitions",
+    descKey: "notifications.categoryCompetitionsDesc",
   },
   {
     key: "achievements",
-    label: "Achievements",
-    description: "Badges, streak milestones, and rank changes",
+    labelKey: "notifications.categoryAchievements",
+    descKey: "notifications.categoryAchievementsDesc",
   },
 ] as const;
 
 export default function NotificationPreferencesScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { preferences } = useNotificationPreferences();
   const updatePreference = useUpdatePreference();
@@ -72,19 +75,18 @@ export default function NotificationPreferencesScreen() {
       <View className="px-4 pt-14 pb-4 flex-row items-center">
         <IconButton
           icon={ArrowLeft}
-          label="Go back"
+          label={t("common.goBack")}
           onPress={() => router.back()}
           size={24}
           color="#FFFFFF"
         />
         <Text className="text-text-primary text-xl font-bold ml-3">
-          Notification Preferences
+          {t("notifications.preferencesTitle")}
         </Text>
       </View>
 
       <Text className="text-text-secondary text-sm px-4 mb-4">
-        Choose which notifications you want to receive. Disabled categories
-        will not send push notifications or appear in your notification center.
+        {t("notifications.preferencesBody")}
       </Text>
 
       {/* Category toggles */}
@@ -95,10 +97,10 @@ export default function NotificationPreferencesScreen() {
         >
           <View className="flex-1 mr-4">
             <Text className="text-text-primary text-base font-medium">
-              {cat.label}
+              {t(cat.labelKey)}
             </Text>
             <Text className="text-text-secondary text-sm mt-1">
-              {cat.description}
+              {t(cat.descKey)}
             </Text>
           </View>
 
@@ -108,7 +110,7 @@ export default function NotificationPreferencesScreen() {
             onValueChange={(enabled: boolean) => {
               updatePreference.mutate({ category: cat.key, enabled });
             }}
-            accessibilityLabel={cat.label}
+            accessibilityLabel={t(cat.labelKey)}
           />
         </View>
       ))}

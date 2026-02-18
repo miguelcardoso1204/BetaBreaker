@@ -13,6 +13,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { useToggleFollow } from "@/hooks/useSocial";
 
@@ -21,13 +22,14 @@ export interface FollowButtonProps {
 }
 
 export function FollowButton({ targetUserId }: FollowButtonProps) {
+  const { t } = useTranslation();
   const { isFollowing, toggleFollow, isPending } =
     useToggleFollow(targetUserId);
 
   return (
     <Button
       testID="follow-button"
-      label={isFollowing ? "Following" : "Follow"}
+      label={isFollowing ? t("social.following") : t("social.follow")}
       variant={isFollowing ? "outline" : "primary"}
       onPress={toggleFollow}
       loading={isPending}

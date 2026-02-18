@@ -34,6 +34,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuditLog } from '@/hooks/useAuditLog';
 
@@ -48,23 +49,24 @@ const ACTION_COLORS: Record<string, string> = {
   media_removed: 'bg-red-500',
 };
 
-// ── Human-readable action labels ─────────────────────────────────────
-// Converts DB action names like 'grade_change' to "Grade" for display
-// in the action badge pill.
-const ACTION_LABELS: Record<string, string> = {
-  grade_change: 'Grade',
-  status_change: 'Status',
-  tag_change: 'Tag',
-  media_removed: 'Media',
+// ── Action label translation keys ────────────────────────────────────
+// Converts DB action names like 'grade_change' to translation keys
+// for display in the action badge pill. Resolved via t() at render time.
+const ACTION_LABEL_KEYS: Record<string, string> = {
+  grade_change: 'admin.auditLog.grade',
+  status_change: 'admin.auditLog.status',
+  tag_change: 'admin.auditLog.tag',
+  media_removed: 'admin.auditLog.media',
 };
 
 // ── Filter tab definitions ───────────────────────────────────────────
 // "all" shows everything; other keys match the action column prefix.
+// Labels are translation keys — resolved at render time via t()
 const FILTER_TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'grade_change', label: 'Grade' },
-  { key: 'status_change', label: 'Status' },
-  { key: 'tag_change', label: 'Tag' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'grade_change', labelKey: 'admin.auditLog.grade' },
+  { key: 'status_change', labelKey: 'admin.auditLog.status' },
+  { key: 'tag_change', labelKey: 'admin.auditLog.tag' },
 ] as const;
 
 type FilterKey = (typeof FILTER_TABS)[number]['key'];
@@ -75,6 +77,7 @@ type FilterKey = (typeof FILTER_TABS)[number]['key'];
 
 /**
  * Format the old → new change for display in the entry card.
+ * Accepts a translation function so strings are localized.
  *
  * Each action type stores different keys in the JSONB:
  *   - grade_change: { canonical_grade: number }
@@ -85,26 +88,27 @@ type FilterKey = (typeof FILTER_TABS)[number]['key'];
 function formatChange(
   action: string,
   oldValue: Record<string, any> | null,
-  newValue: Record<string, any> | null
+  newValue: Record<string, any> | null,
+  t: (key: string) => string
 ): string {
   switch (action) {
     case 'grade_change':
-      return `Grade: ${oldValue?.canonical_grade ?? '?'} → ${newValue?.canonical_grade ?? '?'}`;
+      return `${t('admin.auditLog.gradeField')} ${oldValue?.canonical_grade ?? '?'} → ${newValue?.canonical_grade ?? '?'}`;
 
     case 'status_change':
-      return `Status: ${oldValue?.status ?? '?'} → ${newValue?.status ?? '?'}`;
+      return `${t('admin.auditLog.statusField')} ${oldValue?.status ?? '?'} → ${newValue?.status ?? '?'}`;
 
     case 'tag_change': {
       // Could be a color change or wall_section change — show whichever
       // key is present in the JSONB values.
       if (oldValue?.color !== undefined || newValue?.color !== undefined) {
-        return `Color: ${oldValue?.color ?? '?'} → ${newValue?.color ?? '?'}`;
+        return `${t('admin.auditLog.colorField')} ${oldValue?.color ?? '?'} → ${newValue?.color ?? '?'}`;
       }
-      return `Section: ${oldValue?.wall_section ?? '?'} → ${newValue?.wall_section ?? '?'}`;
+      return `${t('admin.auditLog.sectionField')} ${oldValue?.wall_section ?? '?'} → ${newValue?.wall_section ?? '?'}`;
     }
 
     case 'media_removed':
-      return 'Media removed';
+      return t('admin.auditLog.mediaRemoved');
 
     default:
       return action;
@@ -126,6 +130,7 @@ function formatTimestamp(isoString: string): string {
 }
 
 export default function AuditLogScreen() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const gymId = user?.homeGymId ?? null;
 
@@ -159,7 +164,7 @@ export default function AuditLogScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || 'Failed to load audit log'}
+          {error.message || t('admin.auditLog.failedToLoad')}
         </Text>
       </View>
     );
@@ -170,7 +175,7 @@ export default function AuditLogScreen() {
     <View className="flex-1 bg-background">
       {/* ── Header ─────────────────────────────────────────────── */}
       <Text className="text-xl font-bold text-text-primary px-4 pt-4 pb-2">
-        Audit Log
+        {t('admin.auditLog.title')}
       </Text>
 
       {/* ── Filter Tabs ────────────────────────────────────────── */}
@@ -193,7 +198,7 @@ export default function AuditLogScreen() {
                 activeFilter === tab.key ? 'text-white' : 'text-text-primary'
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </Text>
           </Pressable>
         ))}
@@ -203,7 +208,7 @@ export default function AuditLogScreen() {
       {filteredEntries.length === 0 ? (
         <View className="flex-1 items-center justify-center px-4">
           <Text className="text-text-secondary text-center">
-            No audit log entries
+            {t('admin.auditLog.noEntries')}
           </Text>
         </View>
       ) : (
@@ -224,13 +229,13 @@ export default function AuditLogScreen() {
                     }`}
                   >
                     <Text className="text-white text-xs font-medium">
-                      {ACTION_LABELS[item.action] ?? item.action}
+                      {t(ACTION_LABEL_KEYS[item.action] ?? item.action)}
                     </Text>
                   </View>
 
                   {/* Actor name — "System" fallback for null actor_id */}
                   <Text className="text-text-primary text-sm font-medium">
-                    {item.actor?.display_name ?? 'System'}
+                    {item.actor?.display_name ?? t('admin.auditLog.system')}
                   </Text>
                 </View>
               </View>
@@ -242,7 +247,7 @@ export default function AuditLogScreen() {
 
               {/* Old → New value display — extracted from JSONB */}
               <Text className="text-text-primary text-sm mb-1">
-                {formatChange(item.action, item.old_value, item.new_value)}
+                {formatChange(item.action, item.old_value, item.new_value, t)}
               </Text>
 
               {/* Timestamp — when the change occurred */}

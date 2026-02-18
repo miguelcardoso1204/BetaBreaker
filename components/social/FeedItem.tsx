@@ -18,6 +18,7 @@ import React from "react";
 import { View, Text } from "react-native";
 import { Avatar } from "@/components/ui/Avatar";
 import { canonicalToDisplay } from "@/utils/grades";
+import { useTranslation } from "react-i18next";
 
 /** Shape of an activity feed item from the socialService query */
 export interface ActivityFeedItem {
@@ -42,21 +43,22 @@ export interface FeedItemProps {
 }
 
 /**
- * Map ascent status to a human-readable past-tense verb.
- * These match the status enum in route_ascents.
+ * Map ascent status to an i18n translation key.
+ * These match the status enum in route_ascents. The returned key is
+ * resolved to a localized string by the t() function at render time.
  */
-function statusVerb(status: string): string {
+function statusVerbKey(status: string): string {
   switch (status) {
     case "sent":
-      return "sent";
+      return "social.sent";
     case "flashed":
-      return "flashed";
+      return "social.flashed";
     case "attempted":
-      return "attempted";
+      return "social.attempted";
     case "project":
-      return "projected";
+      return "social.projected";
     default:
-      return "logged";
+      return "social.logged";
   }
 }
 
@@ -72,12 +74,13 @@ function formatDate(dateString: string): { day: string; month: string } {
 }
 
 export function FeedItem({ item }: FeedItemProps) {
+  const { t } = useTranslation();
   const { route, profile } = item;
   const { day, month } = formatDate(item.created_at);
   const grade = canonicalToDisplay(route.canonical_grade, "v-scale");
-  const verb = statusVerb(item.status);
-  const displayName = profile.display_name ?? "Unknown";
-  const routeName = route.name ?? "Unnamed Route";
+  const verb = t(statusVerbKey(item.status));
+  const displayName = profile.display_name ?? t("common.unknown");
+  const routeName = route.name ?? t("route.unnamedRoute");
 
   return (
     <View className="flex-row items-center py-3 px-4">

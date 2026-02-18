@@ -20,6 +20,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
 import { ShieldCheck, Square, CheckSquare } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
 export interface OwnershipModalProps {
   /** Whether the modal is visible. */
@@ -35,6 +36,8 @@ export function OwnershipModal({
   onConfirm,
   onDismiss,
 }: OwnershipModalProps) {
+  const { t } = useTranslation();
+
   // Track whether the user has checked the ownership checkbox.
   // Resets to false every time the modal opens.
   const [affirmed, setAffirmed] = useState(false);
@@ -69,15 +72,13 @@ export function OwnershipModal({
           <View className="flex-row items-center mb-4">
             <ShieldCheck size={24} color="#7C3AED" />
             <Text className="text-xl font-bold text-text-primary ml-2">
-              Content Ownership
+              {t("video.ownershipTitle")}
             </Text>
           </View>
 
           {/* Explanation text */}
           <Text className="text-text-secondary mb-6 leading-5">
-            By uploading, you confirm that this video is your original
-            content and you have the right to share it. Videos that
-            violate copyright may be removed.
+            {t("video.ownershipBody")}
           </Text>
 
           {/* Ownership checkbox */}
@@ -94,7 +95,7 @@ export function OwnershipModal({
               <Square size={22} color="#6B7280" />
             )}
             <Text className="text-text-primary ml-3 flex-1">
-              I affirm that I own this content
+              {t("video.ownershipAffirm")}
             </Text>
           </Pressable>
 
@@ -105,7 +106,7 @@ export function OwnershipModal({
               className="px-5 py-3 rounded-xl"
               accessibilityRole="button"
             >
-              <Text className="text-text-secondary font-semibold">Cancel</Text>
+              <Text className="text-text-secondary font-semibold">{t("common.cancel")}</Text>
             </Pressable>
 
             <Pressable
@@ -118,7 +119,7 @@ export function OwnershipModal({
               accessibilityRole="button"
               accessibilityState={{ disabled: !affirmed }}
             >
-              <Text className="text-white font-semibold">Upload</Text>
+              <Text className="text-white font-semibold">{t("video.upload")}</Text>
             </Pressable>
           </View>
         </Pressable>

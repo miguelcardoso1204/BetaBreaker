@@ -20,6 +20,7 @@
 import React, { useState } from "react";
 import { View, TextInput, Pressable, Text } from "react-native";
 import { Send } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 export interface FeedbackComposerProps {
   /** Called with the trimmed tip text when the user submits */
@@ -32,6 +33,8 @@ export function FeedbackComposer({
   onSubmit,
   isSubmitting,
 }: FeedbackComposerProps) {
+  const { t } = useTranslation();
+
   // Draft text state — managed internally because it's ephemeral
   // UI state that no other component needs.
   const [text, setText] = useState("");
@@ -58,7 +61,7 @@ export function FeedbackComposer({
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="Share a tip for this route..."
+        placeholder={t("social.tipPlaceholder")}
         placeholderTextColor="#6B6B80"
         multiline
         className="flex-1 bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm min-h-[40px] max-h-[100px]"
@@ -72,7 +75,7 @@ export function FeedbackComposer({
         onPress={handleSubmit}
         disabled={!canSubmit}
         accessibilityRole="button"
-        accessibilityLabel="Submit tip"
+        accessibilityLabel={t("social.submitTip")}
         accessibilityState={{ disabled: !canSubmit }}
         className={`p-2 rounded-lg ${canSubmit ? "bg-accent" : "bg-surface"}`}
       >

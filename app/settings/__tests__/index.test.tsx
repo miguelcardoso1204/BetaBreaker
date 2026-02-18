@@ -73,6 +73,18 @@ jest.mock("expo-constants", () => ({
   },
 }));
 
+// Mock @/lib/i18n — controls changeLanguage for testing language picker
+const mockChangeLanguage = jest.fn().mockResolvedValue(undefined);
+jest.mock("@/lib/i18n", () => ({
+  __esModule: true,
+  default: { language: "en" },
+  changeLanguage: (...args: unknown[]) => mockChangeLanguage(...args),
+  SUPPORTED_LANGUAGES: [
+    { code: "en", name: "English" },
+    { code: "pt-PT", name: "Português" },
+  ],
+}));
+
 // Mock lucide-react-native — stub all icons as simple Views.
 // Jest can't process SVG transforms from Lucide, so we replace each
 // icon with a plain View that carries a testID for assertions.
@@ -87,6 +99,7 @@ jest.mock("lucide-react-native", () => {
     BookOpen: (props: any) => <View testID="icon-book-open" {...props} />,
     Globe: (props: any) => <View testID="icon-globe" {...props} />,
     LogOut: (props: any) => <View testID="icon-log-out" {...props} />,
+    Check: (props: any) => <View testID="icon-check" {...props} />,
   };
 });
 
@@ -173,17 +186,58 @@ describe("SettingsScreen", () => {
     expect(mockPush).toHaveBeenCalledWith("/settings/guidelines");
   });
 
-  // ── Language Row ───────────────────────────────────────────────────
+  // ── Language Picker ───────────────────────────────────────────────
 
-  it('renders language row with "Coming Soon" indicator', () => {
+  it("renders language row as interactive (not disabled)", () => {
     render(<SettingsScreen />);
 
     expect(screen.getByText("Language")).toBeOnTheScreen();
     expect(screen.getByText("English")).toBeOnTheScreen();
-    // Multiple "Coming Soon" badges exist (language, privacy, terms)
-    // — verify at least one is rendered
+    // "Coming Soon" badges still exist for Privacy Policy and Terms,
+    // but NOT on the language row (which is now interactive).
+    // Exactly 2 badges should remain (privacy + terms).
     const comingSoonBadges = screen.getAllByText("Coming Soon");
-    expect(comingSoonBadges.length).toBeGreaterThanOrEqual(1);
+    expect(comingSoonBadges).toHaveLength(2);
+  });
+
+  it("tapping language row opens language picker modal", () => {
+    render(<SettingsScreen />);
+
+    // Tap the language row
+    fireEvent.press(screen.getByTestId("language-row"));
+
+    // Modal should show language options
+    expect(screen.getByText("Select Language")).toBeOnTheScreen();
+    expect(screen.getByText("Português")).toBeOnTheScreen();
+  });
+
+  it("selecting Portuguese calls changeLanguage('pt-PT')", async () => {
+    render(<SettingsScreen />);
+
+    // Open language picker
+    fireEvent.press(screen.getByTestId("language-row"));
+
+    // Tap Portuguese option
+    await act(async () => {
+      fireEvent.press(screen.getByText("Português"));
+    });
+
+    expect(mockChangeLanguage).toHaveBeenCalledWith("pt-PT");
+  });
+
+  it("selecting English calls changeLanguage('en')", async () => {
+    render(<SettingsScreen />);
+
+    // Open language picker
+    fireEvent.press(screen.getByTestId("language-row"));
+
+    // Tap English option using testID to avoid ambiguity with
+    // the language row subtitle which also shows "English"
+    await act(async () => {
+      fireEvent.press(screen.getByTestId("language-option-en"));
+    });
+
+    expect(mockChangeLanguage).toHaveBeenCalledWith("en");
   });
 
   // ── About Section ──────────────────────────────────────────────────

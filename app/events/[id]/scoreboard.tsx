@@ -40,6 +40,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useLocalSearchParams } from "expo-router";
 import { Trophy } from "lucide-react-native";
 
@@ -56,15 +57,17 @@ import {
 } from "@/utils/competitionScoring";
 import type { ScoringModel } from "@/services/events.service";
 
-/** Human-readable labels for each scoring model. */
-const SCORING_LABELS: Record<string, string> = {
-  tops_and_zones: "Tops & Zones",
-  points: "Points",
-  thousand_divide_by: "1000/Attempts",
-  redpoint: "Redpoint",
+/** Scoring model i18n keys — resolved via t() at render time since this
+ *  object is defined outside the component where hooks aren't available. */
+const SCORING_LABEL_KEYS: Record<string, string> = {
+  tops_and_zones: "events.scoringLabels.tops_and_zones",
+  points: "events.scoringLabels.points",
+  thousand_divide_by: "events.scoringLabels.thousand_divide_by",
+  redpoint: "events.scoringLabels.redpoint",
 };
 
 export default function ScoreboardScreen() {
+  const { t } = useTranslation();
   const { id: eventId } = useLocalSearchParams<{ id: string }>();
 
   // ── Data fetching ────────────────────────────────────────────────
@@ -124,7 +127,7 @@ export default function ScoreboardScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text className="text-error text-center">
-          {error.message || "Failed to load scoreboard"}
+          {error.message || t("events.failedToLoadScoreboard")}
         </Text>
       </View>
     );
@@ -134,7 +137,7 @@ export default function ScoreboardScreen() {
   if (!event) {
     return (
       <View className="flex-1 items-center justify-center bg-background">
-        <Text className="text-text-secondary">Event not found</Text>
+        <Text className="text-text-secondary">{t("events.eventNotFound")}</Text>
       </View>
     );
   }
@@ -154,7 +157,9 @@ export default function ScoreboardScreen() {
             </Text>
           </View>
           <Text className="text-text-secondary text-sm">
-            {SCORING_LABELS[event.scoring_model] ?? event.scoring_model}
+            {SCORING_LABEL_KEYS[event.scoring_model]
+              ? t(SCORING_LABEL_KEYS[event.scoring_model])
+              : event.scoring_model}
           </Text>
 
           {/* ── Export buttons ──────────────────────────────────────── */}
@@ -182,7 +187,7 @@ export default function ScoreboardScreen() {
                   isExporting ? "text-text-secondary/50" : "text-text-secondary"
                 }`}
               >
-                CSV
+                {t("events.csv")}
               </Text>
             </Pressable>
 
@@ -207,7 +212,7 @@ export default function ScoreboardScreen() {
                   isExporting ? "text-text-secondary/50" : "text-text-secondary"
                 }`}
               >
-                PDF
+                {t("events.pdf")}
               </Text>
             </Pressable>
           </View>
@@ -233,7 +238,7 @@ export default function ScoreboardScreen() {
                     : "text-text-secondary"
                 }`}
               >
-                All
+                {t("common.all")}
               </Text>
             </Pressable>
 
@@ -264,7 +269,7 @@ export default function ScoreboardScreen() {
         {rankedEntries.length === 0 ? (
           <View className="items-center justify-center py-16 px-8">
             <Text className="text-text-secondary text-base text-center">
-              No scores yet
+              {t("events.noScores")}
             </Text>
           </View>
         ) : (

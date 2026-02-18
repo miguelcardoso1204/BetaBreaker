@@ -23,6 +23,7 @@
  */
 
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   ScrollView,
@@ -30,6 +31,7 @@ import {
   View,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import i18n from "@/lib/i18n";
 import { useSessionDetail } from "@/hooks/useSessions";
 import { SessionSummary } from "@/components/session/SessionSummary";
 import { Badge } from "@/components/ui/Badge";
@@ -46,7 +48,7 @@ import { canonicalToDisplay } from "@/utils/grades";
  */
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(i18n.language, {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -61,7 +63,7 @@ function formatDate(dateStr: string): string {
  * "I warmed up at 6 PM, sent the project at 7:30 PM."
  */
 function formatTime(isoTimestamp: string): string {
-  return new Date(isoTimestamp).toLocaleTimeString("en-US", {
+  return new Date(isoTimestamp).toLocaleTimeString(i18n.language, {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -80,6 +82,7 @@ const STATUS_BADGE_VARIANT: Record<string, "success" | "warning" | "default"> = 
 // ── Component ──────────────────────────────────────────────────────
 
 export default function SessionDetailScreen() {
+  const { t } = useTranslation();
   // Extract the date param from the URL (e.g., "2026-02-09")
   const { date } = useLocalSearchParams<{ date: string }>();
 
@@ -103,7 +106,7 @@ export default function SessionDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-background px-4">
         <Text testID="error-message" className="text-error text-center">
-          {(error as Error).message || "Failed to load session"}
+          {(error as Error).message || t("logbook.failedToLoad")}
         </Text>
       </View>
     );
@@ -148,12 +151,12 @@ export default function SessionDetailScreen() {
           the route name, grade, status badge, and timestamp. */}
       <View className="px-4 pb-8">
         <Text className="text-lg font-bold text-text-primary mb-3">
-          Ascents
+          {t("logbook.ascents")}
         </Text>
 
         {ascents.length === 0 ? (
           <Text className="text-text-secondary text-center py-4">
-            No ascents recorded
+            {t("logbook.noAscents")}
           </Text>
         ) : (
           ascents.map((ascent) => (
@@ -174,7 +177,7 @@ export default function SessionDetailScreen() {
               {/* Route name + grade — the main identifying info */}
               <View className="flex-1 mr-2">
                 <Text className="text-text-primary font-semibold">
-                  {ascent.route?.name ?? "Unknown Route"}
+                  {ascent.route?.name ?? t("common.unknownRoute")}
                 </Text>
                 {ascent.route?.canonical_grade != null && (
                   <Text className="text-text-secondary text-xs">

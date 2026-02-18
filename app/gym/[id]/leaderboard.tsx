@@ -32,6 +32,7 @@ import {
   FlatList,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { useGym } from "@/hooks/useGyms";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,16 +47,20 @@ import type { ScoringModel } from "@/lib/constants";
 // ── Period / Model chip definitions ───────────────────────────────
 
 /** Period options for the time filter chips. */
+// NOTE: Labels are set to translation keys here and resolved via t()
+// at render time. This lets us keep the static array outside the component
+// while still supporting i18n — the t() call happens in the JSX, not here.
 const PERIOD_OPTIONS = [
-  { key: "this-week", label: "This Week", getValue: getCurrentISOWeekLabel },
-  { key: "last-week", label: "Last Week", getValue: getPreviousISOWeekLabel },
+  { key: "this-week", labelKey: "gym.leaderboard.thisWeek", getValue: getCurrentISOWeekLabel },
+  { key: "last-week", labelKey: "gym.leaderboard.lastWeek", getValue: getPreviousISOWeekLabel },
 ] as const;
 
-/** Scoring model options for the model filter chips. */
-const MODEL_OPTIONS: { key: ScoringModel; label: string }[] = [
-  { key: "hardest_grade", label: "Grade" },
-  { key: "flash_rate", label: "Flash Rate" },
-  { key: "volume", label: "Volume" },
+/** Scoring model options for the model filter chips.
+ *  Like PERIOD_OPTIONS, labels are translation keys resolved via t() at render. */
+const MODEL_OPTIONS: { key: ScoringModel; labelKey: string }[] = [
+  { key: "hardest_grade", labelKey: "gym.leaderboard.grade" },
+  { key: "flash_rate", labelKey: "gym.leaderboard.flashRate" },
+  { key: "volume", labelKey: "gym.leaderboard.volume" },
 ];
 
 // ── Score formatting ──────────────────────────────────────────────
@@ -90,6 +95,9 @@ function formatScore(
 // ── Component ─────────────────────────────────────────────────────
 
 export default function LeaderboardScreen() {
+  // i18n hook — provides t() for translating hardcoded strings.
+  const { t } = useTranslation();
+
   // Extract gymId from the URL path (/gym/[id]/leaderboard)
   const { id: gymId } = useLocalSearchParams<{ id: string }>();
 
@@ -132,7 +140,7 @@ export default function LeaderboardScreen() {
         {/* ── Header ──────────────────────────────────────────── */}
         <View className="px-4 pt-4 pb-2">
           <Text className="text-text-primary text-2xl font-bold">
-            {gym?.name ?? "Leaderboard"}
+            {gym?.name ?? t("gym.leaderboard.title")}
           </Text>
         </View>
 
@@ -156,7 +164,7 @@ export default function LeaderboardScreen() {
                     isActive ? "text-white" : "text-text-secondary"
                   }`}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
               </Pressable>
             );
@@ -183,7 +191,7 @@ export default function LeaderboardScreen() {
                     isActive ? "text-white" : "text-text-secondary"
                   }`}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
               </Pressable>
             );
@@ -195,7 +203,7 @@ export default function LeaderboardScreen() {
           // Empty state — no entries for this period/model combo.
           <View className="items-center justify-center py-16 px-8">
             <Text className="text-text-secondary text-base text-center">
-              No entries for this period
+              {t("gym.leaderboard.noEntries")}
             </Text>
           </View>
         ) : (

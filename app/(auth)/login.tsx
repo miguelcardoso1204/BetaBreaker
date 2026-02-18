@@ -35,6 +35,7 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { useTranslation } from "react-i18next";
 import { Mail } from "lucide-react-native";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,12 @@ import type { LoginInput } from "@/utils/validation";
 import { Button, AppTextInput, Divider } from "@/components/ui";
 
 export default function LoginScreen() {
+  // useTranslation() gives us the `t` function for looking up i18n strings.
+  // Keys like "auth.login.title" map to values in locales/en.json (or
+  // whichever language is active). This decouples user-facing text from
+  // the component code so we can add new languages without editing JSX.
+  const { t } = useTranslation();
+
   // API-level error from Supabase (e.g., "Invalid login credentials").
   // This is separate from form validation errors — it only appears after
   // the form passes Zod validation but the server rejects the credentials.
@@ -110,12 +117,12 @@ export default function LoginScreen() {
             Using a large bold text instead of an image avoids asset management
             complexity during early development. */}
         <View className="items-center mb-10">
-          <Text className="text-text-primary text-6xl font-bold mb-2">BB</Text>
+          <Text className="text-text-primary text-6xl font-bold mb-2">{t("auth.login.logo")}</Text>
           <Text className="text-text-primary text-3xl font-bold">
-            Welcome Back!
+            {t("auth.login.title")}
           </Text>
           <Text className="text-text-secondary text-base mt-1">
-            We missed you!
+            {t("auth.login.subtitle")}
           </Text>
         </View>
 
@@ -132,10 +139,10 @@ export default function LoginScreen() {
             name="email"
             render={({ field: { onChange, value } }) => (
               <AppTextInput
-                label="Email"
+                label={t("auth.login.emailLabel")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="your@email.com"
+                placeholder={t("auth.login.emailPlaceholder")}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon={Mail}
@@ -151,10 +158,10 @@ export default function LoginScreen() {
             name="password"
             render={({ field: { onChange, value } }) => (
               <AppTextInput
-                label="Password"
+                label={t("auth.login.passwordLabel")}
                 value={value}
                 onChangeText={onChange}
-                placeholder="Enter password"
+                placeholder={t("auth.login.passwordPlaceholder")}
                 secureTextEntry
                 error={errors.password?.message}
                 testID="password-input"
@@ -169,7 +176,7 @@ export default function LoginScreen() {
           <View className="items-end -mt-2 mb-4">
             <Link href="/(auth)/forgot-password" asChild>
               <Text className="text-accent-light text-sm">
-                Forgot Password?
+                {t("auth.login.forgotPassword")}
               </Text>
             </Link>
           </View>
@@ -192,7 +199,7 @@ export default function LoginScreen() {
             3. If validation passes, it calls onSubmit with the validated data
             The `loading` prop shows a spinner during the async signIn call. */}
         <Button
-          label="Sign in"
+          label={t("auth.login.signIn")}
           onPress={handleSubmit(onSubmit)}
           size="lg"
           loading={isSubmitting}
@@ -206,7 +213,7 @@ export default function LoginScreen() {
           <View className="flex-row items-center mb-6">
             <Divider className="flex-1" />
             <Text className="text-text-muted text-sm mx-4">
-              Or continue with
+              {t("auth.login.orContinueWith")}
             </Text>
             <Divider className="flex-1" />
           </View>
@@ -231,11 +238,11 @@ export default function LoginScreen() {
             makes it stand out as the clickable element in the sentence. */}
         <View className="flex-row justify-center mt-8">
           <Text className="text-text-secondary text-sm">
-            Don&apos;t have an account?{" "}
+            {t("auth.login.noAccount")}
           </Text>
           <Link href="/(auth)/register" asChild>
             <Text className="text-accent-light text-sm font-semibold">
-              Sign up
+              {t("auth.login.signUp")}
             </Text>
           </Link>
         </View>

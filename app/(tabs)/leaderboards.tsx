@@ -16,6 +16,7 @@
 // empty data, so this screen renders the empty state in practice. Tests
 // can override the mock to verify all three states work correctly.
 
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Trophy, ChevronRight } from "lucide-react-native";
 import {
@@ -46,6 +47,7 @@ function formatScore(score: number): string {
 }
 
 export default function LeaderboardsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   // Get the current user's ID to pass to useEnrolledLeaderboards.
   // The hook is disabled when user is null (not logged in).
@@ -76,7 +78,7 @@ export default function LeaderboardsScreen() {
         {/* Header */}
         <View className="px-4 pt-14 pb-4">
           <Text className="text-text-primary text-2xl font-bold">
-            Leaderboards
+            {t("leaderboards.title")}
           </Text>
         </View>
 
@@ -86,16 +88,16 @@ export default function LeaderboardsScreen() {
           <Trophy size={64} color="#6B7280" />
 
           <Text className="text-text-primary text-lg font-semibold mt-4 text-center">
-            No enrolled leaderboards
+            {t("leaderboards.noLeaderboards")}
           </Text>
           <Text className="text-text-secondary text-sm mt-2 text-center">
-            Log climbs at a gym to join their weekly leaderboard
+            {t("leaderboards.joinPrompt")}
           </Text>
 
           {/* CTA button — sends user to the Map tab to discover gyms */}
           <View className="mt-6 w-full">
             <Button
-              label="Find Gyms"
+              label={t("leaderboards.findGyms")}
               onPress={() => router.push("/(tabs)/map" as any)}
               size="lg"
             />
@@ -113,7 +115,7 @@ export default function LeaderboardsScreen() {
       {/* Header */}
       <View className="px-4 pt-14 pb-4">
         <Text className="text-text-primary text-2xl font-bold">
-          Leaderboards
+          {t("leaderboards.title")}
         </Text>
       </View>
 

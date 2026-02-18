@@ -26,6 +26,7 @@
 import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import {
   format,
   startOfMonth,
@@ -54,8 +55,18 @@ interface CalendarGridProps {
   onNextMonth: () => void;
 }
 
-/** Day-of-week labels — starting with Sunday to match US convention */
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** Day-of-week translation keys — starting with Sunday to match US convention.
+ * We store i18n keys here (not display strings) so labels are resolved at
+ * render time via t(), enabling runtime language switching. */
+const DAY_LABEL_KEYS = [
+  "calendarGrid.sun",
+  "calendarGrid.mon",
+  "calendarGrid.tue",
+  "calendarGrid.wed",
+  "calendarGrid.thu",
+  "calendarGrid.fri",
+  "calendarGrid.sat",
+];
 
 // ── Component ────────────────────────────────────────────────────────
 
@@ -67,6 +78,8 @@ export default function CalendarGrid({
   onPrevMonth,
   onNextMonth,
 }: CalendarGridProps) {
+  const { t } = useTranslation();
+
   // Build the grid: start from Sunday of the week containing the 1st,
   // end on Saturday of the week containing the last day of the month.
   // This gives us complete rows (no partial weeks).
@@ -88,7 +101,7 @@ export default function CalendarGrid({
           onPress={onPrevMonth}
           testID="prev-month"
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={t("calendarGrid.previousMonth")}
           className="p-2"
         >
           <ChevronLeft size={20} color="#9CA3AF" />
@@ -102,7 +115,7 @@ export default function CalendarGrid({
           onPress={onNextMonth}
           testID="next-month"
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={t("calendarGrid.nextMonth")}
           className="p-2"
         >
           <ChevronRight size={20} color="#9CA3AF" />
@@ -111,10 +124,10 @@ export default function CalendarGrid({
 
       {/* ── Day-of-Week Labels ────────────────────────────────────── */}
       <View className="flex-row mb-1">
-        {DAY_LABELS.map((label) => (
-          <View key={label} className="flex-1 items-center">
+        {DAY_LABEL_KEYS.map((key) => (
+          <View key={key} className="flex-1 items-center">
             <Text className="text-text-secondary text-xs font-medium">
-              {label}
+              {t(key)}
             </Text>
           </View>
         ))}

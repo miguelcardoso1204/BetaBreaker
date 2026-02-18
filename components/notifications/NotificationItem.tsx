@@ -17,6 +17,8 @@
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import {
   Award,
   Trophy,
@@ -60,24 +62,29 @@ const ICON_MAP: Record<string, LucideIcon> = {
  *
  * Uses simple integer division — no external library needed for
  * the granularity we want (minutes, hours, days).
+ *
+ * Accepts a t() function so translated strings are resolved at
+ * render time (React hook rules prevent calling useTranslation
+ * outside a component).
  */
-function relativeTime(dateString: string): string {
+function relativeTime(dateString: string, t: TFunction): string {
   const now = Date.now();
   const then = new Date(dateString).getTime();
   const diffMs = now - then;
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-  if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes < 1) return t("notifications.justNow");
+  if (diffMinutes < 60) return t("notifications.minutesAgo", { count: diffMinutes });
 
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 24) return t("notifications.hoursAgo", { count: diffHours });
 
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return t("notifications.daysAgo", { count: diffDays });
 }
 
 export function NotificationItem({ item, onPress }: NotificationItemProps) {
+  const { t } = useTranslation();
   // Look up the icon for this notification type, fallback to Bell
   const Icon = ICON_MAP[item.type] ?? Bell;
 
@@ -105,7 +112,7 @@ export function NotificationItem({ item, onPress }: NotificationItemProps) {
           {item.body}
         </Text>
         <Text className="text-text-secondary text-xs mt-1">
-          {relativeTime(item.created_at)}
+          {relativeTime(item.created_at, t)}
         </Text>
       </View>
 

@@ -26,6 +26,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { View, TextInput, Text, ActivityIndicator } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { useRouter } from "expo-router";
@@ -53,6 +54,7 @@ const US_CENTER = {
 // ── Component ─────────────────────────────────────────────────────
 
 export default function MapScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: gyms, isLoading } = useGyms();
   const { user } = useAuth();
@@ -178,7 +180,7 @@ export default function MapScreen() {
             * the visual affordance and the search icon provides context. */}
           <TextInput
             className="flex-1 ml-2 text-text-primary"
-            placeholder="Search gyms..."
+            placeholder={t("map.searchPlaceholder")}
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -190,7 +192,7 @@ export default function MapScreen() {
         <IconButton
           testID="favorites-filter"
           icon={Star}
-          label="Filter favorites"
+          label={t("map.filterFavorites")}
           onPress={() => setShowFavoritesOnly((prev) => !prev)}
           color={showFavoritesOnly ? "#F59E0B" : "#9CA3AF"}
         />
@@ -206,9 +208,9 @@ export default function MapScreen() {
         className="absolute bottom-24 left-4 right-4 z-10 bg-surface rounded-xl px-4 py-3 items-center border border-border"
       >
         <Text className="text-text-primary font-semibold">
-          {/* Singular "gym" for exactly 1, plural "gyms" otherwise.
-            * This is a UX detail — "1 gyms" reads wrong. */}
-          {filteredGyms.length} {filteredGyms.length === 1 ? "gym" : "gyms"}
+          {/* i18next handles pluralization via _one/_other suffixes in the
+            * translation file, so we just pass the count and let it pick. */}
+          {t("map.gymCount", { count: filteredGyms.length })}
         </Text>
       </View>
     </View>

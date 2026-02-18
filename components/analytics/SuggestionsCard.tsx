@@ -27,6 +27,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react-native";
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/utils/grades";
@@ -62,17 +63,19 @@ export function SuggestionsCard({
   isLoading,
   testID,
 }: SuggestionsCardProps) {
+  const { t } = useTranslation();
+
   return (
     <View testID={testID} className="py-3">
       {/* Header: title + refresh button */}
       <View className="flex-row items-center justify-between px-4 mb-2">
         <Text className="text-text-primary text-lg font-semibold">
-          Suggested for You
+          {t("analytics.suggestedForYou")}
         </Text>
         <Pressable
           onPress={onRefresh}
           accessibilityRole="button"
-          accessibilityLabel="Refresh suggestions"
+          accessibilityLabel={t("analytics.refreshSuggestions")}
           className="p-2"
         >
           <RefreshCw size={18} color="#9CA3AF" />
@@ -87,7 +90,7 @@ export function SuggestionsCard({
       ) : suggestions.length === 0 ? (
         <View className="items-center justify-center py-6 px-4">
           <Text className="text-text-secondary text-sm text-center">
-            Log some sends to get personalized suggestions
+            {t("analytics.noSuggestionsPrompt")}
           </Text>
         </View>
       ) : (

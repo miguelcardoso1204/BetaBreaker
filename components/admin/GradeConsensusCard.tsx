@@ -24,6 +24,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { canonicalToDisplay } from "@/utils/grades";
 import { useGradeSubmissions } from "@/hooks/useGradeConsensus";
 
@@ -73,6 +74,7 @@ export default function GradeConsensusCard({
   submissionCount,
   divergence,
 }: GradeConsensusCardProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   // Only fetch distribution when the card is expanded (lazy loading)
@@ -82,12 +84,12 @@ export default function GradeConsensusCard({
 
   const badgeColor = getDivergenceColor(divergence);
 
-  // Display labels for divergence badge
+  // Display labels for divergence badge — translated via i18n
   const badgeLabel =
     divergence === null
-      ? "N/A"
+      ? t("admin.consensus.na")
       : divergence === 0
-        ? "Match"
+        ? t("admin.consensus.match")
         : `±${divergence}`;
 
   return (
@@ -120,7 +122,7 @@ export default function GradeConsensusCard({
         <View className="flex-row items-center gap-4">
           {/* Setter grade */}
           <View>
-            <Text className="text-text-secondary text-xs">Setter</Text>
+            <Text className="text-text-secondary text-xs">{t("admin.consensus.setter")}</Text>
             <Text className="text-text-primary font-bold text-lg">
               {canonicalToDisplay(canonicalGrade, "v-scale")}
             </Text>
@@ -128,11 +130,11 @@ export default function GradeConsensusCard({
 
           {/* Community grade */}
           <View>
-            <Text className="text-text-secondary text-xs">Community</Text>
+            <Text className="text-text-secondary text-xs">{t("admin.consensus.community")}</Text>
             <Text className="text-text-primary font-bold text-lg">
               {consensusGrade !== null
                 ? canonicalToDisplay(consensusGrade, "v-scale")
-                : "No consensus"}
+                : t("admin.consensus.noConsensus")}
             </Text>
           </View>
         </View>
@@ -150,21 +152,21 @@ export default function GradeConsensusCard({
 
       {/* ── Submission count ────────────────────────────────────── */}
       <Text className="text-text-secondary text-xs">
-        {submissionCount} submissions
+        {t("admin.consensus.submissions", { count: submissionCount })}
       </Text>
 
       {/* ── Expanded: grade distribution ───────────────────────── */}
       {expanded && (
         <View testID="grade-distribution" className="mt-3 pt-3 border-t border-gray-700">
           <Text className="text-text-secondary text-xs font-medium mb-2">
-            Grade Distribution
+            {t("admin.consensus.gradeDistribution")}
           </Text>
 
           {distLoading ? (
             <ActivityIndicator size="small" color="#6366f1" />
           ) : submissions.length === 0 ? (
             <Text className="text-text-secondary text-xs">
-              No grade submissions yet
+              {t("admin.consensus.noSubmissions")}
             </Text>
           ) : (
             submissions.map((row: any) => (

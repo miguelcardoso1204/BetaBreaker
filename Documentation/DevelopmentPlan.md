@@ -3069,9 +3069,9 @@ Test count: +39 new tests (1027 total passing).
 
 ## Phase 18 — Polish, Accessibility & Localization
 
-### Step 18.1 — i18n Setup (EN + PT-PT)
+### Step 18.1 — i18n Setup (EN + PT-PT) ✅
 
-**Depends on:** All UI phases (3–17)  
+**Depends on:** All UI phases (3–17)
 **Relevant requirements:** FR-Q1
 
 **What to test:**
@@ -3090,6 +3090,19 @@ Test count: +39 new tests (1027 total passing).
 - Wrap all UI strings in `t()` calls.
 
 **Acceptance:** App fully navigable in both languages.
+
+**Implementation notes (Step 18.1):**
+- Stack: `i18next` + `react-i18next` + `expo-localization` + `expo-secure-store` (persistence)
+- Created `locales/en.json` (~700 keys) and `locales/pt-PT.json` (real Portuguese translations)
+- Created `lib/i18n.ts`: `initI18n()`, `changeLanguage()`, `SUPPORTED_LANGUAGES`, locale detection with prefix matching
+- `jest.setup.ts`: synchronous i18n init with real EN translations — all 1387+ existing tests work unchanged
+- `jest.config.js`: added `i18next|react-i18next` to `transformIgnorePatterns` allow-list
+- `app/_layout.tsx`: `I18nextProvider` wrapping app, `initI18n()` runs in parallel with font loading
+- Language picker in settings screen: modal with supported languages, calls `changeLanguage()` to switch + persist
+- All ~68 screen/component files converted to use `useTranslation()` + `t()` calls
+- Label maps (GRADE_SYSTEMS, SCORING_LABEL_KEYS, etc.) use translation keys resolved at render time
+- Files created: `locales/en.json`, `locales/pt-PT.json`, `lib/i18n.ts`, `lib/__tests__/i18n.test.ts`
+- Total tests: 1408 unit (1387 existing + 11 i18n + 4 language picker + 6 other), all passing
 
 ---
 

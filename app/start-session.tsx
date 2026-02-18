@@ -29,6 +29,7 @@
 
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { MapPin } from "lucide-react-native";
@@ -50,6 +51,7 @@ type ModalState =
   | { status: "error"; message: string };
 
 export default function StartSessionScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: gyms } = useGyms();
   const { startSession } = useSession();
@@ -73,7 +75,7 @@ export default function StartSessionScreen() {
         if (status !== "granted") {
           setState({
             status: "error",
-            message: "Location permission is needed to find nearby gyms.",
+            message: t("session.locationPermission"),
           });
           return;
         }
@@ -110,14 +112,14 @@ export default function StartSessionScreen() {
           // All gyms have null coordinates — can't determine nearest.
           setState({
             status: "error",
-            message: "No gyms with location data found.",
+            message: t("session.noGymsFound"),
           });
         }
       } catch {
         if (cancelled) return;
         setState({
           status: "error",
-          message: "Could not determine your location.",
+          message: t("session.locationError"),
         });
       }
     }
@@ -130,7 +132,7 @@ export default function StartSessionScreen() {
     return () => {
       cancelled = true;
     };
-  }, [gyms]);
+  }, [gyms, t]);
 
   return (
     <View className="flex-1 items-center justify-center bg-background px-6">
@@ -139,7 +141,7 @@ export default function StartSessionScreen() {
         <View className="items-center" testID="loading-state">
           <ActivityIndicator size="large" color="#7C3AED" />
           <Text className="text-text-secondary text-base mt-4">
-            Finding nearby gyms...
+            {t("session.findingGyms")}
           </Text>
         </View>
       )}
@@ -151,7 +153,7 @@ export default function StartSessionScreen() {
           <MapPin size={48} color="#7C3AED" />
 
           <Text className="text-text-secondary text-base mt-4">
-            Start session at
+            {t("session.startSessionAt")}
           </Text>
 
           {/* Gym name in accent color — the focal point of the modal */}
@@ -170,7 +172,7 @@ export default function StartSessionScreen() {
               to the gym page where the user can browse routes and log ascents. */}
           <View className="w-full mt-8">
             <Button
-              label="Yes, start session!"
+              label={t("session.yesStart")}
               onPress={() => {
                 startSession(state.gym.id);
                 router.replace(`/gym/${state.gym.id}`);
@@ -182,7 +184,7 @@ export default function StartSessionScreen() {
           {/* Secondary action — user wants a different gym, go to map */}
           <View className="mt-3">
             <Button
-              label="No, choose another gym"
+              label={t("session.chooseAnother")}
               variant="ghost"
               onPress={() => router.replace("/(tabs)/map")}
             />
@@ -202,7 +204,7 @@ export default function StartSessionScreen() {
           {/* Fallback CTA — browse gyms manually on the map */}
           <View className="w-full mt-8">
             <Button
-              label="Browse gyms on map"
+              label={t("session.browseGyms")}
               onPress={() => router.replace("/(tabs)/map")}
               size="lg"
             />
