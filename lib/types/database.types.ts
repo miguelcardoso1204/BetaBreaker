@@ -1471,7 +1471,9 @@ export type Database = {
             }
             Returns: undefined
           }
+      delete_own_account: { Args: never; Returns: undefined }
       expire_trials: { Args: never; Returns: undefined }
+      export_user_data: { Args: never; Returns: Json }
       generate_monthly_billing: {
         Args: { target_month?: string }
         Returns: undefined
@@ -1499,6 +1501,13 @@ export type Database = {
       get_gym_active_user_count: {
         Args: { p_gym_id: string; p_period_end: string; p_period_start: string }
         Returns: number
+      }
+      get_profile_stats: {
+        Args: { p_user_id: string }
+        Returns: {
+          max_grade: number
+          total_sends: number
+        }[]
       }
       get_routes_grade_consensus: {
         Args: { p_gym_id: string }

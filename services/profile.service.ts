@@ -50,4 +50,58 @@ export const profileService = {
   getRoles(userId: string) {
     return supabase.from("user_gym_roles").select("role").eq("user_id", userId);
   },
+
+  /**
+   * Update a user's profile with partial fields.
+   *
+   * RLS policy `profiles_update_own` ensures users can only update their
+   * own row (WHERE id = auth.uid()). Accepts any subset of updatable
+   * columns — display_name, avatar_url, preferred_grade_system, etc.
+   *
+   * Chain: from('profiles') → update(fields) → eq('id', userId)
+   *
+   * @param userId — the auth user's UUID
+   * @param fields — partial object of profile columns to update
+   */
+  updateProfile(userId: string, fields: Record<string, unknown>) {
+    return supabase.from("profiles").update(fields).eq("id", userId);
+  },
+
+  /**
+   * Fetch aggregated profile stats: total sends and max grade.
+   *
+   * Calls the `get_profile_stats` RPC which does the aggregation in
+   * Postgres — more efficient than downloading all ascent rows to
+   * count/max client-side.
+   *
+   * Returns { total_sends: bigint, max_grade: number | null }.
+   * max_grade is null when the user has no sends/flashes.
+   */
+  getProfileStats(userId: string) {
+    return supabase.rpc("get_profile_stats", { p_user_id: userId });
+  },
+
+  /**
+   * Export all user data as a single JSONB blob.
+   *
+   * Calls the SECURITY DEFINER `export_user_data` RPC which aggregates
+   * profile, ascents, badges, and streak data scoped to auth.uid().
+   * Returns everything the user has stored — useful for GDPR compliance.
+   */
+  exportData() {
+    return supabase.rpc("export_user_data");
+  },
+
+  /**
+   * Permanently delete the user's account.
+   *
+   * Calls the SECURITY DEFINER `delete_own_account` RPC which deletes
+   * the auth.users row. CASCADE propagates to profiles, ascents, badges,
+   * streaks, and all other dependent data.
+   *
+   * This is irreversible — the caller should confirm with the user first.
+   */
+  deleteAccount() {
+    return supabase.rpc("delete_own_account");
+  },
 };

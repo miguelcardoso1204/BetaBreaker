@@ -78,3 +78,11 @@ export {
 
 // useAuditLog — read-only audit log query for admin change history (Step 15.7).
 export { useAuditLog } from "./useAuditLog";
+
+// useProfile — profile management: stats, edit, export, delete (Step 16.1).
+export {
+  useProfileStats,
+  useUpdateProfile,
+  useExportData,
+  useDeleteAccount,
+} from "./useProfile";

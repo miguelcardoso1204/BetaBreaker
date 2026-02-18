@@ -1,7 +1,8 @@
 // app/(tabs)/__tests__/profile.test.tsx
 //
 // Tests for the Profile screen — the user's personal dashboard showing
-// their avatar, name, streak stats, tier badge, and pinned achievements.
+// their avatar, name, streak stats, tier badge, pinned achievements,
+// profile stats, edit mode, and account actions (export/delete).
 //
 // MOCK STRATEGY:
 // - useAuth: Mocked to control user data (name, avatar, tier, pinned IDs)
@@ -9,13 +10,18 @@
 // - useUserStreak: Mocked to provide streak data
 // - usePinnedBadges: Mocked to provide resolved pinned badge IDs
 // - useSetPinnedBadges: Mocked to verify save interactions
+// - useProfileStats: Mocked to provide stats data (total sends, max grade)
+// - useUpdateProfile: Mocked to verify edit save
+// - useExportData: Mocked to verify export mutation
+// - useDeleteAccount: Mocked to verify delete mutation
+// - useGyms / useSetHomeGym: Mocked for gym picker
 // - expo-image: Mocked as View (no native image runtime in Jest)
 //
-// Each test configures these mocks to simulate different user states:
-// authenticated vs. unauthenticated, badges earned vs. none, etc.
+// Each test configures these mocks to simulate different user states.
 
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
+import { Alert } from "react-native";
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
@@ -52,13 +58,12 @@ const mockStreak = {
   streak_type: "weekly",
   current_streak: 5,
   longest_streak: 8,
-  // last_active_date (not last_active_week) — matches the DB column name.
-  // Set to Mon Feb 2, 2026 (same ISO week as the fake system time below)
-  // so deriveStreakStatus() computes "active" by default.
   last_active_date: "2026-02-02",
 };
 
 // Mock useAuth — controls whether the user is authenticated and their profile
+const mockRefreshProfile = jest.fn().mockResolvedValue(undefined);
+const mockSignOut = jest.fn().mockResolvedValue({ error: null });
 let mockUseAuthReturn: any = {
   user: mockUser,
   session: { access_token: "test" },
@@ -67,7 +72,8 @@ let mockUseAuthReturn: any = {
   role: "climber",
   signIn: jest.fn(),
   signUp: jest.fn(),
-  signOut: jest.fn(),
+  signOut: mockSignOut,
+  refreshProfile: mockRefreshProfile,
 };
 
 jest.mock("@/hooks/useAuth", () => ({
@@ -96,9 +102,9 @@ let mockUsePinnedBadgesReturn: any = {
 };
 
 // Mock useSetPinnedBadges — mutation for saving pinned selection
-const mockMutateAsync = jest.fn().mockResolvedValue(undefined);
+const mockBadgeMutateAsync = jest.fn().mockResolvedValue(undefined);
 const mockUseSetPinnedBadgesReturn = {
-  mutateAsync: mockMutateAsync,
+  mutateAsync: mockBadgeMutateAsync,
   isPending: false,
 };
 
@@ -126,6 +132,62 @@ jest.mock("@/hooks/useChallenges", () => ({
   useChallengeProgress: () => mockUseChallengeProgressReturn,
 }));
 
+// Mock useProfileStats — returns total sends + max grade
+let mockUseProfileStatsReturn: any = {
+  data: [{ total_sends: 42, max_grade: 20 }],
+  isLoading: false,
+  error: null,
+};
+
+// Mock useUpdateProfile — mutation for saving profile edits
+const mockUpdateMutateAsync = jest.fn().mockResolvedValue(undefined);
+const mockUseUpdateProfileReturn = {
+  mutateAsync: mockUpdateMutateAsync,
+  isPending: false,
+};
+
+// Mock useExportData — mutation for exporting user data
+const mockExportMutateAsync = jest.fn().mockResolvedValue({ profile: {} });
+const mockUseExportDataReturn = {
+  mutateAsync: mockExportMutateAsync,
+  isPending: false,
+};
+
+// Mock useDeleteAccount — mutation for deleting account
+const mockDeleteMutateAsync = jest.fn().mockResolvedValue(undefined);
+const mockUseDeleteAccountReturn = {
+  mutateAsync: mockDeleteMutateAsync,
+  isPending: false,
+};
+
+jest.mock("@/hooks/useProfile", () => ({
+  useProfileStats: () => mockUseProfileStatsReturn,
+  useUpdateProfile: () => mockUseUpdateProfileReturn,
+  useExportData: () => mockUseExportDataReturn,
+  useDeleteAccount: () => mockUseDeleteAccountReturn,
+}));
+
+// Mock useGyms — returns gym list for picker
+let mockUseGymsReturn: any = {
+  data: [
+    { id: "gym-1", name: "Ape Index" },
+    { id: "gym-2", name: "Summit Gym" },
+  ],
+  isLoading: false,
+  error: null,
+};
+
+const mockSetHomeGymMutateAsync = jest.fn().mockResolvedValue(undefined);
+const mockUseSetHomeGymReturn = {
+  mutateAsync: mockSetHomeGymMutateAsync,
+  isPending: false,
+};
+
+jest.mock("@/hooks/useGyms", () => ({
+  useGyms: () => mockUseGymsReturn,
+  useSetHomeGym: () => mockUseSetHomeGymReturn,
+}));
+
 // Mock expo-image (no native runtime in Jest)
 jest.mock("expo-image", () => ({
   Image: (props: any) => {
@@ -140,8 +202,6 @@ describe("ProfileScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Fix system time so deriveStreakStatus() produces deterministic results.
-    // Thu Feb 5, 2026 → ISO week starting Mon Feb 2. When last_active_date
-    // is "2026-02-02" (the default mock), gap = 0 → status = "active".
     jest.useFakeTimers();
     jest.setSystemTime(new Date(2026, 1, 5));
     // Reset all mock return values to defaults
@@ -153,7 +213,8 @@ describe("ProfileScreen", () => {
       role: "climber",
       signIn: jest.fn(),
       signUp: jest.fn(),
-      signOut: jest.fn(),
+      signOut: mockSignOut,
+      refreshProfile: mockRefreshProfile,
     };
     mockUseUserBadgesReturn = {
       data: mockUserBadges,
@@ -180,15 +241,28 @@ describe("ProfileScreen", () => {
       isLoading: false,
       error: null,
     };
+    mockUseProfileStatsReturn = {
+      data: [{ total_sends: 42, max_grade: 20 }],
+      isLoading: false,
+      error: null,
+    };
+    mockUseGymsReturn = {
+      data: [
+        { id: "gym-1", name: "Ape Index" },
+        { id: "gym-2", name: "Summit Gym" },
+      ],
+      isLoading: false,
+      error: null,
+    };
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
+  // ── Existing tests ─────────────────────────────────────────────────
+
   it("shows loading state while data loads", () => {
-    // When useAuth is still loading, show a loading indicator.
-    // This happens briefly on app startup while the session is restored.
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
       isLoading: true,
@@ -200,31 +274,22 @@ describe("ProfileScreen", () => {
   });
 
   it("renders avatar and display name", () => {
-    // The profile header shows the user's avatar (or initials) and
-    // their display name prominently at the top of the screen.
     render(<ProfileScreen />);
     expect(screen.getByText("TestClimber")).toBeOnTheScreen();
   });
 
   it("renders streak data (current + longest)", () => {
-    // Streak stats show the user's current weekly climbing streak
-    // and their all-time longest streak for motivation.
     render(<ProfileScreen />);
-    expect(screen.getByText("5")).toBeOnTheScreen(); // current streak
-    expect(screen.getByText("8")).toBeOnTheScreen(); // longest streak
+    expect(screen.getByText("5")).toBeOnTheScreen();
+    expect(screen.getByText("8")).toBeOnTheScreen();
   });
 
   it("renders pinned badges", () => {
-    // Pinned badges should display with their names visible.
-    // The profile resolves pinned IDs against earned badges.
     render(<ProfileScreen />);
-    // b1 = "First V0" is pinned
     expect(screen.getByText("First V0")).toBeOnTheScreen();
   });
 
   it('shows "No badges yet" when user has zero badges', () => {
-    // New users who haven't earned any badges should see an empty state
-    // message instead of a broken or empty badge section.
     mockUseUserBadgesReturn = { data: [], isLoading: false, error: null };
     mockUsePinnedBadgesReturn = {
       data: { pinned_badge_ids: [] },
@@ -241,27 +306,18 @@ describe("ProfileScreen", () => {
   });
 
   it("edit button opens BadgePicker modal", () => {
-    // The Edit button in the pinned badges section should open the
-    // BadgePicker modal where users select which badges to pin.
     render(<ProfileScreen />);
-
-    // Press the Edit button to open the picker
+    // Press the Edit button in the pinned badges section (not the profile Edit)
     fireEvent.press(screen.getByText("Edit"));
-
-    // The BadgePicker modal should now be visible with the "Select Badges to Pin" title
     expect(screen.getByText("Select Badges to Pin")).toBeOnTheScreen();
   });
 
   it("shows tier badge (Free/Pro)", () => {
-    // The user's subscription tier is displayed as a badge/label
-    // near their name, helping them understand their current plan.
     render(<ProfileScreen />);
     expect(screen.getByText("Free")).toBeOnTheScreen();
   });
 
   it("shows unauthenticated fallback when user is null", () => {
-    // When there's no authenticated user (e.g., session expired),
-    // show a message prompting them to sign in.
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
       user: null,
@@ -275,19 +331,13 @@ describe("ProfileScreen", () => {
   });
 
   // ── Streak status tests ──────────────────────────────────────────
-  // These verify that the profile screen correctly derives streak status
-  // from the DB values and renders the appropriate StreakCard + banner.
 
   it('shows "Active" badge when streak is in the current week', () => {
-    // Default mock has last_active_date "2026-02-02" (same ISO week as
-    // the fake system time Feb 5). deriveStreakStatus → active.
     render(<ProfileScreen />);
     expect(screen.getByText("Active")).toBeOnTheScreen();
   });
 
   it("shows at-risk banner when streak is 1-2 weeks old", () => {
-    // last_active_date set to Mon Jan 26 — 1 ISO week before the
-    // reference week (Feb 2). deriveStreakStatus → at_risk.
     mockUseUserStreakReturn = {
       data: { ...mockStreak, last_active_date: "2026-01-26" },
       isLoading: false,
@@ -302,8 +352,6 @@ describe("ProfileScreen", () => {
   });
 
   it('shows "Broken" badge and banner when streak has expired', () => {
-    // last_active_date set to Mon Jan 12 — 3 ISO weeks before the
-    // reference week (Feb 2). deriveStreakStatus → broken, displayStreak = 0.
     mockUseUserStreakReturn = {
       data: { ...mockStreak, last_active_date: "2026-01-12" },
       isLoading: false,
@@ -315,18 +363,12 @@ describe("ProfileScreen", () => {
     expect(
       screen.getByText("Your streak has ended. Start a new one today!"),
     ).toBeOnTheScreen();
-    // displayStreak should be 0 when broken (overrides stale DB value of 5)
     expect(screen.getByText("0")).toBeOnTheScreen();
   });
 
   // ── Active Challenges tests ──────────────────────────────────────
-  // These verify that the profile screen renders challenge cards when
-  // the user has a home gym with active challenges.
 
   it('renders "Active Challenges" section when challenges exist', () => {
-    // When the user has a home gym and there are active challenges,
-    // the profile screen should show an "Active Challenges" header
-    // and render ChallengeCard components for each challenge.
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
       user: { ...mockUser, homeGymId: "gym-1" },
@@ -353,9 +395,6 @@ describe("ProfileScreen", () => {
   });
 
   it("does not render challenges section when no active challenges", () => {
-    // When there are no active challenges (or the user has no home gym),
-    // the challenges section should not appear at all — no empty state,
-    // just absence. This keeps the profile clean.
     mockUseActiveChallengesReturn = {
       data: [],
       isLoading: false,
@@ -367,8 +406,6 @@ describe("ProfileScreen", () => {
   });
 
   it("shows challenge progress from hook data", () => {
-    // When the user has progress toward a challenge, the ChallengeCard
-    // should display the progress count from the hook data.
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
       user: { ...mockUser, homeGymId: "gym-1" },
@@ -403,5 +440,157 @@ describe("ProfileScreen", () => {
 
     render(<ProfileScreen />);
     expect(screen.getByText("7 / 10")).toBeOnTheScreen();
+  });
+
+  // ── Stats section tests ────────────────────────────────────────────
+
+  it("renders stats section with total sends and max grade", () => {
+    // Default mock has stats: 42 sends, max grade 20 (V8 in v-scale)
+    render(<ProfileScreen />);
+    expect(screen.getByText("Stats")).toBeOnTheScreen();
+    expect(screen.getByText("42")).toBeOnTheScreen();
+    expect(screen.getByText("V8")).toBeOnTheScreen();
+    expect(screen.getByText("Total Sends")).toBeOnTheScreen();
+    expect(screen.getByText("Max Grade")).toBeOnTheScreen();
+  });
+
+  it('shows "—" for max grade when user has no sends', () => {
+    // New user with 0 sends and null max_grade
+    mockUseProfileStatsReturn = {
+      data: [{ total_sends: 0, max_grade: null }],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+    expect(screen.getByText("0")).toBeOnTheScreen();
+    expect(screen.getByText("\u2014")).toBeOnTheScreen(); // em dash
+  });
+
+  // ── Edit mode tests ────────────────────────────────────────────────
+
+  it("Edit Profile button toggles edit mode", () => {
+    render(<ProfileScreen />);
+
+    // Press "Edit Profile" to enter edit mode
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+
+    // Edit mode header and form fields should appear
+    expect(screen.getByText("Edit Profile")).toBeOnTheScreen();
+    expect(screen.getByTestId("edit-name-input")).toBeOnTheScreen();
+    expect(screen.getByTestId("edit-avatar-input")).toBeOnTheScreen();
+  });
+
+  it("edit mode populates fields from current user data", () => {
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+
+    // Name input should be pre-filled with the current display name
+    const nameInput = screen.getByTestId("edit-name-input");
+    expect(nameInput.props.value).toBe("TestClimber");
+
+    // Avatar input should be pre-filled with the current URL
+    const avatarInput = screen.getByTestId("edit-avatar-input");
+    expect(avatarInput.props.value).toBe("https://example.com/avatar.png");
+  });
+
+  it("grade system picker shows 3 options", () => {
+    render(<ProfileScreen />);
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+
+    // All three grade system options should be visible
+    expect(screen.getByText("V-Scale")).toBeOnTheScreen();
+    expect(screen.getByText("Font")).toBeOnTheScreen();
+    expect(screen.getByText("YDS")).toBeOnTheScreen();
+  });
+
+  it("cancel button exits edit mode without saving", () => {
+    render(<ProfileScreen />);
+
+    // Enter edit mode
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+    expect(screen.getByText("Edit Profile")).toBeOnTheScreen();
+
+    // Press Cancel — should return to view mode without calling the mutation
+    fireEvent.press(screen.getByTestId("edit-cancel-button"));
+
+    // Edit Profile header should be gone, view mode header should be back
+    expect(screen.getByTestId("edit-profile-button")).toBeOnTheScreen();
+    expect(mockUpdateMutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("save button calls updateProfile mutation and exits edit mode", async () => {
+    render(<ProfileScreen />);
+
+    // Enter edit mode
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+
+    // Change the display name
+    fireEvent.changeText(screen.getByTestId("edit-name-input"), "NewName");
+
+    // Press Save
+    fireEvent.press(screen.getByTestId("edit-save-button"));
+
+    // The mutation should be called with the edited fields
+    expect(mockUpdateMutateAsync).toHaveBeenCalledWith({
+      userId: "user-123",
+      fields: {
+        display_name: "NewName",
+        avatar_url: "https://example.com/avatar.png",
+        preferred_grade_system: "v-scale",
+      },
+    });
+  });
+
+  it("gym picker opens in edit mode", () => {
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("edit-profile-button"));
+    fireEvent.press(screen.getByTestId("edit-gym-picker"));
+
+    // The gym picker modal should show with gym names
+    expect(screen.getByText("Select Home Gym")).toBeOnTheScreen();
+    expect(screen.getByText("Ape Index")).toBeOnTheScreen();
+    expect(screen.getByText("Summit Gym")).toBeOnTheScreen();
+  });
+
+  // ── Account actions tests ──────────────────────────────────────────
+
+  it("renders export and delete buttons", () => {
+    render(<ProfileScreen />);
+    expect(screen.getByText("Export My Data")).toBeOnTheScreen();
+    expect(screen.getByText("Delete Account")).toBeOnTheScreen();
+  });
+
+  it("export button triggers Alert confirmation", () => {
+    const alertSpy = jest.spyOn(Alert, "alert");
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("export-data-button"));
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      "Export My Data",
+      expect.any(String),
+      expect.any(Array),
+    );
+    alertSpy.mockRestore();
+  });
+
+  it("delete button triggers Alert confirmation with destructive option", () => {
+    const alertSpy = jest.spyOn(Alert, "alert");
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("delete-account-button"));
+
+    expect(alertSpy).toHaveBeenCalledWith(
+      "Delete Account",
+      expect.stringContaining("permanently"),
+      expect.arrayContaining([
+        expect.objectContaining({ text: "Cancel" }),
+        expect.objectContaining({ text: "Delete", style: "destructive" }),
+      ]),
+    );
+    alertSpy.mockRestore();
   });
 });

@@ -2922,9 +2922,9 @@ Test count: +39 new tests (1027 total passing).
 
 ## Phase 16 — Profile & Settings
 
-### Step 16.1 — Profile Screen
+### Step 16.1 — Profile Screen ✅
 
-**Depends on:** Phase 8 (badges), Phase 5 (sessions), Phase 3 (auth)  
+**Depends on:** Phase 8 (badges), Phase 5 (sessions), Phase 3 (auth)
 **Relevant requirements:** FR-A2, FR-A3, FR-A5
 
 **What to test:**
@@ -2946,6 +2946,16 @@ Test count: +39 new tests (1027 total passing).
 - Data export and deletion buttons (with confirmation dialogs).
 
 **Acceptance:** Profile fully functional with edit, export, and delete.
+
+**Implementation notes:**
+- Created `supabase/migrations/20260219120000_profile_rpcs.sql` — 3 RPCs: `get_profile_stats`, `export_user_data`, `delete_own_account`
+- Created `supabase/__tests__/00020_profile_rpcs.test.ts` — 10 integration tests
+- Modified `services/profile.service.ts` — added `updateProfile`, `getProfileStats`, `exportData`, `deleteAccount` methods (8 service tests)
+- Created `hooks/useProfile.ts` — `useProfileStats`, `useUpdateProfile`, `useExportData`, `useDeleteAccount` (8 hook tests)
+- Modified `app/(tabs)/profile.tsx` — added edit mode (name, avatar, grade system, gym picker), stats section, account actions (export/delete with Alert confirmation) (25 screen tests: 14 existing + 11 new)
+- Updated `hooks/index.ts` — barrel exports for useProfile hooks
+- Regenerated `lib/types/database.types.ts` with new RPCs
+- Total new tests: ~37 (10 integration + 6 service + 8 hook + 11 screen + 2 existing service)
 
 ---
 
