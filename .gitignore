@@ -10,8 +10,8 @@ web-build/
 expo-env.d.ts
 
 # NativeWind — auto-generated TypeScript declarations for className prop support.
-# This file is regenerated on each build and should not be committed.
-nativewind-env.d.ts
+# This file must be committed (per NativeWind docs) so CI can type-check className props.
+# nativewind-env.d.ts
 
 # Native
 .kotlin/
