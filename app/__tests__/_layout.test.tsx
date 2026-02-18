@@ -50,7 +50,8 @@ jest.mock("expo-router", () => {
   const Stack = (props: any) => (
     <View testID="stack">{props.children}</View>
   );
-  Stack.Screen = (_props: any) => null;
+  // Named function so ESLint's react/display-name rule doesn't flag it
+  Stack.Screen = function MockScreen(_props: any) { return null; };
   return {
     Stack,
     useRouter: () => ({
