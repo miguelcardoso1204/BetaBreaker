@@ -2765,9 +2765,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 15.3 — Route Setting Calendar & Workload
+### Step 15.3 — Route Setting Calendar & Workload ✅
 
-**Depends on:** Step 15.2  
+**Depends on:** Step 15.2
 **Relevant requirements:** FR-I1
 
 **What to test:**
@@ -2786,11 +2786,17 @@ Test count: +39 new tests (1027 total passing).
 
 **Acceptance:** Admin can plan and track route setting.
 
+**Implementation notes:**
+- Migration: `20260218120000_setting_sessions.sql` — table, RLS (setter+ SELECT, admin+ write), indexes, `get_setter_workload()` RPC
+- Files created: `services/calendar.service.ts`, `hooks/useSettingCalendar.ts`, `components/admin/CalendarGrid.tsx`, `app/(admin)/calendar.tsx`
+- CalendarGrid built with date-fns (no external calendar library) — month grid, dot indicators, date selection
+- Test counts: 25 integration + 30 unit = 55 new tests; 148 suites, 1215 unit tests passing; 18 integration suites, 457 passing
+
 ---
 
-### Step 15.4 — Grade Consensus View
+### Step 15.4 — Grade Consensus View ✅
 
-**Depends on:** Phase 2 (Step 2.3 consensus function), Step 15.2  
+**Depends on:** Phase 2 (Step 2.3 consensus function), Step 15.2
 **Relevant requirements:** FR-I2
 
 **What to test:**
@@ -2808,6 +2814,14 @@ Test count: +39 new tests (1027 total passing).
 - Service query: routes with grade divergence for a gym.
 
 **Acceptance:** Grade consensus view shows accurate comparisons.
+
+**Implementation notes:**
+- Migration: `20260218140000_grade_consensus_rpcs.sql` — two SECURITY INVOKER RPCs: `get_routes_grade_consensus(p_gym_id)` (routes + consensus + divergence), `get_grade_submissions(p_route_id)` (perceived_grade distribution)
+- Files created: `services/consensus.service.ts`, `hooks/useGradeConsensus.ts`, `components/admin/GradeConsensusCard.tsx`, `app/(admin)/consensus.tsx`
+- "Grade history" test case implemented as grade distribution (count per perceived_grade) — no historical tracking table exists; distribution is more actionable
+- Divergence badge uses traffic-light colors: green (0-1), amber (2), red (3+), gray (no consensus); amber uses black text for WCAG contrast
+- GradeConsensusCard expands on press to lazy-fetch grade distribution via separate RPC
+- Test counts: 12 integration + 30 unit = 42 new tests; 152 suites, 1245 unit tests passing; 19 integration suites, 485 passing
 
 ---
 

@@ -54,3 +54,16 @@ export {
   useDeleteRoute,
   useGenerateQr,
 } from "./useAdminRoutes";
+
+// useSettingCalendar — setting session scheduling: calendar queries + mutations.
+// Powers the admin calendar screen (Step 15.3) for planning setter work.
+export {
+  useSettingSessions,
+  useSetterWorkload,
+  useCreateSettingSession,
+  useUpdateSettingSession,
+  useDeleteSettingSession,
+} from "./useSettingCalendar";
+
+// useGradeConsensus — grade consensus queries for admin grade comparison view (Step 15.4).
+export { useRoutesGradeConsensus, useGradeSubmissions } from "./useGradeConsensus";

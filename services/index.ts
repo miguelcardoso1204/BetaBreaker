@@ -58,3 +58,11 @@ export { gamificationService } from "./gamification.service";
 // Used by useAdminDashboard hook for the gym admin overview screen.
 export { dashboardService } from "./dashboard.service";
 export type { RecentActivityItem } from "./dashboard.service";
+
+// Calendar service — setting session CRUD + setter workload RPC.
+// Used by useSettingCalendar hooks for the admin calendar screen (Step 15.3).
+export { calendarService } from "./calendar.service";
+export type { CreateSessionData, UpdateSessionData } from "./calendar.service";
+
+// Consensus service — grade consensus RPCs for admin grade comparison view (Step 15.4).
+export { consensusService } from "./consensus.service";

@@ -1139,6 +1139,51 @@ export type Database = {
           },
         ]
       }
+      setting_sessions: {
+        Row: {
+          created_at: string
+          gym_id: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          setter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          gym_id: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          setter_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          gym_id?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          setter_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setting_sessions_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "setting_sessions_setter_id_fkey"
+            columns: ["setter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       style_tags: {
         Row: {
           category: string | null
@@ -1444,9 +1489,38 @@ export type Database = {
           total_participants: number
         }[]
       }
+      get_grade_submissions: {
+        Args: { p_route_id: string }
+        Returns: {
+          perceived_grade: number
+          submission_count: number
+        }[]
+      }
       get_gym_active_user_count: {
         Args: { p_gym_id: string; p_period_end: string; p_period_start: string }
         Returns: number
+      }
+      get_routes_grade_consensus: {
+        Args: { p_gym_id: string }
+        Returns: {
+          canonical_grade: number
+          color: string
+          consensus_grade: number
+          divergence: number
+          name: string
+          route_id: string
+          status: string
+          submission_count: number
+          wall_section: string
+        }[]
+      }
+      get_setter_workload: {
+        Args: { p_end_date: string; p_gym_id: string; p_start_date: string }
+        Returns: {
+          display_name: string
+          route_count: number
+          setter_id: string
+        }[]
       }
       get_user_role: { Args: { p_gym_id: string }; Returns: string }
       is_admin: { Args: never; Returns: boolean }
