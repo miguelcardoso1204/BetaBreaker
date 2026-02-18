@@ -478,6 +478,21 @@ export const TIME_PERIODS = ['last_month', 'three_months', 'all_time'] as const;
 /** Union type for analytics time period selectors. */
 export type TimePeriod = typeof TIME_PERIODS[number];
 
+/* ── Setting Session Statuses ──────────────────────────────────── */
+
+/**
+ * Lifecycle statuses for route-setting sessions.
+ *
+ * Each session represents a scheduled day when a setter works at the gym:
+ *   planned   — session is scheduled but hasn't happened yet
+ *   completed — the setter showed up and set routes that day
+ *   cancelled — the session was called off (setter unavailable, wall in use, etc.)
+ */
+export const SETTING_SESSION_STATUSES = ['planned', 'completed', 'cancelled'] as const;
+
+/** Union type of valid setting session statuses. */
+export type SettingSessionStatus = typeof SETTING_SESSION_STATUSES[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',
