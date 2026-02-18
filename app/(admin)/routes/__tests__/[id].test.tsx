@@ -2,12 +2,14 @@
  * Edit Route Screen Tests
  *
  * Tests the route detail/edit screen that shows route info with editable
- * fields, status transition buttons, QR generation, and delete action.
+ * fields, status transition buttons, QR generation, delete action, and
+ * the Report Issue form (Step 15.5).
  *
  * Mock strategy (matching events/[id].test.tsx):
  *   - expo-router: provides routeId via useLocalSearchParams
  *   - useAdminRoutes hooks: control data + capture mutation calls
  *   - useRoutes hooks: useRouteDetail for fetching the route
+ *   - useMaintenanceTickets hooks: useCreateTicket mutation
  *   - useAuth: provide stable admin user
  */
 
@@ -68,6 +70,18 @@ jest.mock("@/hooks/useAdminRoutes", () => ({
   }),
 }));
 
+// ── Mock useMaintenanceTickets hooks ──────────────────────────────────
+// useCreateTicket is used by the Report Issue form on the route detail screen.
+// We capture the mutateAsync call to verify the correct ticket data is sent.
+const mockCreateTicketMutateAsync = jest.fn().mockResolvedValue(undefined);
+
+jest.mock("@/hooks/useMaintenanceTickets", () => ({
+  useCreateTicket: () => ({
+    mutateAsync: mockCreateTicketMutateAsync,
+    isPending: false,
+  }),
+}));
+
 import EditRouteScreen from "../[id]";
 
 const { __mockRouteDetailData } = jest.requireMock<{
@@ -107,6 +121,7 @@ describe("EditRouteScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetMockData();
+    mockCreateTicketMutateAsync.mockClear();
   });
 
   it("shows loading state", () => {
@@ -191,5 +206,55 @@ describe("EditRouteScreen", () => {
     render(<EditRouteScreen />);
 
     expect(screen.getByText("Failed to load route")).toBeOnTheScreen();
+  });
+
+  // ── Report Issue tests (Step 15.5) ──────────────────────────────────
+
+  it("renders Report Issue button", () => {
+    __mockRouteDetailData.data = mockRoute;
+
+    render(<EditRouteScreen />);
+
+    expect(screen.getByText("Report Issue")).toBeOnTheScreen();
+  });
+
+  it("shows issue form when Report Issue is pressed", () => {
+    __mockRouteDetailData.data = mockRoute;
+
+    render(<EditRouteScreen />);
+
+    // Form should not be visible initially
+    expect(screen.queryByTestId("issue-description-input")).toBeNull();
+
+    // Press Report Issue to toggle the form open
+    fireEvent.press(screen.getByText("Report Issue"));
+
+    // Now the text input and submit button should appear
+    expect(screen.getByTestId("issue-description-input")).toBeOnTheScreen();
+    expect(screen.getByText("Submit Issue")).toBeOnTheScreen();
+  });
+
+  it("calls useCreateTicket with correct data on submit", () => {
+    __mockRouteDetailData.data = mockRoute;
+
+    render(<EditRouteScreen />);
+
+    // Open the report form
+    fireEvent.press(screen.getByText("Report Issue"));
+
+    // Type a description
+    fireEvent.changeText(
+      screen.getByTestId("issue-description-input"),
+      "Hold spinning at the crux"
+    );
+
+    // Submit the issue
+    fireEvent.press(screen.getByText("Submit Issue"));
+
+    expect(mockCreateTicketMutateAsync).toHaveBeenCalledWith({
+      route_id: "route-1",
+      reporter_id: "admin-1",
+      description: "Hold spinning at the crux",
+    });
   });
 });

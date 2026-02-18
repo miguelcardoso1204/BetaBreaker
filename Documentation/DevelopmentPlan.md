@@ -2825,9 +2825,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 15.5 — Maintenance Tickets
+### Step 15.5 — Maintenance Tickets ✅
 
-**Depends on:** Phase 2 (Step 2.8), Step 15.1  
+**Depends on:** Phase 2 (Step 2.8), Step 15.1
 **Relevant requirements:** FR-I3
 
 **What to test:**
@@ -2846,6 +2846,12 @@ Test count: +39 new tests (1027 total passing).
 - Admin screen: ticket list with status actions.
 
 **Acceptance:** Full ticket lifecycle works from report to resolution.
+
+**Implementation notes:**
+- Files created: `app/(admin)/maintenance.tsx`, `app/(admin)/__tests__/maintenance.test.tsx`, `services/maintenance.service.ts`, `hooks/useMaintenanceTickets.ts`, `services/__tests__/maintenance.service.test.ts`, `hooks/__tests__/useMaintenanceTickets.test.tsx`
+- Files modified: `app/(admin)/routes/[id].tsx` (Report Issue button + form), `app/(admin)/routes/__tests__/[id].test.tsx` (3 new tests), `lib/constants.ts` (MAINTENANCE_TICKET_STATUSES)
+- Tests: 10 maintenance screen tests, 3 report issue tests on route detail, 5 service tests, 8 hook tests — all passing
+- Admin screen has filter tabs (All/Open/In Progress/Resolved), status action buttons, and delete
 
 ---
 

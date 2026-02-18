@@ -37,6 +37,7 @@ import {
   useGenerateQr,
   useGymSetters,
 } from "@/hooks/useAdminRoutes";
+import { useCreateTicket } from "@/hooks/useMaintenanceTickets";
 import { canonicalToDisplay } from "@/utils/grades";
 
 export default function EditRouteScreen() {
@@ -52,12 +53,18 @@ export default function EditRouteScreen() {
   const updateRoute = useUpdateRoute();
   const deleteRoute = useDeleteRoute();
   const generateQr = useGenerateQr();
+  const createTicket = useCreateTicket();
 
   // ── Local form state (synced from fetched route) ──────────────────
   const [name, setName] = useState("");
   const [color, setColor] = useState("");
   const [wallSection, setWallSection] = useState("");
   const [setterId, setSetterId] = useState<string | null>(null);
+
+  // ── Report Issue form state ────────────────────────────────────────
+  // Tracks whether the issue report form is open and the description text.
+  const [showIssueForm, setShowIssueForm] = useState(false);
+  const [issueDescription, setIssueDescription] = useState("");
 
   // Sync local state when route data arrives or changes.
   useEffect(() => {
@@ -151,6 +158,21 @@ export default function EditRouteScreen() {
 
   function handleGenerateQr() {
     generateQr.mutate({ routeId: route!.id });
+  }
+
+  /** Submit a maintenance ticket for this route */
+  async function handleSubmitIssue() {
+    if (!issueDescription.trim() || !user?.id) return;
+
+    await createTicket.mutateAsync({
+      route_id: route!.id,
+      reporter_id: user.id,
+      description: issueDescription.trim(),
+    });
+
+    // Reset form after successful submission
+    setIssueDescription("");
+    setShowIssueForm(false);
   }
 
   // ── Render ───────────────────────────────────────────────────────
@@ -294,6 +316,43 @@ export default function EditRouteScreen() {
           <Text className="text-text-primary text-sm font-mono" selectable>
             {generateQr.data.token}
           </Text>
+        </View>
+      )}
+
+      {/* ── Report Issue Section ──────────────────────────────────── */}
+      {/* Lets admins/setters report maintenance issues (broken holds,
+          spinning holds, safety concerns) directly from the route detail.
+          Toggling the button reveals a description input + submit form. */}
+      <Pressable
+        onPress={() => setShowIssueForm((prev) => !prev)}
+        accessibilityRole="button"
+        className="bg-surface py-3 rounded-lg items-center mb-4"
+      >
+        <Text className="text-amber-500 font-bold text-base">Report Issue</Text>
+      </Pressable>
+
+      {showIssueForm && (
+        <View className="bg-surface rounded-lg p-3 mb-4">
+          <Text className="text-text-secondary text-sm mb-1">
+            Describe the issue
+          </Text>
+          <TextInput
+            testID="issue-description-input"
+            value={issueDescription}
+            onChangeText={setIssueDescription}
+            placeholder="e.g. Hold spinning on crux move..."
+            placeholderTextColor="#9CA3AF"
+            multiline
+            className="bg-background rounded-lg px-3 py-2 text-text-primary mb-3 min-h-[80px]"
+          />
+          <Pressable
+            onPress={handleSubmitIssue}
+            disabled={!issueDescription.trim() || createTicket.isPending}
+            accessibilityRole="button"
+            className="bg-amber-500 py-2 rounded-lg items-center"
+          >
+            <Text className="text-white font-medium">Submit Issue</Text>
+          </Pressable>
         </View>
       )}
 

@@ -493,6 +493,22 @@ export const SETTING_SESSION_STATUSES = ['planned', 'completed', 'cancelled'] as
 /** Union type of valid setting session statuses. */
 export type SettingSessionStatus = typeof SETTING_SESSION_STATUSES[number];
 
+/* ── Maintenance Ticket Statuses ──────────────────────────────── */
+
+/**
+ * Lifecycle statuses for maintenance tickets on routes.
+ *
+ * Climbers report issues (broken holds, spinning holds, safety concerns)
+ * and the ticket progresses through these statuses:
+ *   open        — newly reported, awaiting setter/admin attention
+ *   in_progress — a setter/admin has acknowledged and is working on it
+ *   resolved    — the issue has been fixed
+ */
+export const MAINTENANCE_TICKET_STATUSES = ['open', 'in_progress', 'resolved'] as const;
+
+/** Union type for maintenance ticket lifecycle status. */
+export type MaintenanceTicketStatus = typeof MAINTENANCE_TICKET_STATUSES[number];
+
 export const QR_PUBLIC_KEY = {
   kty: 'EC',
   crv: 'P-256',
