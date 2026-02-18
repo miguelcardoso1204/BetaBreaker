@@ -48,3 +48,8 @@ export type {
 // Gamification service — reads badges, user badges, streaks, and leaderboard data.
 // All gamification tables are populated by DB triggers; this service is read-only.
 export { gamificationService } from "./gamification.service";
+
+// Dashboard service — admin dashboard metrics: route counts, ascents, recent activity.
+// Used by useAdminDashboard hook for the gym admin overview screen.
+export { dashboardService } from "./dashboard.service";
+export type { RecentActivityItem } from "./dashboard.service";

@@ -41,3 +41,6 @@ export { useBadges, useUserBadges, useUserStreak } from "./useBadges";
 
 // useLeaderboard — fetches ranked leaderboard entries for a gym + time period.
 export { useLeaderboard } from "./useLeaderboard";
+
+// useAdminDashboard — admin dashboard data: route counts, ascents, recent activity.
+export { useAdminDashboard } from "./useAdminDashboard";

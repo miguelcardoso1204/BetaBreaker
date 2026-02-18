@@ -2696,9 +2696,9 @@ Test count: +39 new tests (1027 total passing).
 
 ## Phase 15 — Admin Portal & Route Setting
 
-### Step 15.1 — Admin Dashboard
+### Step 15.1 — Admin Dashboard ✅
 
-**Depends on:** Phase 4 (routes), Phase 7 (QR)  
+**Depends on:** Phase 4 (routes), Phase 7 (QR)
 **Relevant requirements:** FR-O1
 
 **What to test:**
@@ -2716,6 +2716,15 @@ Test count: +39 new tests (1027 total passing).
 - `(admin)/_layout.tsx`: role check → redirect if not gym_admin.
 
 **Acceptance:** Dashboard shows correct stats; non-admins blocked.
+
+**Implementation notes (completed):**
+- Spec deviations: "Sets in progress" → "Retiring Soon" (no `draft` route status exists); "Scan count" → "Total Ascents" (no `qr_scans` table exists)
+- Service: `services/dashboard.service.ts` — 4 thin PostgREST wrappers: `getActiveRouteCount`, `getRetiringRouteCount` (count queries with `head:true`), `getTotalAscentCount` (`!inner` join on routes for gym filtering), `getRecentActivity` (ascents with route + climber joins); exports `RecentActivityItem` type
+- Hook: `hooks/useAdminDashboard.ts` — 4 parallel `useQuery` calls with `enabled: !!gymId`, query keys namespaced under `"adminDashboard"`, aggregated `isLoading`/`error`
+- Screen: `app/(admin)/dashboard.tsx` — 3 stat widgets (active routes, retiring soon, total ascents), FlatList activity feed with climber name, route name, grade, status badge; standard loading/error/empty states
+- Files created: `services/dashboard.service.ts`, `services/__tests__/dashboard.service.test.ts`, `hooks/useAdminDashboard.ts`, `hooks/__tests__/useAdminDashboard.test.ts`, `app/(admin)/dashboard.tsx`, `app/(admin)/__tests__/dashboard.test.tsx`
+- Files modified: `services/index.ts`, `hooks/index.ts`
+- Tests: 18 new (4 service + 7 hook + 7 screen); 139 unit suites, 1159 unit tests passing
 
 ---
 
