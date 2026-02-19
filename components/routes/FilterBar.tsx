@@ -119,11 +119,13 @@ export function FilterBar({
     <View className="px-4 py-2">
       {/* Horizontal row of filter pills */}
       <View className="flex-row gap-2">
-        {/* Min grade pill */}
+        {/* Min grade pill — min-h-[44px] meets Apple's touch target minimum */}
         <Pressable
           testID="filter-grade-min"
           onPress={() => setActivePicker("min")}
-          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel={minLabel}
+          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full min-h-[44px]"
         >
           <Text className="text-text-secondary text-sm">{minLabel}</Text>
           <ChevronDown size={14} className="text-muted ml-1" />
@@ -133,7 +135,9 @@ export function FilterBar({
         <Pressable
           testID="filter-grade-max"
           onPress={() => setActivePicker("max")}
-          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel={maxLabel}
+          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full min-h-[44px]"
         >
           <Text className="text-text-secondary text-sm">{maxLabel}</Text>
           <ChevronDown size={14} className="text-muted ml-1" />
@@ -143,7 +147,9 @@ export function FilterBar({
         <Pressable
           testID="filter-sort"
           onPress={handleSortToggle}
-          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel={sortLabel}
+          className="flex-row items-center bg-surface px-3 py-1.5 rounded-full min-h-[44px]"
         >
           <Text className="text-text-secondary text-sm">{sortLabel}</Text>
         </Pressable>
@@ -166,6 +172,8 @@ export function FilterBar({
             <Pressable
               testID="picker-close"
               onPress={() => setActivePicker(null)}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
             >
               <Text className="text-accent text-base">{t("common.close")}</Text>
             </Pressable>

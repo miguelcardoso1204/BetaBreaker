@@ -182,6 +182,10 @@ export function AppTextInput({
             - text-text-primary: white text for user input
             - text-base: 16px font size (prevents iOS zoom on focus)
             - opacity-50: visual indicator that the field is disabled */}
+        {/* accessibilityLabel uses the field's label text so screen
+            readers can announce "Email, text field" instead of just
+            "text field". This connects the visual label to the input
+            for assistive technology without needing a native <label> tag. */}
         <RNTextInput
           value={value}
           onChangeText={onChangeText}
@@ -194,6 +198,7 @@ export function AppTextInput({
           editable={editable}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          accessibilityLabel={label}
           className={`bg-surface border ${
             error ? "border-error" : "border-border"
           } rounded-lg ${paddingLeft} py-3 ${paddingRight} text-text-primary text-base ${

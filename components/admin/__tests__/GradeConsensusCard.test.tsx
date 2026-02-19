@@ -140,6 +140,21 @@ describe("GradeConsensusCard", () => {
     expect(screen.getByText("No consensus")).toBeTruthy();
   });
 
+  it("has accessibilityRole button with label and hint", () => {
+    // The card should be announced as a button with a descriptive label
+    // and a hint telling the user it's expandable.
+    render(<GradeConsensusCard {...defaultProps} />);
+
+    const card = screen.getByTestId("consensus-card-route-1");
+    expect(card.props.accessibilityRole).toBe("button");
+    expect(card.props.accessibilityLabel).toBe(
+      "Grade consensus for Boulder Alpha"
+    );
+    expect(card.props.accessibilityHint).toBe(
+      "Double tap to expand or collapse"
+    );
+  });
+
   it("expands to show grade distribution on press", () => {
     __mockSubmissionsData.submissions = [
       { perceived_grade: 14, submission_count: 3 },

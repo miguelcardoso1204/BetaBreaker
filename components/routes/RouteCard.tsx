@@ -25,6 +25,8 @@ import { Check, ChevronRight } from "lucide-react-native";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { canonicalToDisplay } from "@/utils/grades";
+import { hexToColorName } from "@/utils/colorNames";
+import { useAccessibilityStore } from "@/stores/accessibilityStore";
 import type { GradeSystem } from "@/lib/constants";
 import type { RouteStatus } from "@/lib/constants";
 import { useTranslation } from "react-i18next";
@@ -84,22 +86,46 @@ export function RouteCard({
 }: RouteCardProps) {
   const { t } = useTranslation();
 
+  // Read the color-aware mode preference from the accessibility store.
+  // When enabled, color names are shown as text next to color swatches
+  // so color-blind users can identify routes without relying on color alone.
+  const colorAwareMode = useAccessibilityStore((s) => s.colorAwareMode);
+
   // Convert the canonical integer grade to a human-readable string
   // in the user's preferred system (e.g., 12 → "V4" for v-scale).
   const gradeDisplay = canonicalToDisplay(route.canonical_grade, userGradeSystem);
 
+  // Build the accessibility label for the Card — screen readers announce
+  // this instead of reading each child text element individually.
+  const cardLabel = t("accessibility.routeCard", {
+    name: route.name ?? t("route.unnamedRoute"),
+    grade: gradeDisplay,
+  });
+
   return (
-    <Card onPress={onPress} testID="route-card" className="mb-3">
+    <Card onPress={onPress} testID="route-card" className="mb-3" accessibilityLabel={cardLabel}>
       <View className="flex-row items-center gap-3">
         {/* Color swatch — a small circle showing the route's hold color.
             This helps climbers identify routes on the wall by color.
-            Only rendered when the route has a color assigned. */}
+            Only rendered when the route has a color assigned.
+            accessibilityLabel provides the color name for screen readers. */}
         {route.color && (
-          <View
-            testID="color-swatch"
-            className="w-10 h-10 rounded-full"
-            style={{ backgroundColor: route.color }}
-          />
+          <View className="flex-row items-center gap-1.5">
+            <View
+              testID="color-swatch"
+              accessibilityLabel={t(hexToColorName(route.color))}
+              className="w-10 h-10 rounded-full"
+              style={{ backgroundColor: route.color }}
+            />
+            {/* Color name text — only shown when color-aware mode is on.
+                Renders the translated color name (e.g., "Red") next to
+                the swatch so color-blind users can identify the route. */}
+            {colorAwareMode && (
+              <Text testID="color-name" className="text-text-secondary text-xs">
+                {t(hexToColorName(route.color))}
+              </Text>
+            )}
+          </View>
         )}
 
         {/* Main content — route name, grade, and status */}

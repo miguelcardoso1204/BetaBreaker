@@ -95,4 +95,36 @@ describe("ProfileBadges", () => {
     // 1 max - 0 pinned = 1 empty slot
     expect(screen.getByTestId("empty-slot-0")).toBeOnTheScreen();
   });
+
+  // ── Accessibility ────────────────────────────────────────────────
+
+  it("edit button has accessibilityRole button with label", () => {
+    // The edit button should be announced as a button so screen reader
+    // users know it's tappable.
+    render(
+      <ProfileBadges
+        pinnedBadges={mockPinnedBadges}
+        onManagePress={jest.fn()}
+        maxPins={3}
+      />
+    );
+
+    const editButton = screen.getByRole("button", { name: /edit/i });
+    expect(editButton).toBeTruthy();
+  });
+
+  it("empty slots have accessibilityLabel", () => {
+    // Empty badge slots should announce their purpose to screen readers
+    // so visually impaired users understand the placeholder.
+    render(
+      <ProfileBadges
+        pinnedBadges={[]}
+        onManagePress={jest.fn()}
+        maxPins={2}
+      />
+    );
+
+    const slot = screen.getByTestId("empty-slot-0");
+    expect(slot.props.accessibilityLabel).toBe("Empty badge slot");
+  });
 });

@@ -173,4 +173,44 @@ describe("PromoCodeInput", () => {
     // Should NOT call mutate since the button is disabled
     expect(mockMutate).not.toHaveBeenCalled();
   });
+
+  // ── Accessibility ──────────────────────────────────────────────────
+
+  it("toggle has accessibilityRole button", () => {
+    // The collapsed "Have a promo code?" text acts as a button and
+    // screen readers should announce it as such.
+    const { getByRole } = render(<PromoCodeInput {...defaultProps} />);
+
+    const toggle = getByRole("button", { name: /have a promo code/i });
+    expect(toggle).toBeTruthy();
+  });
+
+  it("redeem button has accessibilityRole and disabled state", () => {
+    // When expanded with no text entered, the Redeem button should
+    // expose its disabled state via accessibilityState.
+    const { getByText, getByRole } = render(
+      <PromoCodeInput {...defaultProps} />
+    );
+
+    // Expand
+    fireEvent.press(getByText(/have a promo code/i));
+
+    const redeem = getByRole("button", { name: /redeem/i });
+    expect(redeem.props.accessibilityState).toEqual(
+      expect.objectContaining({ disabled: true })
+    );
+  });
+
+  it("text input has accessibilityLabel", () => {
+    // The text input should have a label for screen readers to announce
+    // what content is expected.
+    const { getByText, getByLabelText } = render(
+      <PromoCodeInput {...defaultProps} />
+    );
+
+    // Expand
+    fireEvent.press(getByText(/have a promo code/i));
+
+    expect(getByLabelText(/enter promo code/i)).toBeTruthy();
+  });
 });

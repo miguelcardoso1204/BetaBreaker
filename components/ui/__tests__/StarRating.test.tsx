@@ -77,6 +77,15 @@ describe("StarRating", () => {
     expect(mockOnChange).toHaveBeenCalledWith(0);
   });
 
+  it("uses i18n accessibility labels", () => {
+    // Each star should have an i18n-resolved label like "Rate 3 of 5 stars"
+    // so screen readers announce the purpose in the user's language.
+    render(<StarRating value={0} onChange={mockOnChange} />);
+
+    const star3 = screen.getByTestId("star-3");
+    expect(star3.props.accessibilityLabel).toBe("Rate 3 of 5 stars");
+  });
+
   it("shows gold fill for selected stars and gray for unselected", () => {
     // When value=3, stars 1-3 should be gold (#F59E0B) and filled,
     // while stars 4-5 should be gray (#6B7280) and not filled.

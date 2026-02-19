@@ -159,4 +159,86 @@ describe("BadgePicker", () => {
     );
     expect(onSave).toHaveBeenCalledTimes(1);
   });
+
+  // ── Accessibility ────────────────────────────────────────────────
+
+  it("badge items have checkbox role with checked state", () => {
+    // Each badge in the picker acts as a toggle — screen readers should
+    // announce it as a checkbox with its current selected state.
+    render(
+      <BadgePicker
+        earnedBadges={mockEarnedBadges}
+        pinnedIds={["b1"]}
+        maxPins={3}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        visible={true}
+      />
+    );
+
+    // b1 is pre-selected — should be announced as checked
+    const b1 = screen.getByTestId("picker-item-b1");
+    expect(b1.props.accessibilityRole).toBe("checkbox");
+    expect(b1.props.accessibilityState).toEqual(
+      expect.objectContaining({ checked: true })
+    );
+
+    // b2 is not selected — should be announced as unchecked
+    const b2 = screen.getByTestId("picker-item-b2");
+    expect(b2.props.accessibilityRole).toBe("checkbox");
+    expect(b2.props.accessibilityState).toEqual(
+      expect.objectContaining({ checked: false })
+    );
+  });
+
+  it("badge items have accessibilityLabel with badge name", () => {
+    // Screen readers announce the badge name so users know which badge
+    // they're toggling without seeing the icon.
+    render(
+      <BadgePicker
+        earnedBadges={mockEarnedBadges}
+        pinnedIds={[]}
+        maxPins={3}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        visible={true}
+      />
+    );
+
+    const b1 = screen.getByTestId("picker-item-b1");
+    expect(b1.props.accessibilityLabel).toBe("First V0");
+  });
+
+  it("close button has accessibilityRole button", () => {
+    render(
+      <BadgePicker
+        earnedBadges={mockEarnedBadges}
+        pinnedIds={[]}
+        maxPins={3}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        visible={true}
+      />
+    );
+
+    // Close button should be findable by role + label
+    const closeButton = screen.getByRole("button", { name: /close/i });
+    expect(closeButton).toBeTruthy();
+  });
+
+  it("save button has accessibilityRole button", () => {
+    render(
+      <BadgePicker
+        earnedBadges={mockEarnedBadges}
+        pinnedIds={[]}
+        maxPins={3}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+        visible={true}
+      />
+    );
+
+    const saveButton = screen.getByRole("button", { name: /save/i });
+    expect(saveButton).toBeTruthy();
+  });
 });

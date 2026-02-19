@@ -112,13 +112,12 @@ export function IconButton({
       accessibilityState={{ disabled }}
       testID={testID}
       // NativeWind classes:
-      // - p-2: 8px padding around the icon for a larger touch target
-      //   (Apple's HIG recommends at least 44x44pt touch targets;
-      //    24px icon + 8px padding each side = 40px — close enough
-      //    for most contexts, and the parent can add more)
+      // - p-2.5: 10px padding around the icon for a 44px touch target
+      //   (Apple's HIG requires at least 44x44pt touch targets;
+      //    24px icon + 10px padding each side = 44px — meets minimum)
       // - rounded-full: circular shape, common for icon buttons
       // - opacity-50: visual dimming when disabled
-      className={`p-2 rounded-full ${disabled ? "opacity-50" : ""}`}
+      className={`p-2.5 rounded-full ${disabled ? "opacity-50" : ""}`}
     >
       {/* Render the Lucide icon component.
         * We destructure `icon` as `Icon` (capitalized) because React requires

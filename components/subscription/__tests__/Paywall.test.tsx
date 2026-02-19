@@ -194,4 +194,42 @@ describe("Paywall", () => {
 
     expect(getByText(/have a promo code/i)).toBeTruthy();
   });
+
+  // ── Accessibility ──────────────────────────────────────────────────
+
+  it("subscribe button has accessibilityRole and label", () => {
+    // Screen readers need to announce the Subscribe button with its label
+    // so users know what tapping the element does.
+    const { getByRole } = render(<Paywall {...defaultProps} />);
+
+    const buttons = getByRole("button", { name: /subscribe/i });
+    expect(buttons).toBeTruthy();
+  });
+
+  it("restore button has accessibilityRole and label", () => {
+    const { getByRole } = render(<Paywall {...defaultProps} />);
+
+    const button = getByRole("button", { name: /restore/i });
+    expect(button).toBeTruthy();
+  });
+
+  it("dismiss button has accessibilityRole and label", () => {
+    const { getByRole } = render(<Paywall {...defaultProps} />);
+
+    const button = getByRole("button", { name: /not now/i });
+    expect(button).toBeTruthy();
+  });
+
+  it("subscribe button exposes disabled state when purchase is pending", () => {
+    // accessibilityState.disabled tells screen readers the button
+    // can't be activated right now (purchase is in progress).
+    mockPurchaseMutation.isPending = true;
+
+    const { getByRole } = render(<Paywall {...defaultProps} />);
+
+    const button = getByRole("button", { name: /subscribe/i });
+    expect(button.props.accessibilityState).toEqual(
+      expect.objectContaining({ disabled: true })
+    );
+  });
 });

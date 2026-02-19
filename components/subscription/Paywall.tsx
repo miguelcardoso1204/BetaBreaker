@@ -98,6 +98,9 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
             purchaseMutation.mutate(IAP_PRODUCT_IDS.PRO_MONTHLY)
           }
           disabled={purchaseMutation.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={t("subscription.subscribe")}
+          accessibilityState={{ disabled: purchaseMutation.isPending }}
         >
           <Text style={styles.subscribeButtonText}>{t("subscription.subscribe")}</Text>
         </Pressable>
@@ -123,6 +126,9 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
           style={styles.restoreButton}
           onPress={() => restoreMutation.mutate()}
           disabled={restoreMutation.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={t("subscription.restorePurchases")}
+          accessibilityState={{ disabled: restoreMutation.isPending }}
         >
           <Text style={styles.restoreText}>{t("subscription.restorePurchases")}</Text>
         </Pressable>
@@ -131,7 +137,12 @@ export function Paywall({ visible, onDismiss, feature }: PaywallProps) {
         <PromoCodeInput onSuccess={onDismiss} />
 
         {/* Dismiss link — lets the user close without purchasing */}
-        <Pressable style={styles.dismissButton} onPress={onDismiss}>
+        <Pressable
+          style={styles.dismissButton}
+          onPress={onDismiss}
+          accessibilityRole="button"
+          accessibilityLabel={t("subscription.notNow")}
+        >
           <Text style={styles.dismissText}>{t("subscription.notNow")}</Text>
         </Pressable>
       </View>

@@ -241,6 +241,31 @@ describe("BetaVideoPlayer", () => {
     expect(screen.queryByTestId("delete-video-button")).toBeNull();
   });
 
+  // ── Accessibility ──────────────────────────────────────────
+
+  it("thumbnail has accessibilityRole button with label", () => {
+    // The thumbnail Pressable should be announced as a button with
+    // a label that includes the uploader's name for context.
+    render(<BetaVideoPlayer {...defaultProps} />);
+
+    const thumbnail = screen.getByTestId("video-thumbnail");
+    expect(thumbnail.props.accessibilityRole).toBe("button");
+    expect(thumbnail.props.accessibilityLabel).toBe(
+      "Play beta video by Alex Honnold"
+    );
+  });
+
+  it("retry has accessibilityRole button with label", () => {
+    // The retry Pressable should be announced as a button.
+    mockPlayerStatus = "error";
+    render(<BetaVideoPlayer {...defaultProps} />);
+    fireEvent.press(screen.getByTestId("video-thumbnail"));
+
+    const retry = screen.getByTestId("video-retry");
+    expect(retry.props.accessibilityRole).toBe("button");
+    expect(retry.props.accessibilityLabel).toBe("Retry loading video");
+  });
+
   // ── Retry behavior ───────────────────────────────────────────
 
   it("resets to thumbnail state when retry is tapped on error", () => {

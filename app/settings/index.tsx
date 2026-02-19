@@ -21,7 +21,7 @@
 //      signOut() from useAuth.
 
 import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, Alert, Modal } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert, Modal, Switch } from "react-native";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
@@ -39,6 +39,7 @@ import { useUpdateProfile } from "@/hooks/useProfile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
 import { changeLanguage, SUPPORTED_LANGUAGES } from "@/lib/i18n";
+import { useAccessibilityStore } from "@/stores";
 import type { GradeSystem } from "@/utils/grades";
 
 // The three grade systems users can choose from — same set as the profile
@@ -70,6 +71,11 @@ export default function SettingsScreen() {
 
   // Language picker modal visibility state
   const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
+
+  // Color-aware mode toggle — shows color names next to hold swatches
+  // for users who have difficulty distinguishing colors.
+  const colorAwareMode = useAccessibilityStore((s) => s.colorAwareMode);
+  const setColorAwareMode = useAccessibilityStore((s) => s.setColorAwareMode);
 
   /** Persist grade system change immediately (no save button needed). */
   function handleGradeChange(gs: GradeSystem) {
@@ -139,7 +145,10 @@ export default function SettingsScreen() {
               key={gs.value}
               onPress={() => handleGradeChange(gs.value)}
               testID={`grade-option-${gs.value}`}
-              className={`flex-1 py-2 items-center rounded-lg ${
+              accessibilityRole="radio"
+              accessibilityLabel={t(gs.labelKey)}
+              accessibilityState={{ selected: currentGradeSystem === gs.value }}
+              className={`flex-1 py-2 items-center rounded-lg min-h-[44px] justify-center ${
                 currentGradeSystem === gs.value ? "bg-accent" : "bg-surface"
               }`}
             >
@@ -166,6 +175,8 @@ export default function SettingsScreen() {
         {/* Notification Preferences */}
         <Pressable
           onPress={() => router.push("/settings/notification-preferences")}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.notificationPreferences")}
           className="flex-row items-center px-4 py-4 border-b border-surface"
         >
           <Bell size={20} color="#9CA3AF" />
@@ -178,6 +189,8 @@ export default function SettingsScreen() {
         {/* Community Guidelines */}
         <Pressable
           onPress={() => router.push("/settings/guidelines")}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.communityGuidelines")}
           className="flex-row items-center px-4 py-4 border-b border-surface"
         >
           <BookOpen size={20} color="#9CA3AF" />
@@ -187,10 +200,37 @@ export default function SettingsScreen() {
           <ChevronRight size={20} color="#6B7280" />
         </Pressable>
 
+        {/* Color-aware mode — shows color names next to hold color swatches
+            for users who have difficulty distinguishing colors (FR-Q2). */}
+        <Pressable
+          testID="color-aware-toggle"
+          onPress={() => setColorAwareMode(!colorAwareMode)}
+          accessibilityRole="switch"
+          accessibilityLabel={t("settings.colorAwareMode")}
+          accessibilityState={{ checked: colorAwareMode }}
+          className="flex-row items-center px-4 py-4 border-b border-surface"
+        >
+          <View className="flex-1">
+            <Text className="text-text-primary text-base">
+              {t("settings.colorAwareMode")}
+            </Text>
+            <Text className="text-text-secondary text-sm">
+              {t("settings.colorAwareModeDesc")}
+            </Text>
+          </View>
+          <Switch
+            value={colorAwareMode}
+            onValueChange={setColorAwareMode}
+            trackColor={{ true: "#7C3AED" }}
+          />
+        </Pressable>
+
         {/* Language — interactive picker that opens a modal */}
         <Pressable
           testID="language-row"
           onPress={() => setLanguagePickerVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.language")}
           className="flex-row items-center px-4 py-4 border-b border-surface"
         >
           <Globe size={20} color="#9CA3AF" />
@@ -240,6 +280,8 @@ export default function SettingsScreen() {
         <Pressable
           onPress={handleSignOut}
           testID="sign-out-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("settings.signOut")}
           className="flex-row items-center justify-center py-3 rounded-lg bg-red-100"
         >
           <LogOut size={20} color="#DC2626" />
@@ -275,6 +317,9 @@ export default function SettingsScreen() {
                   key={lang.code}
                   testID={`language-option-${lang.code}`}
                   onPress={() => handleLanguageSelect(lang.code)}
+                  accessibilityRole="radio"
+                  accessibilityLabel={lang.name}
+                  accessibilityState={{ selected: isActive }}
                   className={`flex-row items-center px-4 py-4 rounded-lg mb-2 ${
                     isActive ? "bg-accent/10" : ""
                   }`}

@@ -96,6 +96,9 @@ export default function GradeConsensusCard({
     <Pressable
       testID={`consensus-card-${routeId}`}
       onPress={() => setExpanded((prev) => !prev)}
+      accessibilityRole="button"
+      accessibilityLabel={t("accessibility.consensusCard", { name })}
+      accessibilityHint={t("accessibility.expandHint")}
       className="bg-surface rounded-lg p-3 mb-2"
     >
       {/* ── Header: name + color dot + chevron ─────────────────── */}

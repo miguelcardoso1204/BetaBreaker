@@ -23,3 +23,4 @@ export { useRouteFilterStore } from "./routeFilterStore";
 export { useSessionStore } from "./sessionStore";
 export { useOfflineStore } from "./offlineStore";
 export type { OfflineAction } from "./offlineStore";
+export { useAccessibilityStore } from "./accessibilityStore";

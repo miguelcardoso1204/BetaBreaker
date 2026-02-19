@@ -109,7 +109,12 @@ export function BetaVideoPlayer({
       {!isActive ? (
         // THUMBNAIL STATE: Dark placeholder with a centered Play icon.
         // Tapping anywhere on it activates the player.
-        <Pressable testID="video-thumbnail" onPress={handleActivate}>
+        <Pressable
+          testID="video-thumbnail"
+          onPress={handleActivate}
+          accessibilityRole="button"
+          accessibilityLabel={t("video.playBeta", { name: uploaderName })}
+        >
           <View className="bg-gray-800 rounded-xl items-center justify-center aspect-video">
             <Play size={48} color="#FFFFFF" />
           </View>
@@ -118,7 +123,12 @@ export function BetaVideoPlayer({
         // ERROR STATE: Video failed to load (bad URL, network error, etc.)
         // Show a user-friendly message and a retry button that resets
         // the player so they can try again.
-        <Pressable testID="video-retry" onPress={handleRetry}>
+        <Pressable
+          testID="video-retry"
+          onPress={handleRetry}
+          accessibilityRole="button"
+          accessibilityLabel={t("video.retryLoad")}
+        >
           <View className="bg-gray-800 rounded-xl items-center justify-center aspect-video">
             <AlertCircle size={32} color="#EF4444" />
             <Text className="text-red-400 mt-2 font-medium">

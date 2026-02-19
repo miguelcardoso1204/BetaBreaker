@@ -103,6 +103,18 @@ jest.mock("lucide-react-native", () => {
   };
 });
 
+// Mock accessibility store for color-aware mode toggle.
+// Uses mutable state pattern so tests can control the value.
+const mockAccessibilityState = {
+  colorAwareMode: false,
+  setColorAwareMode: jest.fn(),
+};
+
+jest.mock("@/stores", () => ({
+  useAccessibilityStore: (selector: (s: any) => any) =>
+    selector(mockAccessibilityState),
+}));
+
 import SettingsScreen from "../index";
 
 // ── Tests ────────────────────────────────────────────────────────────
@@ -116,6 +128,7 @@ describe("SettingsScreen", () => {
       preferredGradeSystem: "v-scale",
       tier: "free",
     };
+    mockAccessibilityState.colorAwareMode = false;
   });
 
   // ── Header ─────────────────────────────────────────────────────────
@@ -298,5 +311,57 @@ describe("SettingsScreen", () => {
     expect(mockSignOut).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
+  });
+
+  // ── Color-Aware Mode Toggle ──────────────────────────────────────
+
+  it("renders color-aware mode toggle", () => {
+    render(<SettingsScreen />);
+
+    expect(screen.getByText("Color-Aware Mode")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Show color names next to hold color swatches")
+    ).toBeOnTheScreen();
+  });
+
+  it("tapping color-aware toggle calls setColorAwareMode", () => {
+    render(<SettingsScreen />);
+
+    fireEvent.press(screen.getByTestId("color-aware-toggle"));
+    expect(mockAccessibilityState.setColorAwareMode).toHaveBeenCalledWith(true);
+  });
+
+  // ── Accessibility Props ──────────────────────────────────────────
+
+  it("grade system options have radio role with selected state", () => {
+    render(<SettingsScreen />);
+
+    const vScale = screen.getByTestId("grade-option-v-scale");
+    expect(vScale.props.accessibilityRole).toBe("radio");
+    expect(vScale.props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true })
+    );
+
+    const font = screen.getByTestId("grade-option-font");
+    expect(font.props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: false })
+    );
+  });
+
+  it("sign out button has accessibilityRole button", () => {
+    render(<SettingsScreen />);
+
+    const signOut = screen.getByTestId("sign-out-button");
+    expect(signOut.props.accessibilityRole).toBe("button");
+  });
+
+  it("color-aware toggle has switch role with checked state", () => {
+    render(<SettingsScreen />);
+
+    const toggle = screen.getByTestId("color-aware-toggle");
+    expect(toggle.props.accessibilityRole).toBe("switch");
+    expect(toggle.props.accessibilityState).toEqual(
+      expect.objectContaining({ checked: false })
+    );
   });
 });

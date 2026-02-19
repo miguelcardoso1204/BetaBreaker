@@ -27,6 +27,7 @@
 import React from "react";
 import { View, Pressable } from "react-native";
 import { Star } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 
 // ── Props ────────────────────────────────────────────────────────────
 
@@ -59,6 +60,8 @@ export function StarRating({
   disabled = false,
   testID = "star",
 }: StarRatingProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-row gap-1" testID={`${testID}-container`}>
       {/* Render 5 stars. Array.from({ length: 5 }) creates [undefined, undefined, ...],
@@ -85,9 +88,12 @@ export function StarRating({
             }
             disabled={disabled}
             accessibilityRole="button"
-            accessibilityLabel={`Rate ${starNumber} of 5 stars`}
+            accessibilityLabel={t("accessibility.rateStar", { number: starNumber, total: 5 })}
             accessibilityState={{ disabled, selected: isFilled }}
-            className={`p-1 ${disabled ? "opacity-50" : ""}`}
+            // min-h-[44px] min-w-[44px] meets Apple's 44pt touch target minimum.
+            // items-center justify-center keeps the star visually centered
+            // within the larger touch area so spacing looks compact.
+            className={`min-h-[44px] min-w-[44px] items-center justify-center ${disabled ? "opacity-50" : ""}`}
           >
             <Star
               size={size}

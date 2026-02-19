@@ -157,9 +157,14 @@ export function Avatar({
   // `textClass` is the NativeWind class controlling initials font size.
   const { dimension, textClass } = sizeConfig[size];
 
+  // accessibilityLabel is on the outer View (not the inner Image)
+  // so it works for BOTH rendering modes — image and initials. Previously
+  // it was on the Image, so initials mode had no a11y label at all.
+  // Screen readers now announce "Alex's avatar" regardless of mode.
   return (
     <View
       testID={testID}
+      accessibilityLabel={`${name}'s avatar`}
       // NativeWind classes for the outer container:
       // - rounded-full: makes the square View into a perfect circle
       //   (only works when width === height, which we ensure via style)
@@ -185,7 +190,6 @@ export function Avatar({
           source={{ uri }}
           style={{ width: dimension, height: dimension }}
           contentFit="cover"
-          accessibilityLabel={`${name}'s avatar`}
         />
       ) : (
         // --- Initials fallback mode ---

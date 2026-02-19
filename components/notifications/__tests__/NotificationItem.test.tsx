@@ -120,4 +120,44 @@ describe("NotificationItem", () => {
 
     expect(screen.getByTestId("icon-bell")).toBeOnTheScreen();
   });
+
+  // ── Accessibility ──────────────────────────────────────────────
+
+  it("has accessibilityRole button with label including title and body", () => {
+    // Screen readers announce the notification as a tappable button with
+    // the title and body combined, so users hear the full context.
+    render(
+      <NotificationItem item={baseNotification} onPress={mockOnPress} />
+    );
+
+    const pressable = screen.getByRole("button");
+    expect(pressable.props.accessibilityLabel).toContain("New Badge Earned!");
+    expect(pressable.props.accessibilityLabel).toContain(
+      "You earned the First Flash badge"
+    );
+  });
+
+  it("includes unread status in accessibility label for unread notifications", () => {
+    // Unread notifications should announce that status so screen reader
+    // users know which notifications they haven't seen yet.
+    render(
+      <NotificationItem item={baseNotification} onPress={mockOnPress} />
+    );
+
+    const pressable = screen.getByRole("button");
+    expect(pressable.props.accessibilityLabel).toContain("Unread");
+  });
+
+  it("omits unread status in accessibility label for read notifications", () => {
+    // Read notifications don't need the "Unread" announcement — that
+    // would be confusing.
+    const readNotification = { ...baseNotification, read: true };
+
+    render(
+      <NotificationItem item={readNotification} onPress={mockOnPress} />
+    );
+
+    const pressable = screen.getByRole("button");
+    expect(pressable.props.accessibilityLabel).not.toContain("Unread");
+  });
 });

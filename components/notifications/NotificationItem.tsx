@@ -92,6 +92,8 @@ export function NotificationItem({ item, onPress }: NotificationItemProps) {
     <Pressable
       testID={`notification-item-${item.id}`}
       onPress={() => onPress(item.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.title}. ${item.body}${!item.read ? `. ${t("accessibility.unread")}` : ""}`}
       // Read notifications fade to 50% opacity so unread items pop
       className={`flex-row items-center px-4 py-3 ${item.read ? "opacity-50" : ""}`}
     >

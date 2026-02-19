@@ -100,6 +100,35 @@ describe("FilterBar", () => {
     expect(screen.getByText("V12")).toBeOnTheScreen();
   });
 
+  it("pills have accessibilityRole button with labels", () => {
+    // All three filter pills should be announced as buttons by screen
+    // readers with descriptive labels matching their current value.
+    render(<FilterBar {...defaultProps} />);
+
+    const minPill = screen.getByTestId("filter-grade-min");
+    expect(minPill.props.accessibilityRole).toBe("button");
+    expect(minPill.props.accessibilityLabel).toBe("Min: Any");
+
+    const maxPill = screen.getByTestId("filter-grade-max");
+    expect(maxPill.props.accessibilityRole).toBe("button");
+    expect(maxPill.props.accessibilityLabel).toBe("Max: Any");
+
+    const sortPill = screen.getByTestId("filter-sort");
+    expect(sortPill.props.accessibilityRole).toBe("button");
+    expect(sortPill.props.accessibilityLabel).toBe("Newest ↓");
+  });
+
+  it("picker close button has accessibilityRole button", () => {
+    render(<FilterBar {...defaultProps} />);
+
+    // Open the picker
+    fireEvent.press(screen.getByTestId("filter-grade-min"));
+
+    const closeBtn = screen.getByTestId("picker-close");
+    expect(closeBtn.props.accessibilityRole).toBe("button");
+    expect(closeBtn.props.accessibilityLabel).toBe("Close");
+  });
+
   it("calls onGradeMinChange with canonical value when grade is selected", () => {
     const onGradeMinChange = jest.fn();
     render(

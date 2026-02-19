@@ -76,6 +76,13 @@ export interface CardProps {
    * needing to wrap the Card in another View.
    */
   className?: string;
+
+  /**
+   * Accessibility label for screen readers. Only relevant when onPress is
+   * provided (i.e., the card is interactive). Screen readers will announce
+   * this text so users know what tapping the card does.
+   */
+  accessibilityLabel?: string;
 }
 
 // --- Variant Style Map ---
@@ -127,6 +134,7 @@ export function Card({
   onPress,
   testID,
   className = "",
+  accessibilityLabel,
 }: CardProps) {
   // Build the full class string by combining:
   // 1. "p-4" — 16px padding on all sides (consistent inner spacing)
@@ -146,8 +154,17 @@ export function Card({
     //   - onPress callback for tap events
     //   - Automatic accessibility handling (screen readers announce it as tappable)
     //   - Future hover/focus support for web (Expo supports web)
+    // When the card is interactive, Pressable gets accessibilityRole="button"
+    // so screen readers announce it as tappable, and the accessibilityLabel
+    // provides context about what tapping it does (e.g., "Blue Thunder, V4").
     return (
-      <Pressable onPress={onPress} testID={testID} className={baseClasses}>
+      <Pressable
+        onPress={onPress}
+        testID={testID}
+        className={baseClasses}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
         {children}
       </Pressable>
     );

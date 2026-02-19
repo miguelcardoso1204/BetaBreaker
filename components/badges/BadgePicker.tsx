@@ -139,7 +139,12 @@ export function BadgePicker({
             <Text className="text-text-primary text-lg font-bold">
               {t("badges.selectBadges")}
             </Text>
-            <Pressable onPress={onClose}>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.close")}
+              className="p-2"
+            >
               <Text className="text-text-secondary text-sm">{t("common.close")}</Text>
             </Pressable>
           </View>
@@ -159,6 +164,9 @@ export function BadgePicker({
                     key={ub.badge_id}
                     testID={`picker-item-${ub.badge_id}`}
                     onPress={() => handleToggle(ub.badge_id)}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={ub.badge.name}
+                    accessibilityState={{ checked: isSelected }}
                     className="items-center"
                   >
                     {/* Badge icon display */}
@@ -190,6 +198,8 @@ export function BadgePicker({
           {/* Save button — commits the selection */}
           <Pressable
             onPress={handleSave}
+            accessibilityRole="button"
+            accessibilityLabel={t("common.save")}
             className="bg-accent rounded-lg py-3 items-center"
           >
             <Text className="text-white font-semibold text-base">{t("common.save")}</Text>

@@ -138,7 +138,9 @@
     "signOut": "Sign Out",
     "signOutConfirmTitle": "Sign Out",
     "signOutConfirmBody": "Are you sure you want to sign out?",
-    "languagePickerTitle": "Select Language"
+    "languagePickerTitle": "Select Language",
+    "colorAwareMode": "Color-Aware Mode",
+    "colorAwareModeDesc": "Show color names next to hold color swatches"
   },
 
   "onboarding": {
@@ -416,7 +418,9 @@
     "ownershipTitle": "Content Ownership",
     "ownershipBody": "By uploading, you confirm that this video is your original content and you have the right to share it. Videos that violate copyright may be removed.",
     "ownershipAffirm": "I affirm that I own this content",
-    "upload": "Upload"
+    "upload": "Upload",
+    "playBeta": "Play beta video by {{name}}",
+    "retryLoad": "Retry loading video"
   },
 
   "filter": {
@@ -642,5 +646,35 @@
     "noLeaderboards": "No enrolled leaderboards",
     "joinPrompt": "Log climbs at a gym to join their weekly leaderboard",
     "findGyms": "Find Gyms"
+  },
+
+  "accessibility": {
+    "colorAwareMode": "Color-aware mode",
+    "colorAwareModeDesc": "Show color names next to hold color swatches",
+    "routeCard": "{{name}}, {{grade}}",
+    "routeStatus": "Status: {{status}}",
+    "routeSent": "Completed",
+    "holdColor": "Hold color: {{color}}",
+    "unread": "Unread",
+    "emptyBadgeSlot": "Empty badge slot",
+    "consensusCard": "Grade consensus for {{name}}",
+    "expandHint": "Double tap to expand or collapse",
+    "rateStar": "Rate {{number}} of {{total}} stars"
+  },
+
+  "colors": {
+    "red": "Red",
+    "blue": "Blue",
+    "green": "Green",
+    "yellow": "Yellow",
+    "orange": "Orange",
+    "pink": "Pink",
+    "purple": "Purple",
+    "white": "White",
+    "black": "Black",
+    "gray": "Gray",
+    "brown": "Brown",
+    "teal": "Teal",
+    "unknown": "Unknown"
   }
 }

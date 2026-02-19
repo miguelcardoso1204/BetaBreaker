@@ -264,6 +264,23 @@ describe("AppTextInput", () => {
     expect(screen.getByText("EyeOffIcon")).toBeOnTheScreen();
   });
 
+  // -- Accessibility --
+
+  it("input is findable by its label text via accessibilityLabel", () => {
+    // The native <TextInput> gets accessibilityLabel={label}, which means
+    // screen readers announce "Email, text field" and test code can find
+    // the input with getByLabelText("Email").
+    render(
+      <AppTextInput
+        label="Email"
+        value=""
+        onChangeText={() => {}}
+        placeholder="your@email.com"
+      />
+    );
+    expect(screen.getByLabelText("Email")).toBeOnTheScreen();
+  });
+
   // -- No regression --
 
   it("renders without icons when no icon props provided", () => {

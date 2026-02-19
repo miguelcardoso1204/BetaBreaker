@@ -55,6 +55,8 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
       <Pressable
         style={styles.toggleButton}
         onPress={() => setExpanded(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t("subscription.havePromoCode")}
       >
         <Text style={styles.toggleText}>{t("subscription.havePromoCode")}</Text>
       </Pressable>
@@ -72,6 +74,7 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
         autoCapitalize="characters"
         autoCorrect={false}
         editable={!redeemMutation.isPending}
+        accessibilityLabel={t("subscription.promoPlaceholder")}
       />
 
       <Pressable
@@ -82,6 +85,9 @@ export function PromoCodeInput({ onSuccess }: PromoCodeInputProps) {
         ]}
         onPress={() => redeemMutation.mutate(code.trim())}
         disabled={!code.trim() || redeemMutation.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={t("subscription.redeem")}
+        accessibilityState={{ disabled: !code.trim() || redeemMutation.isPending }}
       >
         <Text style={styles.redeemButtonText}>{t("subscription.redeem")}</Text>
       </Pressable>

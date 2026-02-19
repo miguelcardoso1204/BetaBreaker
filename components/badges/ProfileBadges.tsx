@@ -79,7 +79,12 @@ export function ProfileBadges({
         <Text className="text-text-primary text-base font-semibold">
           {t("badges.pinnedBadges")}
         </Text>
-        <Pressable onPress={onManagePress}>
+        <Pressable
+          onPress={onManagePress}
+          accessibilityRole="button"
+          accessibilityLabel={t("badges.edit")}
+          className="p-2"
+        >
           <Text className="text-accent text-sm font-medium">{t("badges.edit")}</Text>
         </Pressable>
       </View>
@@ -103,6 +108,7 @@ export function ProfileBadges({
           <View
             key={`empty-${index}`}
             testID={`empty-slot-${index}`}
+            accessibilityLabel={t("accessibility.emptyBadgeSlot")}
             className="items-center"
           >
             <View

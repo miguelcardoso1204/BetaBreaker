@@ -70,6 +70,24 @@ describe("Avatar", () => {
     expect(screen.getByText("A")).toBeOnTheScreen();
   });
 
+  // --- Accessibility ---
+
+  it("image mode is findable by accessibilityLabel", () => {
+    // The outer View now has accessibilityLabel (moved from the inner Image)
+    // so screen readers announce "Alex's avatar" in image mode.
+    render(
+      <Avatar uri="https://example.com/photo.jpg" name="Alex" testID="avatar" />
+    );
+    expect(screen.getByLabelText("Alex's avatar")).toBeOnTheScreen();
+  });
+
+  it("initials mode is findable by accessibilityLabel", () => {
+    // Previously, accessibilityLabel was on the inner Image — initials
+    // mode had no label at all. Now it's on the outer View, covering both.
+    render(<Avatar name="Alex" testID="avatar" />);
+    expect(screen.getByLabelText("Alex's avatar")).toBeOnTheScreen();
+  });
+
   // --- Size variants ---
 
   it("renders small size", () => {

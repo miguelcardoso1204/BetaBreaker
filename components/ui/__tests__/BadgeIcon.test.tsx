@@ -58,6 +58,15 @@ describe("BadgeIcon", () => {
     expect(container).toHaveStyle({ opacity: 0.4 });
   });
 
+  it("is findable by accessibilityLabel matching the badge name", () => {
+    // The outer View has accessibilityLabel={name} so screen readers
+    // announce badge names (e.g., "First V0") when navigating the gallery.
+    render(
+      <BadgeIcon iconKey="badge-v0" name="First V0" testID="badge-icon" />
+    );
+    expect(screen.getByLabelText("First V0")).toBeOnTheScreen();
+  });
+
   it("supports size variants", () => {
     // The "sm" size is used in compact layouts (e.g., pinned badges on
     // profile header). The "md" size is used in the full badge gallery.

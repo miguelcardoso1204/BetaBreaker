@@ -138,7 +138,9 @@
     "signOut": "Terminar Sessão",
     "signOutConfirmTitle": "Terminar Sessão",
     "signOutConfirmBody": "Tem a certeza que deseja terminar sessão?",
-    "languagePickerTitle": "Selecionar Idioma"
+    "languagePickerTitle": "Selecionar Idioma",
+    "colorAwareMode": "Modo Adaptado a Cores",
+    "colorAwareModeDesc": "Mostrar nomes das cores junto às amostras de cor das presas"
   },
 
   "onboarding": {
@@ -416,7 +418,9 @@
     "ownershipTitle": "Propriedade do Conteúdo",
     "ownershipBody": "Ao carregar, confirma que este vídeo é o seu conteúdo original e que tem o direito de o partilhar. Vídeos que violem direitos de autor podem ser removidos.",
     "ownershipAffirm": "Afirmo que sou proprietário deste conteúdo",
-    "upload": "Carregar"
+    "upload": "Carregar",
+    "playBeta": "Reproduzir vídeo beta de {{name}}",
+    "retryLoad": "Tentar carregar vídeo novamente"
   },
 
   "filter": {
@@ -642,5 +646,35 @@
     "noLeaderboards": "Sem rankings inscritos",
     "joinPrompt": "Registe escaladas num ginásio para entrar no ranking semanal",
     "findGyms": "Encontrar Ginásios"
+  },
+
+  "accessibility": {
+    "colorAwareMode": "Modo adaptado a cores",
+    "colorAwareModeDesc": "Mostrar nomes das cores junto às amostras de cor das presas",
+    "routeCard": "{{name}}, {{grade}}",
+    "routeStatus": "Estado: {{status}}",
+    "routeSent": "Concluída",
+    "holdColor": "Cor da presa: {{color}}",
+    "unread": "Não lida",
+    "emptyBadgeSlot": "Espaço de distintivo vazio",
+    "consensusCard": "Consenso de grau para {{name}}",
+    "expandHint": "Toque duas vezes para expandir ou recolher",
+    "rateStar": "Avaliar {{number}} de {{total}} estrelas"
+  },
+
+  "colors": {
+    "red": "Vermelho",
+    "blue": "Azul",
+    "green": "Verde",
+    "yellow": "Amarelo",
+    "orange": "Laranja",
+    "pink": "Rosa",
+    "purple": "Roxo",
+    "white": "Branco",
+    "black": "Preto",
+    "gray": "Cinzento",
+    "brown": "Castanho",
+    "teal": "Azul-petróleo",
+    "unknown": "Desconhecido"
   }
 }

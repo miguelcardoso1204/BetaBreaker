@@ -32,6 +32,8 @@ import { RefreshCw } from "lucide-react-native";
 import { canonicalToDisplay } from "@/utils/grades";
 import type { GradeSystem } from "@/utils/grades";
 import type { ScoredRoute } from "@/utils/suggestions";
+import { hexToColorName } from "@/utils/colorNames";
+import { useAccessibilityStore } from "@/stores";
 
 // ── Props ───────────────────────────────────────────────────────
 
@@ -130,9 +132,12 @@ interface RouteCardProps {
  *   - Up to 2 style tag chips (more would crowd the card)
  */
 function RouteCard({ route, gradeSystem, onPress }: RouteCardProps) {
+  const { t } = useTranslation();
   const gradeLabel = canonicalToDisplay(route.canonical_grade, gradeSystem);
   // Only show first 2 tags — more would overflow the compact card layout.
   const displayTags = route.tags.slice(0, 2);
+  // Color-aware mode shows color names next to swatches for color-blind users
+  const colorAwareMode = useAccessibilityStore((s) => s.colorAwareMode);
 
   return (
     <Pressable
@@ -143,10 +148,19 @@ function RouteCard({ route, gradeSystem, onPress }: RouteCardProps) {
     >
       {/* Top row: color dot + grade */}
       <View className="flex-row items-center justify-between mb-1">
-        <View
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: route.color ?? "#9CA3AF" }}
-        />
+        <View className="flex-row items-center gap-1">
+          <View
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: route.color ?? "#9CA3AF" }}
+            accessibilityLabel={t(hexToColorName(route.color))}
+          />
+          {/* When color-aware mode is on, display the color name as text */}
+          {colorAwareMode && route.color && (
+            <Text className="text-text-secondary text-xs">
+              {t(hexToColorName(route.color))}
+            </Text>
+          )}
+        </View>
         <Text className="text-text-secondary text-xs font-medium">
           {gradeLabel}
         </Text>

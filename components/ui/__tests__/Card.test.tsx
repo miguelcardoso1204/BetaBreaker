@@ -68,6 +68,33 @@ describe("Card", () => {
     expect(screen.getByText("Static card")).toBeOnTheScreen();
   });
 
+  // -- Accessibility --
+
+  it("pressable card has accessibilityRole button", () => {
+    // When onPress is provided, the card becomes a Pressable with
+    // accessibilityRole="button" so screen readers announce it as tappable.
+    render(
+      <Card onPress={() => {}} testID="card" accessibilityLabel="Blue Thunder, V4">
+        <Text>Route</Text>
+      </Card>
+    );
+    const card = screen.getByTestId("card");
+    expect(card.props.accessibilityRole).toBe("button");
+    expect(card.props.accessibilityLabel).toBe("Blue Thunder, V4");
+  });
+
+  it("static card does not have accessibilityRole button", () => {
+    // A non-interactive Card renders as a plain View — no button role.
+    // This avoids confusing screen readers on static content containers.
+    render(
+      <Card testID="card">
+        <Text>Static</Text>
+      </Card>
+    );
+    const card = screen.getByTestId("card");
+    expect(card.props.accessibilityRole).toBeUndefined();
+  });
+
   // -- Variants --
   // Variants change the visual style (background color, border) but not behavior.
   // We verify each variant renders without crashing and displays content.

@@ -25,6 +25,11 @@ jest.mock("@/utils/grades", () => ({
   canonicalToDisplay: jest.fn(() => "V4"),
 }));
 
+// Mock hexToColorName — returns a predictable i18n key for tests.
+jest.mock("@/utils/colorNames", () => ({
+  hexToColorName: jest.fn(() => "colors.red"),
+}));
+
 // Mock lucide icons — Jest can't process the SVG transforms.
 jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
@@ -157,5 +162,42 @@ describe("RouteCard", () => {
 
     // Should still render the grade and not crash
     expect(screen.getByText("V4")).toBeOnTheScreen();
+  });
+
+  // -- Accessibility --
+
+  it("card has accessibilityRole button with a11y label", () => {
+    // The outer Card should be announced as a button with a descriptive
+    // label combining route name and grade for screen readers.
+    render(<RouteCard {...defaultProps} />);
+
+    const card = screen.getByTestId("route-card");
+    expect(card.props.accessibilityRole).toBe("button");
+    expect(card.props.accessibilityLabel).toBe("Crimpy McSlab, V4");
+  });
+
+  it("shows color name text when color-aware mode is enabled", () => {
+    // When color-aware mode is on, a text label with the color name
+    // appears next to the swatch for color-blind users.
+    const { useAccessibilityStore } = require("@/stores/accessibilityStore");
+    useAccessibilityStore.setState({ colorAwareMode: true });
+
+    render(<RouteCard {...defaultProps} />);
+
+    expect(screen.getByTestId("color-name")).toBeOnTheScreen();
+    expect(screen.getByText("Red")).toBeOnTheScreen();
+
+    // Clean up
+    useAccessibilityStore.setState({ colorAwareMode: false });
+  });
+
+  it("hides color name text when color-aware mode is disabled", () => {
+    // Default state: color names are not shown as text.
+    const { useAccessibilityStore } = require("@/stores/accessibilityStore");
+    useAccessibilityStore.setState({ colorAwareMode: false });
+
+    render(<RouteCard {...defaultProps} />);
+
+    expect(screen.queryByTestId("color-name")).toBeNull();
   });
 });

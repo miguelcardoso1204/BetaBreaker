@@ -3106,9 +3106,9 @@ Test count: +39 new tests (1027 total passing).
 
 ---
 
-### Step 18.2 — Accessibility Pass
+### Step 18.2 — Accessibility Pass ✅
 
-**Depends on:** All UI phases  
+**Depends on:** All UI phases
 **Relevant requirements:** FR-Q2, FR-Q3, NFR-8
 
 **What to test:**
@@ -3129,6 +3129,14 @@ Test count: +39 new tests (1027 total passing).
 - Test with VoiceOver (iOS) and TalkBack (Android).
 
 **Acceptance:** App passes basic accessibility audit.
+
+**Implementation notes (Step 18.2):**
+
+Files created: `utils/colorNames.ts`, `stores/accessibilityStore.ts`, plus test files (15 + 3 = 18 new tests).
+
+Files modified (a11y props added): Card, TextInput, Avatar, BadgeIcon, IconButton, StarRating, RouteCard, FilterBar, BetaVideoPlayer, GradeConsensusCard, NotificationItem, Paywall, PromoCodeInput, BadgePicker, ProfileBadges, SuggestionsCard, settings/index, stores/index, locales/en.json, locales/pt-PT.json.
+
+Key decisions: Color-aware mode via Zustand store + hexToColorName (Euclidean RGB distance) + i18n color keys. Touch targets use min-h-[44px] or p-2.5 for 44pt minimum. No allowFontScaling={false} found — font scaling passes by default. 77 new unit tests (1387 → 1464 total).
 
 ---
 

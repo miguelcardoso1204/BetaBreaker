@@ -104,9 +104,12 @@ export function BadgeIcon({
   // Earned badges use the accent purple background; unearned use surface grey
   const bgClass = earned ? "bg-accent" : "bg-surface";
 
+  // accessibilityLabel lets screen readers announce the badge name
+  // (e.g., "First V0"), making the badge gallery navigable by voice.
   return (
     <View
       testID={testID}
+      accessibilityLabel={name}
       // The outer container wraps the circle + name label.
       // Centered alignment keeps the name text directly below the circle.
       // opacity: 0.4 for unearned badges dims the entire element (circle + name).
