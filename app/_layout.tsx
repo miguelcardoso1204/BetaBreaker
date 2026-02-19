@@ -27,12 +27,19 @@
 
 import "../global.css";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
+import * as Sentry from "@sentry/react-native";
 import { useFonts } from "expo-font";
-import { Stack, useRouter, useSegments } from "expo-router";
+import {
+  Stack,
+  useNavigationContainerRef,
+  useRouter,
+  useSegments,
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import "react-native-reanimated";
 
@@ -41,6 +48,7 @@ import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePushTokenRegistration } from "@/hooks/usePushTokenRegistration";
 import { useColorScheme } from "@/components/useColorScheme";
 import { queryClient } from "@/lib/queryClient";
+import { initSentry, navigationIntegration } from "@/lib/sentry";
 import i18n, { initI18n } from "@/lib/i18n";
 import { useOfflineStore } from "@/stores/offlineStore";
 
@@ -50,12 +58,84 @@ import { useOfflineStore } from "@/stores/offlineStore";
 // splash screen might flash away during the first render cycle.
 SplashScreen.preventAutoHideAsync();
 
-export {
-  // Catch any errors thrown by the Layout component.
-  // Expo Router uses React Error Boundaries to display a fallback UI
-  // when navigation or rendering fails.
-  ErrorBoundary,
-} from "expo-router";
+// Initialize Sentry at module scope so it captures errors from the very
+// first render cycle. If EXPO_PUBLIC_SENTRY_DSN is not set, this is a no-op.
+initSentry();
+
+/**
+ * Custom ErrorBoundary that reports errors to Sentry before rendering
+ * a fallback UI. Expo Router calls this when navigation or rendering fails.
+ *
+ * WHY CUSTOM?
+ * The default expo-router ErrorBoundary doesn't report to Sentry. By
+ * wrapping it, we ensure every unhandled render error gets captured in
+ * our error tracking dashboard.
+ *
+ * WHY StyleSheet INSTEAD OF NativeWind?
+ * The ErrorBoundary renders OUTSIDE the NativeWind provider (it's a
+ * fallback for when the entire component tree crashes). Using
+ * StyleSheet.create ensures the fallback UI is styled regardless of
+ * whether the NativeWind context is available.
+ */
+export function ErrorBoundary({
+  error,
+  retry,
+}: {
+  error: Error;
+  retry: () => void;
+}) {
+  // Report the error to Sentry once when the boundary catches it.
+  // useEffect ensures this runs after render (not during), which is
+  // the correct timing for side effects in React.
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <View style={errorStyles.container}>
+      <Text style={errorStyles.title}>Something went wrong</Text>
+      <Text style={errorStyles.message}>{error.message}</Text>
+      <Pressable style={errorStyles.button} onPress={retry}>
+        <Text style={errorStyles.buttonText}>Try Again</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// Styles for the error boundary fallback UI. Using StyleSheet.create
+// (not NativeWind) because this renders outside the NativeWind provider.
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+    backgroundColor: "#1a1a2e",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#ffffff",
+    marginBottom: 8,
+  },
+  message: {
+    fontSize: 14,
+    color: "#a0a0b0",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  button: {
+    backgroundColor: "#6366f1",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});
 
 export const unstable_settings = {
   // If the user deep-links to a modal, ensure (tabs) is the initial route
@@ -85,6 +165,23 @@ export function AuthGate() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  // Get a ref to the underlying React Navigation container so Sentry
+  // can track screen transitions as performance transactions. This powers
+  // the "screen load" performance metrics in the Sentry dashboard.
+  const navigationRef = useNavigationContainerRef();
+
+  // Register the navigation container with Sentry's React Navigation
+  // integration. This must happen after the ref is attached to the
+  // navigator (i.e., after the first render), hence useEffect.
+  // The ref is stable across renders so this only fires once.
+  const hasRegistered = useRef(false);
+  useEffect(() => {
+    if (navigationRef && !hasRegistered.current) {
+      navigationIntegration.registerNavigationContainer(navigationRef);
+      hasRegistered.current = true;
+    }
+  }, [navigationRef]);
 
   useEffect(() => {
     // Don't redirect while we're still restoring the session from
@@ -197,7 +294,7 @@ function PushTokenManager() {
  * - SyncManager runs the offline sync engine (subscribes to NetInfo)
  * - AuthGate is the innermost — it reads auth state and picks the route
  */
-export default function RootLayout() {
+function RootLayout() {
   // Load custom fonts. useFonts returns [loaded, error] — a tuple where
   // `loaded` is true once fonts are ready, `error` is set if loading fails.
   const [loaded, error] = useFonts({
@@ -264,3 +361,9 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+// Sentry.wrap() adds automatic touch event breadcrumbs (so you can see
+// which buttons were tapped before a crash) and app start profiling
+// (measures time from native init to first render). In the Jest mock,
+// wrap() returns the component unchanged.
+export default Sentry.wrap(RootLayout);

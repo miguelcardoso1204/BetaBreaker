@@ -65,8 +65,20 @@ jest.mock("expo-router", () => {
       replace: mockReplace,
     }),
     useSegments: () => mockSegments,
+    // useNavigationContainerRef returns a ref-like object that Sentry
+    // uses to track screen transitions. In tests we return a stable mock.
+    useNavigationContainerRef: () => ({ current: null }),
   };
 });
+
+// Mock @/lib/sentry — AuthGate now imports navigationIntegration to
+// register the navigation container for Sentry performance tracking.
+jest.mock("@/lib/sentry", () => ({
+  initSentry: jest.fn(),
+  navigationIntegration: {
+    registerNavigationContainer: jest.fn(),
+  },
+}));
 
 // Import after mocks are set up
 import { AuthGate } from "../_layout";

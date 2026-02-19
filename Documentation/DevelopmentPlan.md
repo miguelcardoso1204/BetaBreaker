@@ -3142,9 +3142,9 @@ Key decisions: Color-aware mode via Zustand store + hexToColorName (Euclidean RG
 
 ## Phase 19 — Error Tracking & Monitoring
 
-### Step 19.1 — Sentry Integration
+### Step 19.1 — Sentry Integration ✅
 
-**Depends on:** Phase 3 (root layout)  
+**Depends on:** Phase 3 (root layout)
 **Relevant requirements:** NFR-10
 
 **What to test:**
@@ -3163,6 +3163,14 @@ Key decisions: Color-aware mode via Zustand store + hexToColorName (Euclidean RG
 - Test with intentional error.
 
 **Acceptance:** Errors appear in Sentry; no PII leaks.
+
+**Implementation notes:**
+
+Files created: `lib/sentry.ts` (initSentry + scrubPii + navigationIntegration), `__mocks__/@sentry/react-native.ts` (Jest manual mock), `lib/__tests__/sentry.test.ts` (16 tests).
+
+Files modified: `app/_layout.tsx` (initSentry at module scope, custom ErrorBoundary with Sentry.captureException, navigation container registration, Sentry.wrap on default export), `app/__tests__/_layout.test.tsx` (added Sentry + sentry lib mocks, useNavigationContainerRef mock), `metro.config.js` (withSentryConfig wrapper with annotateReactComponents), `.env.local` (EXPO_PUBLIC_SENTRY_DSN placeholder).
+
+Key decisions: `scrubPii` uses `ErrorEvent` type (not `Event`) to match Sentry v7 `beforeSend` signature. Navigation integration registered via `useRef` guard to prevent duplicate registration. ErrorBoundary uses `StyleSheet.create` (not NativeWind) since it renders outside the NativeWind provider. Metro config composes `withSentryConfig(withNativeWind(...))` — no Babel plugin needed thanks to `annotateReactComponents`. 16 new unit tests (1464 → 1480 total).
 
 ---
 
