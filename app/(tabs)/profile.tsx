@@ -40,6 +40,7 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Settings } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
@@ -289,9 +290,10 @@ export default function ProfileScreen() {
 
   // ── Authenticated profile ──────────────────────────────────────────
   return (
-    <ScrollView className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <ScrollView className="flex-1">
       {/* Header: Avatar + name + tier badge + edit button */}
-      <View className="items-center pt-8 pb-4">
+      <View className="items-center pt-4 pb-4">
         {isEditing ? (
           // ── Edit mode header ──────────────────────────────────────
           <View className="w-full px-4">
@@ -574,5 +576,6 @@ export default function ProfileScreen() {
         </View>
       </Modal>
     </ScrollView>
+    </SafeAreaView>
   );
 }

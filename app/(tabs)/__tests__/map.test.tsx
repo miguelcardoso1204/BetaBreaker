@@ -20,7 +20,7 @@
  */
 
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react-native";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
 
 // ── Mocks ────────────────────────────────────────────────────────
 
@@ -44,6 +44,17 @@ jest.mock("react-native-maps", () => {
     ),
   };
 });
+
+// Mock expo-location — immediately resolves with "denied" by default so the
+// map falls back to gym-based centering. Individual tests can override this
+// to test the GPS-centered behavior.
+jest.mock("expo-location", () => ({
+  requestForegroundPermissionsAsync: jest.fn(async () => ({
+    status: "denied",
+  })),
+  getCurrentPositionAsync: jest.fn(),
+  Accuracy: { Balanced: 3 },
+}));
 
 // Mock expo-router — useRouter returns push for marker tap navigation.
 const mockPush = jest.fn();
@@ -79,12 +90,13 @@ jest.mock("@/hooks/useAuth", () => ({
 }));
 
 // Mock lucide-react-native — replace SVG icons with simple Views.
-// Search and Star are the icons used by the map screen overlay.
+// Search, Star, and ChevronRight are the icons used by the map screen.
 jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
     Search: (props: any) => <View testID="icon-search" {...props} />,
     Star: (props: any) => <View testID="icon-star" {...props} />,
+    ChevronRight: (props: any) => <View testID="icon-chevron" {...props} />,
   };
 });
 
@@ -115,6 +127,7 @@ const mockGyms = [
     address: "123 Boulder Ave, Portland, OR 97201",
     social_links: null,
     default_grade_system: "v-scale",
+    operating_hours: { monday: { open: "06:00", close: "22:00" }, tuesday: { open: "06:00", close: "22:00" } },
     created_at: "2026-01-01T00:00:00Z",
   },
   {
@@ -125,6 +138,7 @@ const mockGyms = [
     address: "456 Wall St, Seattle, WA 98101",
     social_links: null,
     default_grade_system: "v-scale",
+    operating_hours: null,
     created_at: "2026-01-02T00:00:00Z",
   },
   {
@@ -135,6 +149,7 @@ const mockGyms = [
     address: "789 Nowhere Rd",
     social_links: null,
     default_grade_system: "font",
+    operating_hours: null,
     created_at: "2026-01-03T00:00:00Z",
   },
 ];
@@ -160,77 +175,94 @@ describe("MapScreen", () => {
 
   // ── 1. Map renders ───────────────────────────────────────────────
 
-  it("renders the map view", () => {
+  it("renders the map view", async () => {
     // The MapView component should always render (even with no gyms loaded).
     // We verify this via the testID on our mocked MapView.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
-    expect(screen.getByTestId("map-view")).toBeOnTheScreen();
+    // Wait for the async location effect to resolve before the map appears.
+    await waitFor(() => {
+      expect(screen.getByTestId("map-view")).toBeOnTheScreen();
+    });
   });
 
   // ── 2. Gym markers displayed (null coords excluded) ─────────────
 
-  it("displays markers for gyms with coordinates and excludes null-coord gyms", () => {
+  it("displays markers for gyms with coordinates and excludes null-coord gyms", async () => {
     // Only gym-1 and gym-2 have valid lat/lng. gym-3 has null coordinates
     // and should NOT get a marker — you can't place a marker without coords.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
-    expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
+    await waitFor(() => {
+      expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
+    });
     expect(screen.getByTestId("marker-gym-2")).toBeOnTheScreen();
     expect(screen.queryByTestId("marker-gym-3")).toBeNull();
   });
 
   // ── 3. Search bar renders ────────────────────────────────────────
 
-  it("renders a search bar", () => {
+  it("renders a search bar", async () => {
     // The search input lets users type a gym name to filter markers.
     // We check for the placeholder text, which doubles as a visual label.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
-    expect(
-      screen.getByPlaceholderText("Search gyms...")
-    ).toBeOnTheScreen();
+    await waitFor(() => {
+      expect(
+        screen.getByPlaceholderText("Search gyms...")
+      ).toBeOnTheScreen();
+    });
   });
 
   // ── 4. Favorites filter renders ──────────────────────────────────
 
-  it("renders a favorites filter toggle", () => {
+  it("renders a favorites filter toggle", async () => {
     // The star icon button toggles between showing all gyms and only
     // the user's home gym. testID="favorites-filter" on the Pressable.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
-    expect(screen.getByTestId("favorites-filter")).toBeOnTheScreen();
+    await waitFor(() => {
+      expect(screen.getByTestId("favorites-filter")).toBeOnTheScreen();
+    });
   });
 
-  // ── 5. Bottom sheet shows gym count ──────────────────────────────
+  // ── 5. Bottom sheet lists visible gyms ──────────────────────────
 
-  it("shows the correct gym count in the bottom sheet", () => {
-    // The bottom sheet displays how many gyms are visible on the map.
-    // Only 2 of our 3 mock gyms have coordinates, so count should be "2 gyms".
+  it("lists visible gyms in the bottom sheet", async () => {
+    // The bottom sheet shows a scrollable list of gym names for gyms
+    // currently displayed on the map. Only gyms with coords appear.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
-    expect(screen.getByText("2 gyms")).toBeOnTheScreen();
+    await waitFor(() => {
+      expect(screen.getByText("Summit Climbing Gym")).toBeOnTheScreen();
+    });
+    expect(screen.getByText("Vertical World")).toBeOnTheScreen();
+    // gym-3 has no coords — shouldn't appear in list
+    expect(screen.queryByText("No Coords Gym")).toBeNull();
   });
 
   // ── 6. Tap marker navigates to gym page ──────────────────────────
 
-  it("navigates to gym page when a marker is tapped", () => {
+  it("navigates to gym page when a marker is tapped", async () => {
     // Tapping a gym marker should push the Gym Main Page route for
     // that gym's ID. This is the primary navigation path from the map.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
+    await waitFor(() => {
+      expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
+    });
     fireEvent.press(screen.getByTestId("marker-gym-1"));
 
     expect(mockPush).toHaveBeenCalledWith("/gym/gym-1");
@@ -238,21 +270,26 @@ describe("MapScreen", () => {
 
   // ── 7. Search filters markers ────────────────────────────────────
 
-  it("filters markers and updates count when searching", () => {
+  it("filters markers and updates count when searching", async () => {
     // Typing "Summit" in the search bar should filter to only gym-1
     // (name matches), hide gym-2's marker, and update the count to "1 gym".
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("Search gyms...")).toBeOnTheScreen();
+    });
+
     const searchInput = screen.getByPlaceholderText("Search gyms...");
     fireEvent.changeText(searchInput, "Summit");
 
     // gym-1 matches "Summit" — marker should still be visible
     expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
-    // gym-2 doesn't match — marker should be gone
+    // gym-2 doesn't match — marker and list entry should be gone
     expect(screen.queryByTestId("marker-gym-2")).toBeNull();
-    // Count updates to singular "1 gym" (not "1 gyms")
-    expect(screen.getByText("1 gym")).toBeOnTheScreen();
+    expect(screen.queryByText("Vertical World")).toBeNull();
+    // Only Summit should remain in the list
+    expect(screen.getByText("Summit Climbing Gym")).toBeOnTheScreen();
   });
 });

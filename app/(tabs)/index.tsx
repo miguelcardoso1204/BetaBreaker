@@ -18,6 +18,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useActivityFeed } from "@/hooks/useSocial";
@@ -47,9 +48,9 @@ export default function HomeScreen() {
   const showSuggestions = suggestions.hasAccess && !suggestions.noHomeGym;
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       {/* Welcome header with notification bell */}
-      <View className="px-4 pt-14 pb-2">
+      <View className="px-4 pt-2 pb-2">
         <View className="flex-row items-center justify-between">
           <Text className="text-text-primary text-2xl font-bold flex-1">
             {t("home.welcomeBack")}
@@ -117,6 +118,6 @@ export default function HomeScreen() {
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

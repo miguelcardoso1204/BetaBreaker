@@ -38,8 +38,16 @@ import type { Database } from "@/lib/types/database.types";
  * we may need a chunking strategy in the future.
  */
 const ExpoSecureStoreAdapter = {
-  getItem: (key: string): Promise<string | null> => {
-    return SecureStore.getItemAsync(key);
+  getItem: async (key: string): Promise<string | null> => {
+    // Wrap in try/catch because iOS Keychain can reject access when the
+    // device is locked or during background token refresh ("User interaction
+    // is not allowed"). Returning null lets Supabase treat it as "no stored
+    // session" and retry on the next refresh tick — no crash.
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch {
+      return null;
+    }
   },
   setItem: (key: string, value: string): Promise<void> => {
     return SecureStore.setItemAsync(key, value);

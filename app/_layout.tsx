@@ -29,6 +29,7 @@ import "../global.css";
 
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider } from "react-i18next";
@@ -350,15 +351,17 @@ function RootLayout() {
   // ThemeProvider → provides dark/light colors to React Navigation's UI
   // AuthGate → decides which route group (auth vs tabs) to show
   return (
-    <QueryClientProvider client={queryClient}>
-      <I18nextProvider i18n={i18n}>
-        <SyncManager />
-        <PushTokenManager />
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <AuthGate />
-        </ThemeProvider>
-      </I18nextProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <I18nextProvider i18n={i18n}>
+          <SyncManager />
+          <PushTokenManager />
+          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+            <AuthGate />
+          </ThemeProvider>
+        </I18nextProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -366,4 +369,11 @@ function RootLayout() {
 // which buttons were tapped before a crash) and app start profiling
 // (measures time from native init to first render). In the Jest mock,
 // wrap() returns the component unchanged.
-export default Sentry.wrap(RootLayout);
+//
+// Only wrap when a DSN is configured — otherwise Sentry.wrap() tries to
+// start an "App Start" performance span before the SDK is initialized,
+// which logs a noisy warning. Without a DSN, initSentry() is a no-op,
+// so wrapping would provide no benefit anyway.
+export default process.env.EXPO_PUBLIC_SENTRY_DSN
+  ? Sentry.wrap(RootLayout)
+  : RootLayout;

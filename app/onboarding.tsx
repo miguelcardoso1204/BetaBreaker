@@ -29,8 +29,8 @@ import {
   View,
   Pressable,
   FlatList,
-  SafeAreaView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Mountain, Check } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";

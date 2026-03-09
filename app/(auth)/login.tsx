@@ -31,6 +31,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -99,9 +100,10 @@ export default function LoginScreen() {
     // On iOS, "padding" mode adds padding at the bottom; on Android,
     // "height" mode adjusts the view's height. This prevents the keyboard
     // from covering the input fields — a common mobile UX issue.
+    <SafeAreaView className="flex-1 bg-background">
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       {/* ScrollView ensures the form is scrollable on small screens.
           keyboardShouldPersistTaps="handled" means tapping outside the
@@ -248,5 +250,6 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

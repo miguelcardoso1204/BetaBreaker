@@ -492,6 +492,7 @@ export type Database = {
           latitude: number | null
           longitude: number | null
           name: string
+          operating_hours: Json | null
           social_links: Json | null
         }
         Insert: {
@@ -502,6 +503,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name: string
+          operating_hours?: Json | null
           social_links?: Json | null
         }
         Update: {
@@ -512,6 +514,7 @@ export type Database = {
           latitude?: number | null
           longitude?: number | null
           name?: string
+          operating_hours?: Json | null
           social_links?: Json | null
         }
         Relationships: []

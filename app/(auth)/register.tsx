@@ -30,6 +30,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -172,9 +173,10 @@ export default function RegisterScreen() {
     // mode (shrinks the view). This prevents inputs from being hidden
     // behind the keyboard — especially important on registration screens
     // where there are 3 input fields.
+    <SafeAreaView className="flex-1 bg-background">
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
+      className="flex-1"
     >
       {/* ScrollView ensures the form is scrollable on small screens.
           keyboardShouldPersistTaps="handled" means tapping a button while
@@ -361,5 +363,6 @@ export default function RegisterScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

@@ -264,7 +264,8 @@
     "searchPlaceholder": "Search gyms...",
     "filterFavorites": "Filter favorites",
     "gymCount_one": "{{count}} gym",
-    "gymCount_other": "{{count}} gyms"
+    "gymCount_other": "{{count}} gyms",
+    "hoursNotAvailable": "Hours not available"
   },
 
   "events": {

@@ -264,7 +264,8 @@
     "searchPlaceholder": "Pesquisar ginásios...",
     "filterFavorites": "Filtrar favoritos",
     "gymCount_one": "{{count}} ginásio",
-    "gymCount_other": "{{count}} ginásios"
+    "gymCount_other": "{{count}} ginásios",
+    "hoursNotAvailable": "Horário indisponível"
   },
 
   "events": {

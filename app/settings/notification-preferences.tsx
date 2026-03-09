@@ -22,6 +22,7 @@
 
 import React from "react";
 import { View, Text, ScrollView, Switch } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { ArrowLeft } from "lucide-react-native";
@@ -67,12 +68,13 @@ export default function NotificationPreferencesScreen() {
   const updatePreference = useUpdatePreference();
 
   return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       {/* Header with back button and title */}
-      <View className="px-4 pt-14 pb-4 flex-row items-center">
+      <View className="px-4 pt-2 pb-4 flex-row items-center">
         <IconButton
           icon={ArrowLeft}
           label={t("common.goBack")}
@@ -115,5 +117,6 @@ export default function NotificationPreferencesScreen() {
         </View>
       ))}
     </ScrollView>
+    </SafeAreaView>
   );
 }

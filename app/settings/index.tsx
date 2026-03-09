@@ -22,6 +22,7 @@
 
 import React, { useState } from "react";
 import { View, Text, ScrollView, Pressable, Alert, Modal, Switch } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
@@ -116,12 +117,13 @@ export default function SettingsScreen() {
     "English";
 
   return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      {/* Header: back button + title (same pattern as notification-preferences) */}
-      <View className="px-4 pt-14 pb-4 flex-row items-center">
+      {/* Header: back button + title */}
+      <View className="px-4 pt-2 pb-4 flex-row items-center">
         <IconButton
           icon={ArrowLeft}
           label={t("common.goBack")}
@@ -341,5 +343,6 @@ export default function SettingsScreen() {
         </Pressable>
       </Modal>
     </ScrollView>
+    </SafeAreaView>
   );
 }

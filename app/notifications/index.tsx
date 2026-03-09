@@ -28,6 +28,7 @@
 
 import React from "react";
 import { View, Text, FlatList, ActivityIndicator, Pressable } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Settings, ArrowLeft } from "lucide-react-native";
@@ -63,9 +64,9 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       {/* Header */}
-      <View className="px-4 pt-14 pb-2">
+      <View className="px-4 pt-2 pb-2">
         {/* Top row: back button, title, gear icon */}
         <View className="flex-row items-center justify-between">
           <IconButton
@@ -122,6 +123,6 @@ export default function NotificationsScreen() {
           </Text>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }

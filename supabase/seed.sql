@@ -43,15 +43,16 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 -- ===========================================================================
 -- One gym with realistic metadata. The fixed UUID lets tests and other
 -- seed sections reference it directly without querying.
-INSERT INTO public.gyms (id, name, address, latitude, longitude, social_links, default_grade_system)
+INSERT INTO public.gyms (id, name, address, latitude, longitude, social_links, default_grade_system, operating_hours)
 VALUES (
   '10000000-0000-0000-0000-000000000001',
-  'Summit Climbing Gym',
-  '123 Boulder Ave, Portland, OR 97201',
-  45.5152,   -- Portland latitude
-  -122.6784, -- Portland longitude
-  '{"instagram": "@summitclimbing", "website": "https://summitclimbing.example.com"}'::jsonb,
-  'v-scale'
+  'Vertigo Climbing Center',
+  'Av. Infante D. Henrique 334, Armazém 6, 1800-224 Lisboa',
+  38.7340,   -- Marvila, Lisbon
+  -9.1050,
+  '{"instagram": "@vertigoclimbing", "website": "https://vertigoclimbing.pt"}'::jsonb,
+  'font',
+  '{"monday":{"open":"07:00","close":"23:00"},"wednesday":{"open":"07:00","close":"23:00"},"friday":{"open":"07:00","close":"23:00"},"tuesday":{"open":"10:00","close":"23:00"},"thursday":{"open":"10:00","close":"23:00"},"saturday":{"open":"10:00","close":"20:00"},"sunday":{"open":"10:00","close":"18:00"}}'::jsonb
 )
 ON CONFLICT (id) DO NOTHING;
 
@@ -387,49 +388,71 @@ VALUES (
 -- Section 12: Additional Gyms (for map testing)
 -- ===========================================================================
 -- The map screen needs multiple gym markers to test search, scroll, and
--- the favorites filter. These gyms are spread across Portland and nearby
--- cities so they cluster naturally when zoomed out and separate when zoomed in.
---
--- Each gym has a distinct default_grade_system to test grade display logic.
+-- the favorites filter. These gyms are spread across Lisbon, Porto, and
+-- the Algarve so they cluster naturally when zoomed out and separate when
+-- zoomed in. All real Portuguese climbing gyms with verified addresses.
 
-INSERT INTO public.gyms (id, name, address, latitude, longitude, social_links, default_grade_system)
+INSERT INTO public.gyms (id, name, address, latitude, longitude, social_links, default_grade_system, operating_hours)
 VALUES
-  -- Portland gyms — spread across the city
+  -- Lisbon gyms
   ('10000000-0000-0000-0000-000000000002',
-   'Vertical World',
-   '456 Belmont St, Portland, OR 97214',
-   45.5165, -122.6270,
-   '{"instagram": "@verticalworldpdx", "website": "https://verticalworld.example.com"}'::jsonb,
-   'v-scale'),
+   '9.8 Gravity Climbing',
+   'Av. Severiano Falcão 3B, 2685-379 Prior Velho',
+   38.7960, -9.1230,
+   '{"instagram": "@9.8_gravity_climbing", "website": "https://98gravity.pt"}'::jsonb,
+   'font',
+   '{"monday":{"open":"10:00","close":"23:00"},"tuesday":{"open":"10:00","close":"23:00"},"wednesday":{"open":"10:00","close":"23:00"},"thursday":{"open":"10:00","close":"23:00"},"friday":{"open":"10:00","close":"23:00"},"saturday":{"open":"10:00","close":"23:00"},"sunday":{"open":"10:00","close":"23:00"}}'::jsonb),
 
   ('10000000-0000-0000-0000-000000000003',
-   'The Circuit Bouldering Gym',
-   '789 NW 23rd Ave, Portland, OR 97210',
-   45.5335, -122.6990,
-   '{"instagram": "@thecircuitpdx"}'::jsonb,
-   'font'),
+   'Escala25',
+   'Av. da Índia, Pilar 7 da Ponte 25 de Abril, 1349-028 Lisboa',
+   38.6945, -9.1790,
+   '{"instagram": "@escala25", "website": "https://escala25.com"}'::jsonb,
+   'font',
+   '{"monday":{"open":"14:00","close":"22:00"},"tuesday":{"open":"10:00","close":"22:00"},"wednesday":{"open":"10:00","close":"22:00"},"thursday":{"open":"10:00","close":"22:00"},"friday":{"open":"10:00","close":"21:00"},"saturday":{"open":"10:00","close":"18:00"},"sunday":{"open":"10:00","close":"18:00"}}'::jsonb),
 
+  -- Porto gyms
   ('10000000-0000-0000-0000-000000000004',
-   'Portland Rock Gym',
-   '21 NE 12th Ave, Portland, OR 97232',
-   45.5244, -122.6544,
-   '{"instagram": "@pdxrockgym", "website": "https://pdxrockgym.example.com"}'::jsonb,
-   'v-scale'),
+   'São Rock Climbing',
+   'R. de Godim 312, 4300-277 Porto',
+   41.1490, -8.5850,
+   '{"instagram": "@saorockclimbing", "website": "http://saorockclimbing.com"}'::jsonb,
+   'font',
+   '{"monday":{"open":"16:00","close":"22:00"},"tuesday":{"open":"08:30","close":"22:00"},"wednesday":{"open":"08:30","close":"22:00"},"thursday":{"open":"08:30","close":"22:00"},"friday":{"open":"08:30","close":"22:00"},"saturday":{"open":"10:00","close":"20:00"}}'::jsonb),
 
-  -- Nearby cities — tests map at wider zoom levels
   ('10000000-0000-0000-0000-000000000005',
-   'Stoneworks Climbing',
-   '6775 SW 111th Ave, Beaverton, OR 97008',
-   45.4654, -122.7868,
-   '{"website": "https://stoneworks.example.com"}'::jsonb,
-   'v-scale'),
+   'The North Wall',
+   'R. do Tronco 375, Núcleo Empresarial SARCOL, São Mamede de Infesta',
+   41.1870, -8.6050,
+   '{"instagram": "@thenorthwallclimbing", "website": "https://thenorthwall.pt"}'::jsonb,
+   'font',
+   '{"monday":{"open":"10:00","close":"22:00"},"tuesday":{"open":"10:00","close":"22:00"},"wednesday":{"open":"10:00","close":"22:00"},"thursday":{"open":"10:00","close":"22:00"},"friday":{"open":"10:00","close":"22:00"},"saturday":{"open":"10:00","close":"18:00"},"sunday":{"open":"10:00","close":"14:00"}}'::jsonb),
 
+  -- Porto / Matosinhos / Gaia area
+  ('10000000-0000-0000-0000-000000000007',
+   'PROA Climbing Center',
+   'Av. Menéres 858, 4450-189 Matosinhos',
+   41.1820, -8.6890,
+   '{"instagram": "@proaclimbingcenter", "website": "https://proaclimbingcenter.com"}'::jsonb,
+   'font',
+   '{"monday":{"open":"10:00","close":"20:00"},"tuesday":{"open":"16:00","close":"22:00"},"wednesday":{"open":"10:00","close":"22:00"},"thursday":{"open":"10:00","close":"22:00"},"friday":{"open":"10:00","close":"22:00"},"saturday":{"open":"10:00","close":"20:00"},"sunday":{"open":"10:00","close":"20:00"}}'::jsonb),
+
+  ('10000000-0000-0000-0000-000000000008',
+   'Zone Climb',
+   'Tv. Joaquim Lopes Pintor 81, 4400-750 Vila Nova de Gaia',
+   41.1114, -8.6210,
+   '{"instagram": "@zoneclimbpt", "website": "https://zone.com.pt"}'::jsonb,
+   'font',
+   '{"monday":{"open":"07:00","close":"22:00"},"tuesday":{"open":"07:00","close":"22:00"},"wednesday":{"open":"07:00","close":"22:00"},"thursday":{"open":"07:00","close":"22:00"},"friday":{"open":"07:00","close":"22:00"},"saturday":{"open":"10:00","close":"20:00"},"sunday":{"open":"10:00","close":"20:00"}}'::jsonb),
+
+  -- Algarve
   ('10000000-0000-0000-0000-000000000006',
-   'Crux Rock Gym',
-   '1500 SE Water Ave, Bend, OR 97702',
-   44.0582, -121.3153,
-   '{"instagram": "@cruxbend"}'::jsonb,
-   'yds')
+   'Vertical Escalada',
+   'R. Eça de Queiroz, 8400-018 Lagoa',
+   37.1350, -8.4530,
+   '{"instagram": "@verticalescalada.pt", "website": "https://verticalescalada.pt"}'::jsonb,
+   'font',
+   '{"monday":{"open":"17:00","close":"22:00"},"tuesday":{"open":"17:00","close":"22:00"},"wednesday":{"open":"17:00","close":"22:00"},"thursday":{"open":"17:00","close":"22:00"},"friday":{"open":"17:00","close":"22:00"},"saturday":{"open":"10:00","close":"18:00"}}'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
 
@@ -440,7 +463,7 @@ ON CONFLICT (id) DO NOTHING;
 -- screen has variety when filtering by grade. Sam Setter is used as the
 -- setter for simplicity (in production, each gym would have its own setters).
 
--- Vertical World routes (gym 002) — bouldering focus
+-- 9.8 Gravity routes (gym 002) — bouldering focus
 INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
   ('30000000-0000-0000-0000-000000000101', '10000000-0000-0000-0000-000000000002', 'Jug Haul',           0,  'green',  'main-floor',   '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000102', '10000000-0000-0000-0000-000000000002', 'Pinch Fest',         5,  'blue',   'boulder-cave',  '20000000-0000-0000-0000-000000000002', 'active'),
@@ -450,7 +473,7 @@ INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_sectio
   ('30000000-0000-0000-0000-000000000106', '10000000-0000-0000-0000-000000000002', 'Limit Breaker',     25,  'black',  'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active')
 ON CONFLICT (id) DO NOTHING;
 
--- The Circuit routes (gym 003) — comp-style, graded in Font scale
+-- Escala25 routes (gym 003) — sport climbing at the bridge
 INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
   ('30000000-0000-0000-0000-000000000201', '10000000-0000-0000-0000-000000000003', 'Volume Cruise',      2,  'yellow', 'zone-a',       '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000202', '10000000-0000-0000-0000-000000000003', 'Coordination',       8,  'green',  'zone-b',       '20000000-0000-0000-0000-000000000002', 'active'),
@@ -460,7 +483,7 @@ INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_sectio
   ('30000000-0000-0000-0000-000000000206', '10000000-0000-0000-0000-000000000003', 'World Cup Final',   23,  'blue',   'comp-wall',    '20000000-0000-0000-0000-000000000002', 'active')
 ON CONFLICT (id) DO NOTHING;
 
--- Portland Rock Gym routes (gym 004) — traditional, mixed grades
+-- São Rock routes (gym 004) — indoor climbing, mixed grades
 INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
   ('30000000-0000-0000-0000-000000000301', '10000000-0000-0000-0000-000000000004', 'Warm Up',            0,  'green',  'beginner-wall', '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000302', '10000000-0000-0000-0000-000000000004', 'Layback Crack',      5,  'yellow', 'trad-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
@@ -470,7 +493,7 @@ INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_sectio
   ('30000000-0000-0000-0000-000000000306', '10000000-0000-0000-0000-000000000004', 'The Eliminator',    25,  'purple', 'comp-wall',     '20000000-0000-0000-0000-000000000002', 'retiring_soon')
 ON CONFLICT (id) DO NOTHING;
 
--- Stoneworks routes (gym 005) — family-friendly, skews easier
+-- The North Wall routes (gym 005) — largest climbing space in Portugal
 INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
   ('30000000-0000-0000-0000-000000000401', '10000000-0000-0000-0000-000000000005', 'Rainbow Jug',        0,  'rainbow', 'kids-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000402', '10000000-0000-0000-0000-000000000005', 'Frog Reach',         2,  'green',   'kids-wall',   '20000000-0000-0000-0000-000000000002', 'active'),
@@ -480,7 +503,7 @@ INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_sectio
   ('30000000-0000-0000-0000-000000000406', '10000000-0000-0000-0000-000000000005', 'Stonecutter',       18,  'black',   'main-wall',   '20000000-0000-0000-0000-000000000002', 'active')
 ON CONFLICT (id) DO NOTHING;
 
--- Crux Rock Gym routes (gym 006, Bend) — YDS scale, sport climbing focus
+-- Vertical Escalada routes (gym 006, Lagoa) — Algarve climbing
 INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
   ('30000000-0000-0000-0000-000000000501', '10000000-0000-0000-0000-000000000006', 'First Lead',         0,  'green',  'lead-wall-a',  '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000502', '10000000-0000-0000-0000-000000000006', 'Clip and Go',        5,  'blue',   'lead-wall-a',  '20000000-0000-0000-0000-000000000002', 'active'),
@@ -488,6 +511,26 @@ INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_sectio
   ('30000000-0000-0000-0000-000000000504', '10000000-0000-0000-0000-000000000006', 'Pump Clock',        15,  'orange', 'lead-wall-b',  '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000505', '10000000-0000-0000-0000-000000000006', 'Red Point Project', 20,  'red',    'lead-wall-c',  '20000000-0000-0000-0000-000000000002', 'active'),
   ('30000000-0000-0000-0000-000000000506', '10000000-0000-0000-0000-000000000006', 'Onsight or Bust',   23,  'white',  'lead-wall-c',  '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+-- PROA Climbing Center routes (gym 007, Matosinhos) — bouldering
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000601', '10000000-0000-0000-0000-000000000007', 'Sea Breeze',         0,  'green',  'main-floor',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000602', '10000000-0000-0000-0000-000000000007', 'Porto Traverse',     5,  'blue',   'traverse-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000603', '10000000-0000-0000-0000-000000000007', 'Granite Grip',       8,  'orange', 'main-floor',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000604', '10000000-0000-0000-0000-000000000007', 'Atlantic Wall',     13,  'red',    'overhang-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000605', '10000000-0000-0000-0000-000000000007', 'Matosinhos Power',  18,  'purple', 'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000606', '10000000-0000-0000-0000-000000000007', 'Oceanic Project',   25,  'black',  'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active')
+ON CONFLICT (id) DO NOTHING;
+
+-- Zone Climb routes (gym 008, Vila Nova de Gaia) — bouldering + crossfit space
+INSERT INTO public.routes (id, gym_id, name, canonical_grade, color, wall_section, setter_id, status) VALUES
+  ('30000000-0000-0000-0000-000000000701', '10000000-0000-0000-0000-000000000008', 'Gaia Intro',         0,  'green',  'main-floor',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000702', '10000000-0000-0000-0000-000000000008', 'Volume Hop',         5,  'yellow', 'main-floor',    '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000703', '10000000-0000-0000-0000-000000000008', 'River View',        10,  'blue',   'slab-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000704', '10000000-0000-0000-0000-000000000008', 'Steel Bridge',      13,  'orange', 'overhang-wall', '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000705', '10000000-0000-0000-0000-000000000008', 'Port Wine Power',   18,  'red',    'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active'),
+  ('30000000-0000-0000-0000-000000000706', '10000000-0000-0000-0000-000000000008', 'Douro Dyno',        23,  'purple', 'comp-wall',     '20000000-0000-0000-0000-000000000002', 'active')
 ON CONFLICT (id) DO NOTHING;
 
 
