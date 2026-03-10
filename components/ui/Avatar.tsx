@@ -47,7 +47,7 @@
 // must be a perfect square for `rounded-full` to produce a circle).
 
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 
 /**
@@ -64,6 +64,9 @@ export interface AvatarProps {
   name: string;
   /** Size preset controlling the avatar's dimensions. Defaults to "md". */
   size?: "sm" | "md" | "lg";
+  /** Shape variant — "circle" (default) for round avatars, "square" for
+   *  rounded-corner squares (used on the profile header). */
+  variant?: "circle" | "square";
   /** Optional testID for finding this element in tests. */
   testID?: string;
 }
@@ -80,11 +83,18 @@ export interface AvatarProps {
  * if we add a new size to AvatarProps but forget to add it here,
  * TypeScript will catch the error at compile time.
  */
+// sm and md are fixed pixel sizes for compact layouts (leaderboard rows,
+// list items). lg is computed dynamically — see getLgDimension().
 const sizeConfig = {
   sm: { dimension: 32, textClass: "text-xs" },
   md: { dimension: 40, textClass: "text-sm" },
-  lg: { dimension: 64, textClass: "text-xl" },
 } as const;
+
+/** lg scales to ~35% of screen width, clamped between 80–160px so it
+ *  doesn't get too tiny on small phones or too huge on tablets. */
+function getLgDimension(screenWidth: number) {
+  return Math.min(160, Math.max(80, Math.round(screenWidth * 0.35)));
+}
 
 /**
  * Extracts uppercase initials from a name string.
@@ -150,12 +160,20 @@ export function Avatar({
   uri,
   name,
   size = "md",
+  variant = "circle",
   testID,
 }: AvatarProps) {
-  // Destructure the size config for the selected preset.
-  // `dimension` is the width/height in pixels.
-  // `textClass` is the NativeWind class controlling initials font size.
-  const { dimension, textClass } = sizeConfig[size];
+  // useWindowDimensions re-renders the component on orientation/resize
+  // changes, so the lg avatar stays proportional after rotation.
+  const { width: screenWidth } = useWindowDimensions();
+
+  // For sm/md, use fixed sizes. For lg, compute from screen width.
+  const dimension =
+    size === "lg" ? getLgDimension(screenWidth) : sizeConfig[size].dimension;
+  const textClass =
+    size === "lg"
+      ? dimension >= 120 ? "text-5xl" : dimension >= 96 ? "text-4xl" : "text-3xl"
+      : sizeConfig[size].textClass;
 
   // accessibilityLabel is on the outer View (not the inner Image)
   // so it works for BOTH rendering modes — image and initials. Previously
@@ -174,7 +192,7 @@ export function Avatar({
       //   horizontally and vertically within the circle
       // - bg-accent: purple background — visible when showing initials
       //   (hidden behind the image when a photo is loaded)
-      className="rounded-full overflow-hidden items-center justify-center bg-accent"
+      className={`${variant === "circle" ? "rounded-full" : "rounded-xl"} overflow-hidden items-center justify-center bg-accent`}
       // Inline style for exact pixel dimensions. We use style instead
       // of NativeWind classes because Tailwind's width/height utilities
       // (w-8, h-8, etc.) only support predefined sizes. Our avatar

@@ -36,7 +36,6 @@ import {
   ScrollView,
   Pressable,
   TextInput,
-  Alert,
   Modal,
   FlatList,
 } from "react-native";
@@ -58,8 +57,6 @@ import { useGyms, useSetHomeGym } from "@/hooks/useGyms";
 import {
   useProfileStats,
   useUpdateProfile,
-  useExportData,
-  useDeleteAccount,
 } from "@/hooks/useProfile";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
@@ -111,8 +108,6 @@ export default function ProfileScreen() {
   // Mutations for profile management
   const updateProfile = useUpdateProfile(refreshProfile);
   const setHomeGym = useSetHomeGym();
-  const exportData = useExportData();
-  const deleteAccount = useDeleteAccount(signOut);
 
   // ── Local state ────────────────────────────────────────────────────
 
@@ -229,42 +224,6 @@ export default function ProfileScreen() {
     setPickerVisible(false);
   }
 
-  /** Export user data — confirm first, then trigger the mutation. */
-  function handleExportData() {
-    Alert.alert(
-      t("profile.exportConfirmTitle"),
-      t("profile.exportConfirmBody"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.export"),
-          onPress: async () => {
-            await exportData.mutateAsync();
-            Alert.alert(t("profile.exportCompleteTitle"), t("profile.exportCompleteBody"));
-          },
-        },
-      ]
-    );
-  }
-
-  /** Delete account — double-confirm before triggering the mutation. */
-  function handleDeleteAccount() {
-    Alert.alert(
-      t("profile.deleteConfirmTitle"),
-      t("profile.deleteConfirmBody"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.delete"),
-          style: "destructive",
-          onPress: async () => {
-            await deleteAccount.mutateAsync();
-          },
-        },
-      ]
-    );
-  }
-
   // ── Loading state ──────────────────────────────────────────────────
   if (authLoading) {
     return (
@@ -291,9 +250,20 @@ export default function ProfileScreen() {
   // ── Authenticated profile ──────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      {/* Top bar: Settings gear pinned to top-right */}
+      <View className="flex-row justify-end px-4 pt-2">
+        <IconButton
+          icon={Settings}
+          label={t("settings.title")}
+          onPress={() => router.push("/settings" as any)}
+          size={22}
+          color="#9CA3AF"
+          testID="settings-button"
+        />
+      </View>
     <ScrollView className="flex-1">
       {/* Header: Avatar + name + tier badge + edit button */}
-      <View className="items-center pt-4 pb-4">
+      <View className="pb-4">
         {isEditing ? (
           // ── Edit mode header ──────────────────────────────────────
           <View className="w-full px-4">
@@ -380,44 +350,37 @@ export default function ProfileScreen() {
           </View>
         ) : (
           // ── View mode header ──────────────────────────────────────
-          <>
+          <View className="flex-row items-center w-full px-4">
             <Avatar
               uri={user.avatarUrl ?? undefined}
               name={user.displayName ?? t("profile.climber")}
               size="lg"
+              variant="square"
               testID="profile-avatar"
             />
-            <Text className="text-text-primary text-xl font-bold mt-3">
-              {user.displayName ?? t("profile.climber")}
-            </Text>
-            {/* Tier badge — shows the user's subscription level */}
-            <View className="mt-1">
-              <Badge
-                label={user.tier === "pro" ? t("profile.pro") : t("profile.free")}
-                variant={user.tier === "pro" ? "success" : "default"}
-              />
-            </View>
-            {/* Action row: Edit Profile + Settings gear */}
-            <View className="flex-row items-center gap-3 mt-3">
+            <View className="ml-4 flex-1">
+              <Text className="text-text-primary text-xl font-bold">
+                {user.displayName ?? t("profile.climber")}
+              </Text>
+              {/* Tier badge — shows the user's subscription level */}
+              <View className="flex-row mt-1">
+                <Badge
+                  label={user.tier === "pro" ? t("profile.pro") : t("profile.free")}
+                  variant={user.tier === "pro" ? "success" : "default"}
+                />
+              </View>
+              {/* Edit Profile button */}
               <Pressable
                 onPress={handleStartEditing}
                 testID="edit-profile-button"
-                className="px-4 py-2 rounded-lg bg-surface"
+                className="px-4 py-2 rounded-lg bg-surface mt-2 self-start"
               >
                 <Text className="text-text-primary font-semibold">
                   {t("profile.editProfile")}
                 </Text>
               </Pressable>
-              <IconButton
-                icon={Settings}
-                label={t("settings.title")}
-                onPress={() => router.push("/settings" as any)}
-                size={22}
-                color="#9CA3AF"
-                testID="settings-button"
-              />
             </View>
-          </>
+          </View>
         )}
       </View>
 
@@ -500,35 +463,6 @@ export default function ProfileScreen() {
           })}
         </View>
       )}
-
-      {/* Account actions — export and delete at the bottom of the profile */}
-      <View className="px-4 py-6 mt-4">
-        <Text className="text-text-primary text-lg font-bold mb-3">
-          {t("profile.account")}
-        </Text>
-
-        {/* Export data button */}
-        <Pressable
-          onPress={handleExportData}
-          testID="export-data-button"
-          className="bg-surface rounded-lg py-3 items-center mb-3"
-        >
-          <Text className="text-text-primary font-semibold">
-            {t("profile.exportData")}
-          </Text>
-        </Pressable>
-
-        {/* Delete account button — destructive styling */}
-        <Pressable
-          onPress={handleDeleteAccount}
-          testID="delete-account-button"
-          className="bg-red-100 rounded-lg py-3 items-center"
-        >
-          <Text className="text-red-600 font-semibold">
-            {t("profile.deleteAccount")}
-          </Text>
-        </Pressable>
-      </View>
 
       {/* BadgePicker modal — opens when "Edit" is pressed on badges */}
       <BadgePicker

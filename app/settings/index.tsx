@@ -34,9 +34,11 @@ import {
   Globe,
   LogOut,
   Check,
+  Download,
+  Trash2,
 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
-import { useUpdateProfile } from "@/hooks/useProfile";
+import { useUpdateProfile, useExportData, useDeleteAccount } from "@/hooks/useProfile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
 import { changeLanguage, SUPPORTED_LANGUAGES } from "@/lib/i18n";
@@ -85,6 +87,46 @@ export default function SettingsScreen() {
       userId: user.id,
       fields: { preferred_grade_system: gs },
     });
+  }
+
+  // Account action mutations — export data and delete account
+  const exportData = useExportData();
+  const deleteAccount = useDeleteAccount(signOut);
+
+  /** Export user data — confirm first, then trigger the mutation. */
+  function handleExportData() {
+    Alert.alert(
+      t("profile.exportConfirmTitle"),
+      t("profile.exportConfirmBody"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.export"),
+          onPress: async () => {
+            await exportData.mutateAsync();
+            Alert.alert(t("profile.exportCompleteTitle"), t("profile.exportCompleteBody"));
+          },
+        },
+      ]
+    );
+  }
+
+  /** Delete account — double-confirm before triggering the mutation. */
+  function handleDeleteAccount() {
+    Alert.alert(
+      t("profile.deleteConfirmTitle"),
+      t("profile.deleteConfirmBody"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("common.delete"),
+          style: "destructive",
+          onPress: async () => {
+            await deleteAccount.mutateAsync();
+          },
+        },
+      ]
+    );
   }
 
   /** Show confirmation dialog before signing out. */
@@ -275,6 +317,41 @@ export default function SettingsScreen() {
           </Text>
           <Badge label={t("common.comingSoon")} variant="default" />
         </View>
+      </View>
+
+      {/* ── Account ──────────────────────────────────────────────────── */}
+      <View className="mt-4">
+        <Text className="text-text-secondary text-sm font-semibold uppercase tracking-wide px-4 mb-2">
+          {t("profile.account")}
+        </Text>
+
+        {/* Export data */}
+        <Pressable
+          onPress={handleExportData}
+          testID="export-data-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("profile.exportData")}
+          className="flex-row items-center px-4 py-4 border-b border-surface"
+        >
+          <Download size={20} color="#9CA3AF" />
+          <Text className="text-text-primary text-base flex-1 ml-3">
+            {t("profile.exportData")}
+          </Text>
+        </Pressable>
+
+        {/* Delete account */}
+        <Pressable
+          onPress={handleDeleteAccount}
+          testID="delete-account-button"
+          accessibilityRole="button"
+          accessibilityLabel={t("profile.deleteAccount")}
+          className="flex-row items-center px-4 py-4 border-b border-surface"
+        >
+          <Trash2 size={20} color="#DC2626" />
+          <Text className="text-red-600 text-base flex-1 ml-3">
+            {t("profile.deleteAccount")}
+          </Text>
+        </Pressable>
       </View>
 
       {/* ── Sign Out ─────────────────────────────────────────────────── */}

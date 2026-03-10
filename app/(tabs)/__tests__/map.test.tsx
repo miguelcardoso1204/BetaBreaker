@@ -27,6 +27,19 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react-nativ
 // Mock react-native-maps — MapView as a View that renders children (markers),
 // and Marker as a Pressable so we can fireEvent.press to test navigation.
 // The `identifier` prop maps to testID="marker-{identifier}" for easy querying.
+// Mock react-native-map-clustering — drop-in MapView replacement that
+// handles marker clustering. In tests we just render children like a View.
+jest.mock("react-native-map-clustering", () => {
+  const { View } = require("react-native");
+  return {
+    __esModule: true,
+    default: (props: any) => (
+      <View testID="map-view">{props.children}</View>
+    ),
+  };
+});
+
+// Mock react-native-maps — Marker and Callout components.
 jest.mock("react-native-maps", () => {
   const { View, Pressable } = require("react-native");
   return {
@@ -35,10 +48,12 @@ jest.mock("react-native-maps", () => {
       <View testID="map-view">{props.children}</View>
     ),
     Marker: (props: any) => (
-      <Pressable
-        testID={`marker-${props.identifier}`}
-        onPress={props.onPress}
-      >
+      <View testID={`marker-${props.identifier}`}>
+        {props.children}
+      </View>
+    ),
+    Callout: (props: any) => (
+      <Pressable testID={props.testID} onPress={props.onPress}>
         {props.children}
       </Pressable>
     ),
@@ -97,6 +112,7 @@ jest.mock("lucide-react-native", () => {
     Search: (props: any) => <View testID="icon-search" {...props} />,
     Star: (props: any) => <View testID="icon-star" {...props} />,
     ChevronRight: (props: any) => <View testID="icon-chevron" {...props} />,
+    LocateFixed: (props: any) => <View testID="icon-locate" {...props} />,
   };
 });
 
@@ -239,23 +255,26 @@ describe("MapScreen", () => {
   it("lists visible gyms in the bottom sheet", async () => {
     // The bottom sheet shows a scrollable list of gym names for gyms
     // currently displayed on the map. Only gyms with coords appear.
+    // Gym names also appear in marker callouts, so we check the list
+    // items by their testIDs instead.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
 
     await waitFor(() => {
-      expect(screen.getByText("Summit Climbing Gym")).toBeOnTheScreen();
+      expect(screen.getByTestId("bottom-sheet")).toBeOnTheScreen();
     });
-    expect(screen.getByText("Vertical World")).toBeOnTheScreen();
+    expect(screen.getByTestId("gym-list-item-gym-1")).toBeOnTheScreen();
+    expect(screen.getByTestId("gym-list-item-gym-2")).toBeOnTheScreen();
     // gym-3 has no coords — shouldn't appear in list
-    expect(screen.queryByText("No Coords Gym")).toBeNull();
+    expect(screen.queryByTestId("gym-list-item-gym-3")).toBeNull();
   });
 
-  // ── 6. Tap marker navigates to gym page ──────────────────────────
+  // ── 6. Tap callout navigates to gym page ─────────────────────────
 
-  it("navigates to gym page when a marker is tapped", async () => {
-    // Tapping a gym marker should push the Gym Main Page route for
-    // that gym's ID. This is the primary navigation path from the map.
+  it("navigates to gym page when a callout is tapped", async () => {
+    // Tapping a pin shows a callout with gym info. Tapping the callout
+    // navigates to the Gym Main Page for that gym's ID.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
@@ -263,16 +282,18 @@ describe("MapScreen", () => {
     await waitFor(() => {
       expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
     });
-    fireEvent.press(screen.getByTestId("marker-gym-1"));
+
+    // The callout content is rendered inside the marker. Tap it to navigate.
+    fireEvent.press(screen.getByTestId("callout-gym-1"));
 
     expect(mockPush).toHaveBeenCalledWith("/gym/gym-1");
   });
 
-  // ── 7. Search filters markers ────────────────────────────────────
+  // ── 7. Search shows dropdown results ─────────────────────────────
 
-  it("filters markers and updates count when searching", async () => {
-    // Typing "Summit" in the search bar should filter to only gym-1
-    // (name matches), hide gym-2's marker, and update the count to "1 gym".
+  it("shows search results dropdown when typing a gym name", async () => {
+    // Typing "Summit" should show a dropdown with matching gyms.
+    // All markers remain on the map — search is for navigation, not filtering.
     __mockData.data = mockGyms;
 
     render(<MapScreen />);
@@ -284,12 +305,13 @@ describe("MapScreen", () => {
     const searchInput = screen.getByPlaceholderText("Search gyms...");
     fireEvent.changeText(searchInput, "Summit");
 
-    // gym-1 matches "Summit" — marker should still be visible
+    // Search results dropdown appears with the matching gym
+    expect(screen.getByTestId("search-results")).toBeOnTheScreen();
+    expect(screen.getByTestId("search-result-gym-1")).toBeOnTheScreen();
+    // Non-matching gym should NOT be in the dropdown
+    expect(screen.queryByTestId("search-result-gym-2")).toBeNull();
+    // Both markers still visible — search doesn't filter markers
     expect(screen.getByTestId("marker-gym-1")).toBeOnTheScreen();
-    // gym-2 doesn't match — marker and list entry should be gone
-    expect(screen.queryByTestId("marker-gym-2")).toBeNull();
-    expect(screen.queryByText("Vertical World")).toBeNull();
-    // Only Summit should remain in the list
-    expect(screen.getByText("Summit Climbing Gym")).toBeOnTheScreen();
+    expect(screen.getByTestId("marker-gym-2")).toBeOnTheScreen();
   });
 });
