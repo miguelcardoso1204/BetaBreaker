@@ -25,6 +25,7 @@
 
 import React, { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -37,8 +38,9 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useTranslation } from "react-i18next";
-import { Mail } from "lucide-react-native";
+import { Mail, Lock } from "lucide-react-native";
 
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema } from "@/utils/validation";
 import type { LoginInput } from "@/utils/validation";
@@ -119,7 +121,12 @@ export default function LoginScreen() {
             Using a large bold text instead of an image avoids asset management
             complexity during early development. */}
         <View className="items-center mb-10">
-          <Text className="text-text-primary text-6xl font-bold mb-2">{t("auth.login.logo")}</Text>
+          <Image
+            source={require("@/assets/images/logo_white.png")}
+            style={{ width: 260, height: 173, marginBottom: 16 }}
+            resizeMode="contain"
+            accessibilityLabel="Beta Breaker logo"
+          />
           <Text className="text-text-primary text-3xl font-bold">
             {t("auth.login.title")}
           </Text>
@@ -165,6 +172,7 @@ export default function LoginScreen() {
                 onChangeText={onChange}
                 placeholder={t("auth.login.passwordPlaceholder")}
                 secureTextEntry
+                leftIcon={Lock}
                 error={errors.password?.message}
                 testID="password-input"
               />
@@ -223,13 +231,16 @@ export default function LoginScreen() {
           {/* Social buttons — placeholder for OAuth integration.
               Full OAuth flow requires deep link configuration (later phase).
               For now, these are visual-only to match the mockup.
-              "G" = Google, "A" = Apple — will be replaced with SVG icons. */}
+              Icons from @expo/vector-icons (bundled with Expo). */}
           <View className="flex-row justify-center gap-4">
             <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
-              <Text className="text-text-primary text-lg">G</Text>
+              <Ionicons name="logo-google" size={22} color="#DB4437" />
             </View>
             <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
-              <Text className="text-text-primary text-lg">A</Text>
+              <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
+            </View>
+            <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
+              <FontAwesome name="facebook" size={24} color="#1877F2" />
             </View>
           </View>
         </View>

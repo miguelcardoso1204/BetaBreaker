@@ -24,6 +24,7 @@
 
 import React, { useState } from "react";
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -36,7 +37,8 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useTranslation } from "react-i18next";
-import { Mail, User } from "lucide-react-native";
+import { Mail, User, Lock } from "lucide-react-native";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 import { useAuth } from "@/hooks/useAuth";
 import { registrationSchema } from "@/utils/validation";
@@ -191,7 +193,12 @@ export default function RegisterScreen() {
             Same "BB" monogram as the login screen for brand consistency.
             Will be replaced with the actual logo asset in a later phase. */}
         <View className="items-center mb-10">
-          <Text className="text-text-primary text-6xl font-bold mb-2">{t("auth.register.logo")}</Text>
+          <Image
+            source={require("@/assets/images/logo_white.png")}
+            style={{ width: 260, height: 173, marginBottom: 16 }}
+            resizeMode="contain"
+            accessibilityLabel="Beta Breaker logo"
+          />
           <Text className="text-text-primary text-3xl font-bold">
             {t("auth.register.title")}
           </Text>
@@ -257,6 +264,7 @@ export default function RegisterScreen() {
                 onChangeText={onChange}
                 placeholder={t("auth.register.passwordPlaceholder")}
                 secureTextEntry
+                leftIcon={Lock}
                 error={errors.password?.message}
                 testID="password-input"
               />
@@ -333,13 +341,15 @@ export default function RegisterScreen() {
             <Divider className="flex-1" />
           </View>
 
-          {/* "G" = Google, "A" = Apple — will be replaced with SVG icons */}
           <View className="flex-row justify-center gap-4">
             <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
-              <Text className="text-text-primary text-lg">G</Text>
+              <Ionicons name="logo-google" size={22} color="#DB4437" />
             </View>
             <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
-              <Text className="text-text-primary text-lg">A</Text>
+              <Ionicons name="logo-apple" size={24} color="#FFFFFF" />
+            </View>
+            <View className="w-12 h-12 rounded-full bg-surface items-center justify-center">
+              <FontAwesome name="facebook" size={24} color="#1877F2" />
             </View>
           </View>
         </View>

@@ -77,7 +77,7 @@ describe("LoginScreen", () => {
 
   it("renders the welcome heading", () => {
     render(<LoginScreen />);
-    expect(screen.getByText("Welcome Back!")).toBeOnTheScreen();
+    expect(screen.getByText("Beta Breaker")).toBeOnTheScreen();
   });
 
   it("renders email input", () => {

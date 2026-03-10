@@ -27,12 +27,12 @@
   "auth": {
     "login": {
       "logo": "BB",
-      "title": "Bem-vindo de Volta!",
-      "subtitle": "Tivemos saudades!",
+      "title": "Beta Breaker",
+      "subtitle": "Pronto para Enviar?",
       "emailLabel": "Email",
-      "emailPlaceholder": "o.seu@email.com",
+      "emailPlaceholder": "Introduza o seu email",
       "passwordLabel": "Palavra-passe",
-      "passwordPlaceholder": "Introduza a palavra-passe",
+      "passwordPlaceholder": "Introduza a sua palavra-passe",
       "forgotPassword": "Esqueceu a Palavra-passe?",
       "signIn": "Entrar",
       "orContinueWith": "Ou continue com",
@@ -41,14 +41,14 @@
     },
     "register": {
       "logo": "BB",
-      "title": "Registe-se!",
-      "subtitle": "Faça parte desta comunidade incrível!",
+      "title": "Beta Breaker",
+      "subtitle": "Mete Magnésio e Junta-te",
       "emailLabel": "Endereço de Email",
-      "emailPlaceholder": "o.seu@email.com",
+      "emailPlaceholder": "Introduza o seu email",
       "nameLabel": "O Seu Nome",
-      "namePlaceholder": "@oseuname",
+      "namePlaceholder": "Introduza o seu primeiro e último nome",
       "passwordLabel": "Palavra-passe",
-      "passwordPlaceholder": "Introduza a palavra-passe",
+      "passwordPlaceholder": "Introduza a sua palavra-passe",
       "strengthWeak": "Fraca",
       "strengthFair": "Razoável",
       "strengthStrong": "Forte",
@@ -265,7 +265,8 @@
     "filterFavorites": "Filtrar favoritos",
     "gymCount_one": "{{count}} ginásio",
     "gymCount_other": "{{count}} ginásios",
-    "hoursNotAvailable": "Horário indisponível"
+    "hoursNotAvailable": "Horário indisponível",
+    "viewGym": "Ver ginásio"
   },
 
   "events": {

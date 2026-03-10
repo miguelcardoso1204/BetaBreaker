@@ -96,7 +96,7 @@ describe("lib/i18n", () => {
 
     // t() should return the English translation from en.json
     expect(i18n.t("common.cancel")).toBe("Cancel");
-    expect(i18n.t("auth.login.title")).toBe("Welcome Back!");
+    expect(i18n.t("auth.login.title")).toBe("Beta Breaker");
     expect(i18n.t("settings.signOut")).toBe("Sign Out");
   });
 
@@ -115,7 +115,7 @@ describe("lib/i18n", () => {
 
     expect(i18n.language).toBe("pt-PT");
     expect(i18n.t("common.cancel")).toBe("Cancelar");
-    expect(i18n.t("auth.login.title")).toBe("Bem-vindo de Volta!");
+    expect(i18n.t("auth.login.title")).toBe("Beta Breaker");
   });
 
   it("persists language choice to SecureStore", async () => {

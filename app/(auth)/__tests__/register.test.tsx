@@ -72,7 +72,7 @@ describe("RegisterScreen", () => {
 
   it("renders the sign up heading", () => {
     render(<RegisterScreen />);
-    expect(screen.getByText("Sign up!")).toBeOnTheScreen();
+    expect(screen.getByText("Beta Breaker")).toBeOnTheScreen();
   });
 
   it("renders email input", () => {

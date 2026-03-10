@@ -27,12 +27,12 @@
   "auth": {
     "login": {
       "logo": "BB",
-      "title": "Welcome Back!",
-      "subtitle": "We missed you!",
+      "title": "Beta Breaker",
+      "subtitle": "Ready to Send?",
       "emailLabel": "Email",
-      "emailPlaceholder": "your@email.com",
+      "emailPlaceholder": "Enter your email",
       "passwordLabel": "Password",
-      "passwordPlaceholder": "Enter password",
+      "passwordPlaceholder": "Enter your password",
       "forgotPassword": "Forgot Password?",
       "signIn": "Sign in",
       "orContinueWith": "Or continue with",
@@ -41,14 +41,14 @@
     },
     "register": {
       "logo": "BB",
-      "title": "Sign up!",
-      "subtitle": "Make part of this amazing community!",
+      "title": "Beta Breaker",
+      "subtitle": "Chalk Up and Join In",
       "emailLabel": "Email Address",
-      "emailPlaceholder": "your@email.com",
+      "emailPlaceholder": "Enter your email",
       "nameLabel": "Your Name",
-      "namePlaceholder": "@yourname",
+      "namePlaceholder": "Enter your first and last name",
       "passwordLabel": "Password",
-      "passwordPlaceholder": "Enter password",
+      "passwordPlaceholder": "Enter your password",
       "strengthWeak": "Weak",
       "strengthFair": "Fair",
       "strengthStrong": "Strong",
@@ -265,7 +265,8 @@
     "filterFavorites": "Filter favorites",
     "gymCount_one": "{{count}} gym",
     "gymCount_other": "{{count}} gyms",
-    "hoursNotAvailable": "Hours not available"
+    "hoursNotAvailable": "Hours not available",
+    "viewGym": "View gym"
   },
 
   "events": {
