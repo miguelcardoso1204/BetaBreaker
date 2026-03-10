@@ -42,6 +42,7 @@ import {
   useSegments,
 } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { Asset } from "expo-asset";
 import "react-native-reanimated";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -308,8 +309,23 @@ function RootLayout() {
   // visible until BOTH fonts and i18n are ready.
   const [i18nReady, setI18nReady] = useState(false);
 
+  // Track whether critical image assets (like the logo) have been cached.
+  // Without preloading, require() loads images on-demand at render time,
+  // which causes a visible delay on the login/register screens.
+  const [assetsReady, setAssetsReady] = useState(false);
+
   useEffect(() => {
     initI18n().then(() => setI18nReady(true));
+  }, []);
+
+  // Preload the logo images in parallel with fonts and i18n.
+  // Asset.loadAsync downloads and caches the image so it renders instantly
+  // when login/register screens mount — no visible pop-in.
+  useEffect(() => {
+    Asset.loadAsync([
+      require("@/assets/images/logo_white.png"),
+      require("@/assets/images/logo_black.png"),
+    ]).then(() => setAssetsReady(true));
   }, []);
 
   // If font loading fails, throw the error so ErrorBoundary catches it.
@@ -329,18 +345,18 @@ function RootLayout() {
     useOfflineStore.getState().hydrate();
   }, []);
 
-  // Hide splash screen once fonts AND i18n are loaded.
+  // Hide splash screen once fonts, i18n, AND image assets are loaded.
   // We don't wait for auth — the AuthGate handles that by returning null
   // (which keeps the splash visible since nothing replaces it).
   useEffect(() => {
-    if (loaded && i18nReady) {
+    if (loaded && i18nReady && assetsReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, i18nReady]);
+  }, [loaded, i18nReady, assetsReady]);
 
-  // Don't render anything until fonts and i18n are loaded.
+  // Don't render anything until fonts, i18n, and assets are loaded.
   // The splash screen is still showing, so this is invisible to the user.
-  if (!loaded || !i18nReady) {
+  if (!loaded || !i18nReady || !assetsReady) {
     return null;
   }
 
