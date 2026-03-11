@@ -65,7 +65,7 @@ export const gymService = {
    * @param userId — the auth user's UUID (from session)
    * @param gymId — the gym UUID to set as home gym
    */
-  setHomeGym(userId: string, gymId: string) {
+  setHomeGym(userId: string, gymId: string | null) {
     return supabase
       .from("profiles")
       .update({ home_gym_id: gymId })

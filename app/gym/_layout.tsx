@@ -41,6 +41,11 @@ export default function GymLayout() {
           </Pressable>
         ),
       }}
-    />
+    >
+      {/* Hide the header on the gym detail screen — the screen has its
+          own header section with avatar, name, and star toggle. The default
+          Stack header just shows "[id]/index" which is meaningless. */}
+      <Stack.Screen name="[id]/index" options={{ headerShown: false }} />
+    </Stack>
   );
 }

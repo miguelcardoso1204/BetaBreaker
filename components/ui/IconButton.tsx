@@ -59,6 +59,9 @@ export interface IconButtonProps {
    * the SVG stroke color. Most Lucide icons are stroke-based, not filled.
    */
   color?: string;
+  /** SVG fill color. Defaults to "none" (outline only).
+   *  Set this to fill the icon interior (e.g., a filled star). */
+  fill?: string;
   /** When true, the button is non-interactive and visually dimmed (50% opacity). */
   disabled?: boolean;
   /** Optional testID passed to the outer Pressable for testing. */
@@ -88,6 +91,7 @@ export function IconButton({
   onPress,
   size = 24,
   color = "#FFFFFF",
+  fill = "none",
   disabled = false,
   testID,
 }: IconButtonProps) {
@@ -124,7 +128,7 @@ export function IconButton({
         * component names to start with an uppercase letter. Lowercase names
         * are treated as HTML elements (e.g., <div>), not React components.
         * `strokeWidth={2}` is the Lucide default — explicit for clarity. */}
-      <Icon size={size} color={color} strokeWidth={2} />
+      <Icon size={size} color={color} fill={fill} strokeWidth={2} />
     </Pressable>
   );
 }

@@ -205,6 +205,17 @@
     "removeHomeGym": "Remove home gym",
     "setAsHomeGym": "Set as home gym",
     "hoursNotAvailable": "Hours not available",
+    "schedule": "Schedule",
+    "closed": "Closed",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
     "viewRoutes": "View Routes",
     "routes": "Routes",
     "leaderboards": "Leaderboards",

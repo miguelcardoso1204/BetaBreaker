@@ -20,8 +20,9 @@
  * standard TanStack Query pattern for POST/PUT/DELETE operations.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { gymService } from "@/services/gyms.service";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Fetch the list of all gyms.
@@ -73,18 +74,19 @@ export function useGym(gymId: string) {
  *   };
  */
 export function useSetHomeGym() {
-  const queryClient = useQueryClient();
+  const { refreshProfile } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ userId, gymId }: { userId: string; gymId: string }) => {
+    mutationFn: async ({ userId, gymId }: { userId: string; gymId: string | null }) => {
       const result = await gymService.setHomeGym(userId, gymId);
       if (result.error) throw result.error;
       return result.data;
     },
-    // After setting home gym, invalidate auth-related caches so the
-    // profile refreshes with the new homeGymId value.
+    // useAuth is event-driven (not TanStack Query), so we call
+    // refreshProfile() to re-read the profile row from Supabase.
+    // This updates user.homeGymId in the auth state.
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth"] });
+      refreshProfile();
     },
   });
 }

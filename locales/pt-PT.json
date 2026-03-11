@@ -205,6 +205,17 @@
     "removeHomeGym": "Remover ginásio principal",
     "setAsHomeGym": "Definir como ginásio principal",
     "hoursNotAvailable": "Horário não disponível",
+    "schedule": "Horário",
+    "closed": "Fechado",
+    "days": {
+      "monday": "Segunda-feira",
+      "tuesday": "Terça-feira",
+      "wednesday": "Quarta-feira",
+      "thursday": "Quinta-feira",
+      "friday": "Sexta-feira",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
     "viewRoutes": "Ver Vias",
     "routes": "Vias",
     "leaderboards": "Rankings",

@@ -192,7 +192,7 @@ export function Avatar({
       //   horizontally and vertically within the circle
       // - bg-accent: purple background — visible when showing initials
       //   (hidden behind the image when a photo is loaded)
-      className={`${variant === "circle" ? "rounded-full" : "rounded-xl"} overflow-hidden items-center justify-center bg-accent`}
+      className={`${variant === "circle" ? "rounded-full" : "rounded-[32px]"} overflow-hidden items-center justify-center bg-accent`}
       // Inline style for exact pixel dimensions. We use style instead
       // of NativeWind classes because Tailwind's width/height utilities
       // (w-8, h-8, etc.) only support predefined sizes. Our avatar

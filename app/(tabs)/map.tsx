@@ -350,6 +350,7 @@ export default function MapScreen() {
             label={t("map.filterFavorites")}
             onPress={() => setShowFavoritesOnly((prev) => !prev)}
             color={showFavoritesOnly ? "#F59E0B" : "#9CA3AF"}
+            fill={showFavoritesOnly ? "#F59E0B" : "none"}
           />
         </View>
 
