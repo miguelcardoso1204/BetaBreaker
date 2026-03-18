@@ -48,7 +48,7 @@ import "react-native-reanimated";
 import { useAuth } from "@/hooks/useAuth";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { usePushTokenRegistration } from "@/hooks/usePushTokenRegistration";
-import { useColorScheme } from "@/components/useColorScheme";
+import { useColorScheme } from "react-native";
 import { queryClient } from "@/lib/queryClient";
 import { initSentry, navigationIntegration } from "@/lib/sentry";
 import i18n, { initI18n } from "@/lib/i18n";
@@ -241,7 +241,6 @@ export function AuthGate() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen name="gym" />
       <Stack.Screen name="settings" />
       <Stack.Screen
         name="start-session"

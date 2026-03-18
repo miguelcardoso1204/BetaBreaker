@@ -56,6 +56,15 @@ docs/plans/
 /ios
 /android
 
+# Claude Code tooling
+.claude/
+
+# Editor settings
+.vscode/
+
+# Test credentials (seed-only, but keep out of version control)
+Documentation/testcredentials.md
+
 # LaTeX build artifacts
 *.aux
 *.log
