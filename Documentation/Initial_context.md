@@ -26,10 +26,10 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 - **Identity & Accounts:** registration, profile, privacy and safety
 - **Gyms & Areas:** gym directory, sectors, social links
 - **Routes Catalog:** route model, QR/NFC IDs, user-driven tags and feedback
-- **Logging & Sessions:** quick logs, session start/end, summaries
+- **Logging & Sessions:** quick logs, session start/end, persistent session history, summaries
 - **Analytics:** grade conversions, personalized suggestions (Pro)
 - **Gamification:** badges, streaks, optional rank model
-- **Social:** leaderboards, feedback, reporting, video verification policy
+- **Social:** leaderboards (with rules/prizes), feedback, media likes, reporting, video verification policy
 - **Admin Web:** audit logs and operations
 - **Monetization:** Pro subscriptions and gym billing console
 
@@ -68,7 +68,7 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 |FR-A2|4|Profile with editable fields; pin up to 3 badges (Free: 1)|
 |FR-A3|5|Account deletion and data export on request|
 |FR-A4|4|Social sign-in (Google, Apple) as alternative to email/password|
-|FR-A5|3|Optional onboarding flow: select home gym, climbing type preference, self-assessed grade range|
+|FR-A5|3|Optional onboarding flow: select favorite gyms (multi-select), climbing type preference, self-assessed grade range|
 
 ### B. Gyms & Areas
 
@@ -77,7 +77,9 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 |FR-B1|5|Gym directory with details and social links|
 |FR-B2|2|Sectors/areas metadata and map position inside gym|
 |FR-B3|4|QR/NFC station mapping to open route details|
-|FR-B4|4|User sets a "home gym"; home gym content prioritized in feeds and leaderboards|
+|FR-B4|4|User favorites multiple gyms via a `favorite_gyms` join table; favorite gym content prioritized in feeds and leaderboards|
+|FR-B5|3|Location-based nearest gym detection for quick session start (FAB prompt)|
+|FR-B6|3|Gym logo display in directory listings, profile session cards, and leaderboard entries|
 
 ### C. Problems/Routes Catalog
 
@@ -90,6 +92,7 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 |FR-C5|4|System generates unique route IDs and printable QR/NFC payloads|
 |FR-C6|3|Feedback governance: up/down-vote tags and beta tips; low-score/spam hidden|
 |FR-C7|4|Route lifecycle status visible to users (Active, Retiring Soon, Archived) with visual indicator|
+|FR-C8|3|Video like/unlike system with like counts on route media; sort videos by most liked|
 
 ### D. Tick-Logging & Sessions
 
@@ -100,6 +103,9 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 |FR-D3|4|Offline cache and sync with conflict resolution|
 |FR-D4|4|Explicit session start/end; compute duration|
 |FR-D5|2|Auto-suggest session start based on geofence/QR or multiple logs|
+|FR-D6|4|Session summary screen at session end: attempts, sends, grade distribution, duration; also viewable from activity history|
+|FR-D7|4|Persistent session history with gym, duration, and linked ascent metadata; drill-down from profile logbook|
+|FR-D8|3|Active session hub screen: live timer, pending logs list, stats row, browse/scan action buttons, post-session summary|
 
 ### E. Progression & Analytics
 
@@ -129,6 +135,8 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 |FR-G3|4|Report abuse/spam on users, videos, tags, comments (moderation queue)|
 |FR-G4|4|Gym-configurable video requirement for leaderboard sends above grade threshold|
 |FR-G5|3|Follow / friend system: follow other climbers to see their activity in a feed|
+|FR-G6|4|Activity feed (Home tab): aggregated event stream showing friend activity, gym route resets, leaderboard updates, and competition events|
+|FR-G7|2|Leaderboard rules and prizes display: gym-configured text shown in modals on leaderboard detail screen|
 
 ### H. Competitions & Events
 
@@ -211,7 +219,7 @@ Mobile application for digitalization and gamification of indoor climbing gyms. 
 - **NFR-8 Usability:** Consistent design, clear iconography, large tap targets, high-contrast mode.
 - **NFR-9 Reliability:** Local session logs preserved on interruption; auto-retry sync.
 - **NFR-10 Monitoring:** Anonymized error/performance metrics, no PII in logs.
-- **NFR-11 Video/Media:** Beta videos: max 60 s, max 1080p, ≤50 MB after client-side compression. Lazy-loaded thumbnails in lists; streaming playback.
+- **NFR-11 Video/Media:** Beta videos: max 60 s, max 1080p, ≤150 MB after client-side compression; hosted on Cloudinary (unsigned upload preset). Lazy-loaded thumbnails in lists; streaming playback.
 - **NFR-12 Rate Limiting:** Public-facing endpoints rate-limited (e.g., 60 req/min per user). QR/NFC scan endpoint hardened against replay attacks.
 - **NFR-13 Testability:** Core business logic (grade mapping, leaderboard scoring, streak calculation) covered by unit tests with ≥80% coverage. Integration tests for auth, sync, and QR flows.
 - **NFR-14 Compatibility:** Support iOS 16+ and Android 10+ (API 29+). Responsive layout for phones; tablet layout not required for MVP.

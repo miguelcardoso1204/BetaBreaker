@@ -365,7 +365,8 @@ Config plugins auto-added to `app.json`: `expo-secure-store`, `expo-sqlite`, `ex
 
 **What to implement (`supabase/migrations/00001_core_tables.sql`):**
 
-- `profiles`: id (FK to auth.users), display_name, avatar_url, home_gym_id, preferred_grade_system, tier, onboarding_completed, created_at
+- `profiles`: id (FK to auth.users), display_name, avatar_url, preferred_grade_system, tier, onboarding_completed, created_at
+- `favorite_gyms`: user_id (FK to profiles), gym_id (FK to gyms), created_at — many-to-many join table for user gym favorites
 - `gyms`: id, name, address, latitude, longitude, social_links (JSONB), default_grade_system, created_at
 - `routes`: id, gym_id (FK), canonical_grade, color, wall_section, setter_id (FK to profiles), status (enum: active/retiring_soon/archived), name, created_at, retired_at
 - `style_tags`: id, name (unique), category
@@ -1006,9 +1007,9 @@ Run `supabase db push`, then run test suite against local DB.
 **Relevant requirements:** FR-B1, FR-B4
 
 > **Implementation notes (2026-02-06):**
-> - Created `services/gyms.service.ts` with `getGyms()`, `getGymById(id)`, `setHomeGym(userId, gymId)`
-> - Created `hooks/useGyms.ts` with `useGyms()`, `useGym(id)`, `useSetHomeGym()`
-> - `useSetHomeGym` uses `useMutation` + invalidates `["auth"]` cache on success
+> - Created `services/gyms.service.ts` with `getGyms()`, `getGymById(id)`, `addFavoriteGym(userId, gymId)`, `removeFavoriteGym(userId, gymId)`
+> - Created `hooks/useGyms.ts` with `useGyms()`, `useGym(id)`, `useFavoriteGyms()`, `useToggleFavoriteGym()`
+> - `useToggleFavoriteGym` uses `useMutation` + invalidates `["favorite-gyms"]` cache on success
 > - Added `jest.setup.ts` with TanStack Query `notifyManager.setScheduler` for sync mutation tests
 > - 3 service tests + 5 hook tests = 8 new tests
 > - Total unit tests: 254
@@ -1019,13 +1020,14 @@ Run `supabase db push`, then run test suite against local DB.
 |---|---|
 | Fetch all gyms | Returns gym list |
 | Fetch gym by ID | Returns single gym with details |
-| Set home gym | Updates user profile's `home_gym_id` |
-| Home gym prioritization | Hook exposes `homeGym` for UI prioritization |
+| Add favorite gym | Inserts row into `favorite_gyms` join table |
+| Remove favorite gym | Deletes row from `favorite_gyms` join table |
+| Favorite gyms list | Hook exposes list of favorite gyms for UI prioritization |
 
 **What to implement:**
 
-- `services/gyms.service.ts`: `getGyms()`, `getGymById(id)`, `setHomeGym(gymId)`
-- `hooks/useGyms.ts`: `useGyms()`, `useGym(id)`, `useHomeGym()`
+- `services/gyms.service.ts`: `getGyms()`, `getGymById(id)`, `addFavoriteGym(userId, gymId)`, `removeFavoriteGym(userId, gymId)`
+- `hooks/useGyms.ts`: `useGyms()`, `useGym(id)`, `useFavoriteGyms()`, `useToggleFavoriteGym()`
 
 **Acceptance:** Gym service and hook tests pass.
 
@@ -1212,9 +1214,9 @@ Run `supabase db push`, then run test suite against local DB.
 **Acceptance:** Gym Main Page renders with all metadata; navigation cards route correctly.
 
 **Implementation notes (2026-02-09):**
-- Created `app/gym/[id]/__tests__/index.test.tsx` — 11 tests covering gym name, address with MapPin, hours placeholder with Clock, no open/closed dot (no hours data), social handle from social_links JSONB, favorite toggle calling useSetHomeGym, gold star when home gym, Routes card navigation, Leaderboards/Style Analysis coming soon alerts, loading spinner
-- Created `app/gym/[id]/index.tsx` — ScrollView layout with Avatar initials fallback (no logo_url column), gym name + Star IconButton (gold when home gym), MapPin + address, Clock + "Hours not available" placeholder, Instagram handle from social_links, "Start Session" Button (Alert placeholder for Phase 5), three Card navigation tiles (Routes navigates, Leaderboards/Style Analysis show Alert.alert)
-- Data gaps noted: no `operating_hours` column → "Hours not available"; no `logo_url` → Avatar initials; no `saved_gyms` table → reuses `home_gym_id` from profiles via `useSetHomeGym()`
+- Created `app/gym/[id]/__tests__/index.test.tsx` — 11 tests covering gym name, address with MapPin, hours placeholder with Clock, no open/closed dot (no hours data), social handle from social_links JSONB, favorite toggle calling useToggleFavoriteGym, gold star when gym is favorited, Routes card navigation, Leaderboards/Style Analysis coming soon alerts, loading spinner
+- Created `app/gym/[id]/index.tsx` — ScrollView layout with Avatar initials fallback (no logo_url column), gym name + Star IconButton (gold when gym is favorited), MapPin + address, Clock + "Hours not available" placeholder, Instagram handle from social_links, "Start Session" Button (Alert placeholder for Phase 5), three Card navigation tiles (Routes navigates, Leaderboards/Style Analysis show Alert.alert)
+- Data gaps noted: no `operating_hours` column → "Hours not available"; no `logo_url` → Avatar initials; favorites use `favorite_gyms` join table via `useToggleFavoriteGym()`
 - Test 4 adjusted from dev plan's "red/green dot" spec: since no `operating_hours` column exists, we verify the dot is absent rather than testing its color
 - Tests: 11 new screen tests (300 unit total, 636 total with integration)
 
@@ -1554,10 +1556,10 @@ Run `supabase db push`, then run test suite against local DB.
 - Three cascading dropdown selectors (Country → City → Gym) using `AppTextInput` (dropdown variant) or a custom picker component.
 - Data flow: `useGyms()` hook fetches all gyms → group by country → filter cities by selected country → filter gyms by selected city.
 - "Start Activity" button: calls `sessionStore.startSession(gymId)`, then navigates to Route Browse.
-- Pre-select user's home gym (from `useAuth().user.homeGymId`) if set.
+- Pre-select user's first favorite gym (from `useFavoriteGyms()`) if set.
 - Layout: dropdowns stacked vertically with spacer pushing button to bottom of screen.
 
-**Why:** The Start Activity screen is the entry point for every climbing session. The cascading dropdown pattern prevents invalid combinations (e.g., gym in Porto but city set to Lisbon). Pre-selecting the home gym reduces friction for daily climbers.
+**Why:** The Start Activity screen is the entry point for every climbing session. The cascading dropdown pattern prevents invalid combinations (e.g., gym in Porto but city set to Lisbon). Pre-selecting a favorite gym reduces friction for daily climbers.
 
 **Acceptance:** Cascading selectors work correctly; session starts; navigation to route browse works.
 
@@ -1657,7 +1659,7 @@ Run `supabase db push`, then run test suite against local DB.
 | Cache routes after fetch | Routes saved to SQLite after network fetch |
 | Serve from cache offline | When network unavailable, returns cached routes |
 | Cache invalidation | After sync, stale cache entries updated |
-| Cache respects gym scope | Only home gym routes cached |
+| Cache respects gym scope | Only favorite gyms' routes cached |
 
 **What to implement:**
 
@@ -2443,6 +2445,49 @@ Run `supabase db push`, then run test suite against local DB.
 - Key design decision: static thumbnail placeholder (dark View + Play icon) instead of `generateThumbnailsAsync` — simpler, faster, cross-platform.
 - All 10 BetaVideoPlayer tests pass, all 16 route detail tests pass, 981/982 unit tests pass (1 pre-existing failure: qr-roundtrip needs .env.local).
 
+### Step 12.3 — Video Likes, Uploader Avatars, and Sort Controls ✅
+
+**Depends on:** Step 12.2
+
+**What to test:**
+
+| Test case | Description |
+|---|---|
+| getUserLikes fetches liked media IDs | Batched `.in()` query returns user's likes for displayed videos |
+| likeMedia inserts + recounts | Like row created, likes_count recalculated |
+| unlikeMedia deletes + recounts | Like row removed, likes_count recalculated |
+| useRouteMedia returns userLikes set | Hook combines media + likes in one query |
+| useLikeMedia toggles like/unlike | Mutation calls correct service method based on current state |
+| Avatar renders in BetaVideoPlayer | Uploader's profile picture shown next to name |
+| Heart button toggles liked state | Filled red when liked, outline gray when not |
+| Like count visibility | Count shown when > 0, hidden when 0 |
+| Sort controls appear with 2+ videos | Pill toggle between Newest and Most Liked |
+| isOwner bug fixed | Now uses `item.user_id === user?.id` instead of hardcoded `false` |
+
+**What to implement:**
+
+- Migration: `route_media_likes` join table + `likes_count` column on `route_media`
+- Service methods: `getUserLikes`, `likeMedia`, `unlikeMedia`
+- Hook: `useLikeMedia` toggle mutation, extended `useRouteMedia` with userLikes
+- UI: Avatar + Heart button in BetaVideoPlayer, sort controls in route detail
+
+**Acceptance:** Likes toggle, count updates, sort reorders, avatars display, isOwner works.
+
+**Implementation notes (Step 12.3):**
+- Created `supabase/migrations/20260319100000_media_likes.sql` — `route_media_likes` table with composite PK `(media_id, user_id)`, RLS (select all auth, insert/delete own only), and `likes_count` integer column on `route_media`.
+- Updated `lib/types/database.types.ts` — added `likes_count` to `route_media` Row/Insert/Update, added `route_media_likes` table type.
+- Modified `services/media.service.ts` — added `getUserLikes` (batched `.in()` query), `likeMedia` (insert + recount), `unlikeMedia` (delete + recount). Recount approach prevents count drift from concurrent operations.
+- Modified `hooks/useMedia.ts` — `useRouteMedia` now fetches user likes alongside media and returns `userLikes: Set<string>`. Added `useLikeMedia` toggle mutation.
+- Modified `hooks/index.ts` — exported `useRouteMedia` and `useLikeMedia`.
+- Modified `components/routes/BetaVideoPlayer.tsx` — added `uploaderAvatarUrl`, `likesCount`, `isLiked`, `onLike` props. Info row now shows Avatar (sm) + Heart button with conditional fill and count.
+- Modified `app/(tabs)/gym/[id]/route/[routeId]/index.tsx` — wired new props, fixed `isOwner` bug (`item.user_id === user?.id`), added `videoSort` state with pill toggle (Newest / Most Liked), `useMemo` sort, and `useDeleteMedia` for delete.
+- Updated `locales/en.json` and `locales/pt-PT.json` — added `video.like`, `video.unlike`, `video.sortNewest`, `video.sortMostLiked`.
+- Updated `services/__tests__/media.service.test.ts` — 6 new tests for getUserLikes, likeMedia, unlikeMedia (total 12).
+- Updated `hooks/__tests__/useMedia.test.tsx` — 3 new tests for useLikeMedia, updated useRouteMedia tests for userLikes (total 14).
+- Updated `components/routes/__tests__/BetaVideoPlayer.test.tsx` — 5 new tests for avatar, heart button, like count, accessibility labels (total 16).
+- Updated `app/(tabs)/gym/[id]/route/[routeId]/__tests__/index.test.tsx` — 3 new tests for sort controls and liked state; updated mocks for new return shape.
+- 166 suites pass, 1496 tests pass. 3 pre-existing suite failures (SafeAreaView/NativeWind displayName crash on gym detail, gym leaderboard, route detail screens).
+
 ---
 
 ## Phase 13 — Monetization
@@ -2686,7 +2731,7 @@ Test count: +39 new tests (1027 total passing).
 - Added `routeService.getCandidateRoutes()` — fetches routes with nested style tags, flattens to `CandidateRoute[]`, clamps grade range to 0–30
 - Created `hooks/useRouteSuggestions.ts` — composes useAuth, useEntitlement, useGradePyramid, useStyleInsights; derives maxGrade from pyramid, computes weak/known styles, fetches sent IDs + candidates in parallel, runs client-side scoring
 - Created `components/analytics/SuggestionsCard.tsx` — horizontal FlatList carousel with compact route cards showing color dot, name, grade, up to 2 style tag chips
-- Integrated SuggestionsCard into `app/(tabs)/index.tsx` — renders in `ListHeaderComponent` when feed has items, or above empty state; Pro-gated + requires home gym
+- Integrated SuggestionsCard into `app/(tabs)/index.tsx` — renders in `ListHeaderComponent` when feed has items, or above empty state; Pro-gated + requires explicit gymId parameter
 - Scoring: novel tags +2, weak tags +1, strong tags +0; sorted by score desc then grade desc; paginated (8 per page)
 - Files created: `utils/suggestions.ts`, `hooks/useRouteSuggestions.ts`, `components/analytics/SuggestionsCard.tsx`
 - Files modified: `services/sessions.service.ts`, `services/routes.service.ts`, `app/(tabs)/index.tsx`
@@ -2931,8 +2976,8 @@ Test count: +39 new tests (1027 total passing).
 
 | Test case | Description |
 |---|---|
-| Displays user info | Name, avatar, home gym, grade preference |
-| Edit fields | Can update name, avatar, home gym |
+| Displays user info | Name, avatar, favorite gyms, grade preference |
+| Edit fields | Can update name, avatar, favorite gyms |
 | Pinned badges | Shows pinned badges |
 | Stats summary | Total sends, max grade, current streak |
 | Data export | Request triggers data export |
@@ -3037,7 +3082,7 @@ Test count: +39 new tests (1027 total passing).
 | Test case | Description |
 |---|---|
 | Shown after first registration | New users see onboarding |
-| Select home gym | Gym picker works |
+| Select favorite gyms | Multi-select gym picker works |
 | Select climbing type | Boulder, lead, top-rope selection |
 | Select grade range | Self-assessed grade range |
 | Skip option | User can skip each step |
@@ -3058,7 +3103,7 @@ Test count: +39 new tests (1027 total passing).
 - Created `app/onboarding.tsx` — 4-step wizard (Welcome → Gym → Grade System → Done)
 - Modified `app/_layout.tsx` AuthGate to route new users to `/onboarding` based on `user.onboardingCompleted`
 - Added guard for null user (profile still loading after session restore)
-- Scoped to existing DB fields: `home_gym_id`, `preferred_grade_system`, `onboarding_completed` (no migration needed)
+- Scoped to existing DB fields: `favorite_gyms` (join table), `preferred_grade_system`, `onboarding_completed`
 - Climbing type and grade range steps skipped — those columns don't exist in the schema
 - Batch save on finish via `useUpdateProfile` → `refreshProfile()` → AuthGate redirects to `/(tabs)`
 - 11 AuthGate tests (6 existing updated + 5 new onboarding routing tests)

@@ -81,7 +81,7 @@ The center button (`+`) is a raised FAB — not a tab with its own persistent sc
 
 **Content:**
 - Profile photo, name, age
-- Favorite gym
+- Favorite gyms (list)
 - Achievements / badges
 - Currently enrolled leaderboards
 - Pro status indicator
@@ -93,7 +93,7 @@ The center button (`+`) is a raised FAB — not a tab with its own persistent sc
 | Edit button | Edit Profile |
 | Leaderboard item | Gym Leaderboard |
 | Achievement / badge | Badge detail (future) |
-| Favorite gym | Gym Main Page |
+| Favorite gym item | Gym Main Page |
 
 ---
 
@@ -236,7 +236,7 @@ The center button (`+`) is a raised FAB — not a tab with its own persistent sc
 **Content:**
 - Same layout as own profile but with Follow button instead of Edit
 - Profile photo, name, age
-- Favorite gym, achievements, enrolled leaderboards
+- Favorite gyms, achievements, enrolled leaderboards
 - Pro status
 - Activity history
 
@@ -244,7 +244,7 @@ The center button (`+`) is a raised FAB — not a tab with its own persistent sc
 | Tap target | Destination |
 |---|---|
 | Leaderboard item | Gym Leaderboard |
-| Favorite gym | Gym Main Page |
+| Favorite gym item | Gym Main Page |
 
 ---
 
@@ -254,7 +254,7 @@ The center button (`+`) is a raised FAB — not a tab with its own persistent sc
 **Purpose:** Edit your own profile information.
 
 **Content:**
-- Edit: name, age, avatar, favorite gym, preferred grade system
+- Edit: name, age, avatar, favorite gyms, preferred grade system
 - Save / cancel
 
 ---

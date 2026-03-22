@@ -51,7 +51,8 @@ Beta Breaker follows a **Supabase-first, client-heavy** architecture. The goal i
 |---|---|---|
 | **Supabase Auth** | Identity & access control | Email/password, Google OAuth, Apple Sign-In, JWT tokens, RLS integration |
 | **Supabase Database** | Primary data store (Postgres 15+) | Row Level Security, database functions, triggers, views, pg_cron |
-| **Supabase Storage** | Media files (beta videos, profile images) | S3-compatible buckets, storage policies, CDN, image transformations |
+| **Supabase Storage** | Media files (profile images) | S3-compatible buckets, storage policies, CDN, image transformations |
+| **Cloudinary** | Video hosting (beta videos) | Unsigned upload preset, client-side FormData upload, CDN delivery. Used instead of Supabase Storage because React Native's Blob serialization produces 0-byte files with Supabase's upload API, while FormData with file:// URIs works correctly with Cloudinary's REST endpoint. |
 | **Supabase Realtime** | Live data subscriptions | Postgres Changes (leaderboards, live scoreboards, notifications) |
 | **Supabase Edge Functions** | Server-side logic | Deno/TypeScript runtime, QR payload signing, push notification dispatch, billing webhooks |
 
@@ -63,6 +64,7 @@ Beta Breaker follows a **Supabase-first, client-heavy** architecture. The goal i
 | **Supabase CLI** | Local development, migrations, Edge Function deployment |
 | **GitHub** | Source control, CI/CD via GitHub Actions |
 | **Supabase Dashboard** | Database management, logs, monitoring |
+| **Cloudinary** | Video hosting and delivery — unsigned upload preset from client, CDN delivery |
 | **Sentry (expo-sentry)** | Error tracking and performance monitoring |
 
 ---
@@ -114,7 +116,7 @@ Beta Breaker follows a **Supabase-first, client-heavy** architecture. The goal i
 ┌─────────────────────────────────────────────────────────┐
 │                  EXTERNAL SERVICES                      │
 │                                                         │
-│  Apple/Google IAP  │  APNs/FCM  │  Sentry  │  EAS      │
+│  Apple/Google IAP │ APNs/FCM │ Sentry │ EAS │ Cloudinary│
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -170,6 +172,7 @@ beta-breaker/
 │
 ├── lib/                          # Core utilities and configuration
 │   ├── supabase.ts               # Supabase client initialization
+│   ├── cloudinary.ts             # Cloudinary upload helper (unsigned preset)
 │   ├── queryClient.ts            # TanStack Query client setup
 │   ├── constants.ts              # App-wide constants (grade scales, etc.)
 │   └── types/                    # Shared TypeScript types
@@ -293,12 +296,16 @@ User records / selects video
   → Client-side: validate duration ≤60s, resolution ≤1080p
   → Client-side: compress with expo-video (FFmpeg if needed)
   → Ownership affirmation checkbox
-  → supabase.storage.from('beta-videos').upload(path, file)
-    → Storage bucket (policy: authenticated users, max 50MB)
-  ← Public URL returned
+  → uploadToCloudinary(uri, mimeType)             # lib/cloudinary.ts
+    → Build FormData with { uri, type, name }      # RN reads file:// URIs natively
+    → POST to Cloudinary unsigned upload endpoint
+    → Upload preset "beta_videos" (configured in Cloudinary dashboard)
+  ← Cloudinary returns secure_url + public_id
   → supabase.from('route_media').insert({ route_id, url, type: 'video' })
   ← Media linked to route
 ```
+
+> **Why Cloudinary instead of Supabase Storage?** React Native's `fetch` cannot serialize Blob/ArrayBuffer correctly — Supabase Storage uploads produce 0-byte files. Cloudinary's REST API accepts FormData with raw `file://` URIs, which React Native handles natively.
 
 ### 5.6 QR Scan → Route Detail
 
@@ -450,7 +457,7 @@ Edge Functions are used sparingly — only for operations that **cannot** run cl
 
 | Feature | Reason |
 |---|---|
-| Upload video | Needs Storage bucket |
+| Upload video | Needs Cloudinary (network) |
 | View leaderboards | Realtime data |
 | Competition scoring | Needs server validation |
 | Social actions (follow, report) | Write to server |
@@ -476,7 +483,7 @@ Edge Functions are used sparingly — only for operations that **cannot** run cl
 | **Rate limiting** | Supabase built-in rate limits + custom per-user limits on scan endpoints |
 | **Data privacy** | GDPR: data export via Supabase SQL function, account deletion cascades all user data |
 | **Media safety** | Upload requires ownership affirmation; storage bucket policies limit size/type; moderation queue |
-| **Secrets** | Environment variables in Supabase Edge Functions; `.env` for local dev (never committed) |
+| **Secrets** | Environment variables in Supabase Edge Functions; `.env` for local dev (never committed). Cloudinary cloud name exposed via `EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME` (public — unsigned uploads only, no API secret needed client-side) |
 
 ---
 
@@ -551,6 +558,7 @@ Type generation:
 | Video | expo-video | react-native-video | First-party Expo module; simpler setup; sufficient for 60s beta clips |
 | Push notifications | expo-notifications + Edge Functions | OneSignal, Firebase Cloud Messaging direct | Native Expo integration; Edge Functions handle dispatch logic without third-party dependency |
 | IAP | RevenueCat or expo-in-app-purchases | Custom receipt validation | RevenueCat simplifies cross-platform subscription management; expo-in-app-purchases as lighter alternative |
+| Video hosting | Cloudinary (unsigned upload) | Supabase Storage, AWS S3 | React Native's Blob serialization breaks Supabase Storage uploads (0-byte files); Cloudinary accepts FormData with file:// URIs natively; free tier sufficient for MVP |
 | Error tracking | Sentry (expo-sentry) | Bugsnag, Crashlytics | First-class Expo integration; generous free tier; source map support |
 
 ---
@@ -564,7 +572,8 @@ Type generation:
 | Free/low-cost budget | Cannot use expensive third-party services | Supabase free tier (500 MB DB, 1 GB storage, 50K MAU auth); EAS free builds; Sentry free tier |
 | Supabase Realtime limits (free tier) | Max 200 concurrent connections | Sufficient for MVP scale (single gym pilot); upgrade plan if needed |
 | No custom backend | Complex server logic is harder | Push logic into Postgres functions + RLS; use Edge Functions for the rest |
-| Client-side video compression | Quality/size trade-off | Cap at 1080p/60s/50MB; use expo-video or FFmpeg-kit if finer control needed |
+| Client-side video compression | Quality/size trade-off | Cap at 1080p/60s/150MB; use expo-video or FFmpeg-kit if finer control needed |
+| Video uploads via Cloudinary | External dependency for media hosting | React Native Blob serialization breaks Supabase Storage uploads (0-byte files); Cloudinary's FormData endpoint works natively with RN file:// URIs. Unsigned preset limits attack surface; Cloudinary free tier (25 GB storage, 25 GB bandwidth/month) sufficient for MVP |
 
 ---
 

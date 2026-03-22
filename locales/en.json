@@ -92,8 +92,8 @@
     "avatarUrl": "Avatar URL",
     "avatarUrlPlaceholder": "https://example.com/avatar.png",
     "gradeSystem": "Grade System",
-    "homeGym": "Home Gym",
-    "selectGym": "Select a gym",
+    "favoriteGyms": "Favorite Gyms",
+    "manageGyms": "Manage favorite gyms from gym pages",
     "climber": "Climber",
     "pro": "Pro",
     "free": "Free",
@@ -113,14 +113,19 @@
     "exportCompleteBody": "Your data has been exported.",
     "deleteConfirmTitle": "Delete Account",
     "deleteConfirmBody": "This will permanently delete your account and all associated data. This action cannot be undone.",
-    "selectHomeGym": "Select Home Gym",
     "pinnedBadges": "Pinned Badges",
     "noPinnedBadges": "No pinned badges yet",
     "recentSends": "Recent Sends",
     "noRecentSends": "No recent sends yet",
     "failedToLoad": "Failed to load profile",
     "followers": "followers",
-    "following": "following"
+    "following": "following",
+    "enrolledLeaderboards": "Leaderboards",
+    "noEnrolledLeaderboards": "Not enrolled in any leaderboards yet",
+    "viewAll": "View All",
+    "recentSessions": "Recent Sessions",
+    "noRecentSessions": "No sessions yet — start climbing!",
+    "ascents": "ascents"
   },
 
   "settings": {
@@ -148,12 +153,13 @@
     "welcomeSubtitle": "Track your climbing, share beta, compete with friends.",
     "letsGetStarted": "Let's get started",
     "skipSetup": "Skip setup",
-    "selectHomeGym": "Select Your Home Gym",
-    "changeGymLater": "You can change this later in settings.",
+    "favoriteGyms": "Favorite Your Gyms",
+    "favoriteGymsSubtitle": "Select the gyms you climb at. You can change this anytime.",
     "gradeSystem": "Grade System",
     "gradeSystemPrompt": "How do you read grades?",
     "allSet": "You're all set!",
-    "noGymSelected": "No gym selected",
+    "noGymsSelected": "No gyms selected",
+    "favoriteGymsLabel": "Favorite Gyms",
     "getStarted": "Get Started"
   },
 
@@ -180,16 +186,25 @@
     "duration": "Duration: {{duration}}",
     "ascentCount_one": "{{count}} ascent",
     "ascentCount_other": "{{count}} ascents",
-    "gradeDistribution": "Grade Distribution"
+    "gradeDistribution": "Grade Distribution",
+    "activeSession": "Active Session",
+    "sessionAt": "Session at {{gym}}",
+    "routesLogged": "Routes Logged",
+    "browseRoutes": "Browse Routes",
+    "finishSession": "Finish Session",
+    "finishConfirmTitle": "Finish Session?",
+    "finishConfirmBody": "End your climbing session and save your logs?",
+    "noAscentsYet": "No ascents yet",
+    "tapToLog": "Browse routes or scan a QR code to log climbs",
+    "removeAscent": "Remove ascent",
+    "done": "Done",
+    "viewSession": "View Session"
   },
 
   "logbook": {
     "sessions": "Sessions",
-    "saved": "Saved",
     "noSessions": "No sessions yet",
     "startSessionPrompt": "Start a climbing session to see your history here",
-    "noSavedRoutes": "No saved routes yet",
-    "saveRoutesPrompt": "Star routes to save them for later",
     "ascents": "Ascents",
     "noAscents": "No ascents recorded",
     "failedToLoad": "Failed to load session",
@@ -198,12 +213,14 @@
     "sendCount_one": "{{count}} send",
     "sendCount_other": "{{count}} sends",
     "flashCount_one": "{{count}} flash",
-    "flashCount_other": "{{count}} flashes"
+    "flashCount_other": "{{count}} flashes",
+    "duration": "Duration",
+    "sends": "Sends"
   },
 
   "gym": {
-    "removeHomeGym": "Remove home gym",
-    "setAsHomeGym": "Set as home gym",
+    "unfavorite": "Remove from favorites",
+    "favorite": "Add to favorites",
     "hoursNotAvailable": "Hours not available",
     "schedule": "Schedule",
     "closed": "Closed",
@@ -223,17 +240,19 @@
     "styleAnalysisComingSoon": "Style Analysis will be available in a future update.",
     "leaderboard": {
       "title": "Leaderboard",
-      "thisWeek": "This Week",
-      "lastWeek": "Last Week",
-      "grade": "Grade",
-      "flashRate": "Flash Rate",
-      "volume": "Volume",
-      "noEntries": "No entries for this period"
+      "backToList": "All Leaderboards",
+      "noEntries": "No entries yet",
+      "noActive": "No active leaderboards at this gym",
+      "noRetired": "No retired leaderboards at this gym",
+      "participants": "{{count}} participants",
+      "rules": "Rules",
+      "prizes": "Prizes"
     }
   },
 
   "route": {
     "grade": "Grade:",
+    "communityGrade": "Community:",
     "setOn": "Set on:",
     "wall": "Wall:",
     "setter": "Setter:",
@@ -244,12 +263,11 @@
     "videoSubmissions": "Video Submissions",
     "noVideos": "No beta videos yet — be the first to share!",
     "failedToLoad": "Failed to load route",
-    "unfavorite": "Unfavorite route",
-    "favorite": "Favorite route",
     "noRoutesFound": "No routes found",
     "unnamedRoute": "Unnamed Route",
     "result": "Result",
     "howWouldYouRate": "How would you rate this route?",
+    "whatGrade": "What grade do you think this is?",
     "comments": "Comments",
     "commentsPlaceholder": "Share your beta, conditions, or thoughts...",
     "climbingStyle": "Climbing Style"
@@ -333,6 +351,7 @@
     "reasonSpam": "Spam",
     "reasonHarassment": "Harassment",
     "reasonDangerous": "Dangerous activity",
+    "reasonCheating": "Cheating",
     "reasonOther": "Other",
     "reportSubmitted": "Report submitted",
     "reportThankYou": "Thank you for helping keep our community safe.",
@@ -428,12 +447,34 @@
     "tapToRetry": "Tap to retry",
     "loadingVideo": "Loading video...",
     "deleteVideo": "Delete video",
+    "deleteConfirm": "Are you sure you want to delete this video? This action cannot be undone.",
     "ownershipTitle": "Content Ownership",
     "ownershipBody": "By uploading, you confirm that this video is your original content and you have the right to share it. Videos that violate copyright may be removed.",
     "ownershipAffirm": "I affirm that I own this content",
     "upload": "Upload",
     "playBeta": "Play beta video by {{name}}",
-    "retryLoad": "Retry loading video"
+    "retryLoad": "Retry loading video",
+    "uploadSuccess": "Video Uploaded",
+    "uploadSuccessMessage": "Your beta video has been uploaded successfully!",
+    "uploadFailed": "Upload Failed",
+    "tapToReplace": "Tap to replace",
+    "like": "Like video",
+    "unlike": "Unlike video",
+    "sortNewest": "Newest",
+    "sortMostLiked": "Most Liked",
+    "reportVideo": "Report video",
+    "tapToExpand": "Tap to watch beta video by {{name}}"
+  },
+
+  "ascent": {
+    "yourClimb": "Your Climb",
+    "yourOpinion": "Your Opinion",
+    "share": "Share"
+  },
+
+  "feedback": {
+    "deleteTip": "Delete tip",
+    "deleteConfirm": "Are you sure you want to delete this tip? This action cannot be undone."
   },
 
   "filter": {
@@ -656,8 +697,11 @@
 
   "leaderboards": {
     "title": "Leaderboards",
-    "noLeaderboards": "No enrolled leaderboards",
-    "joinPrompt": "Log climbs at a gym to join their weekly leaderboard",
+    "active": "Active",
+    "retired": "Retired",
+    "noLeaderboards": "No leaderboards found",
+    "joinPrompt": "Log climbs at a gym to join their leaderboards",
+    "noRetired": "No retired leaderboards yet",
     "findGyms": "Find Gyms"
   },
 

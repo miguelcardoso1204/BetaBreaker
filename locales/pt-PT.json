@@ -92,8 +92,8 @@
     "avatarUrl": "URL do Avatar",
     "avatarUrlPlaceholder": "https://exemplo.com/avatar.png",
     "gradeSystem": "Sistema de Graduação",
-    "homeGym": "Ginásio Principal",
-    "selectGym": "Selecionar um ginásio",
+    "favoriteGyms": "Ginásios Favoritos",
+    "manageGyms": "Gerir ginásios favoritos nas páginas dos ginásios",
     "climber": "Escalador",
     "pro": "Pro",
     "free": "Gratuito",
@@ -113,14 +113,19 @@
     "exportCompleteBody": "Os seus dados foram exportados.",
     "deleteConfirmTitle": "Eliminar Conta",
     "deleteConfirmBody": "Isto irá eliminar permanentemente a sua conta e todos os dados associados. Esta ação não pode ser desfeita.",
-    "selectHomeGym": "Selecionar Ginásio Principal",
     "pinnedBadges": "Distintivos Fixados",
     "noPinnedBadges": "Ainda sem distintivos fixados",
     "recentSends": "Envios Recentes",
     "noRecentSends": "Ainda sem envios recentes",
     "failedToLoad": "Falha ao carregar perfil",
     "followers": "seguidores",
-    "following": "a seguir"
+    "following": "a seguir",
+    "enrolledLeaderboards": "Rankings",
+    "noEnrolledLeaderboards": "Ainda não inscrito em nenhum ranking",
+    "viewAll": "Ver Todos",
+    "recentSessions": "Sessões Recentes",
+    "noRecentSessions": "Sem sessões — comece a escalar!",
+    "ascents": "vias"
   },
 
   "settings": {
@@ -148,12 +153,13 @@
     "welcomeSubtitle": "Registe as suas escaladas, partilhe beta, compita com amigos.",
     "letsGetStarted": "Vamos começar",
     "skipSetup": "Saltar configuração",
-    "selectHomeGym": "Selecione o Seu Ginásio Principal",
-    "changeGymLater": "Pode alterar isto mais tarde nas definições.",
+    "favoriteGyms": "Favorite os Seus Ginásios",
+    "favoriteGymsSubtitle": "Selecione os ginásios onde escala. Pode alterar a qualquer momento.",
     "gradeSystem": "Sistema de Graduação",
     "gradeSystemPrompt": "Como lê os graus?",
     "allSet": "Está tudo pronto!",
-    "noGymSelected": "Nenhum ginásio selecionado",
+    "noGymsSelected": "Nenhum ginásio selecionado",
+    "favoriteGymsLabel": "Ginásios Favoritos",
     "getStarted": "Começar"
   },
 
@@ -180,16 +186,24 @@
     "duration": "Duração: {{duration}}",
     "ascentCount_one": "{{count}} ascensão",
     "ascentCount_other": "{{count}} ascensões",
-    "gradeDistribution": "Distribuição de Graus"
+    "gradeDistribution": "Distribuição de Graus",
+    "activeSession": "Sessão Ativa",
+    "sessionAt": "Sessão em {{gym}}",
+    "routesLogged": "Vias Registadas",
+    "browseRoutes": "Explorar Vias",
+    "finishSession": "Terminar Sessão",
+    "finishConfirmTitle": "Terminar Sessão?",
+    "finishConfirmBody": "Terminar a sua sessão de escalada e guardar os registos?",
+    "noAscentsYet": "Ainda sem ascensões",
+    "tapToLog": "Explore vias ou digitalize um código QR para registar escaladas",
+    "removeAscent": "Remover ascensão",
+    "done": "Concluído",
+    "viewSession": "Ver Sessão"
   },
 
   "logbook": {
-    "sessions": "Sessões",
-    "saved": "Guardados",
     "noSessions": "Ainda sem sessões",
     "startSessionPrompt": "Inicie uma sessão de escalada para ver o seu histórico aqui",
-    "noSavedRoutes": "Ainda sem vias guardadas",
-    "saveRoutesPrompt": "Marque vias com estrela para as guardar para mais tarde",
     "ascents": "Ascensões",
     "noAscents": "Nenhuma ascensão registada",
     "failedToLoad": "Falha ao carregar sessão",
@@ -198,12 +212,14 @@
     "sendCount_one": "{{count}} envio",
     "sendCount_other": "{{count}} envios",
     "flashCount_one": "{{count}} flash",
-    "flashCount_other": "{{count}} flashes"
+    "flashCount_other": "{{count}} flashes",
+    "duration": "Duração",
+    "sends": "Envios"
   },
 
   "gym": {
-    "removeHomeGym": "Remover ginásio principal",
-    "setAsHomeGym": "Definir como ginásio principal",
+    "unfavorite": "Remover dos favoritos",
+    "favorite": "Adicionar aos favoritos",
     "hoursNotAvailable": "Horário não disponível",
     "schedule": "Horário",
     "closed": "Fechado",
@@ -223,17 +239,19 @@
     "styleAnalysisComingSoon": "A Análise de Estilo estará disponível numa atualização futura.",
     "leaderboard": {
       "title": "Ranking",
-      "thisWeek": "Esta Semana",
-      "lastWeek": "Semana Passada",
-      "grade": "Grau",
-      "flashRate": "Taxa de Flash",
-      "volume": "Volume",
-      "noEntries": "Sem entradas para este período"
+      "backToList": "Todos os Rankings",
+      "noEntries": "Ainda sem entradas",
+      "noActive": "Sem rankings ativos neste ginásio",
+      "noRetired": "Sem rankings retirados neste ginásio",
+      "participants": "{{count}} participantes",
+      "rules": "Regras",
+      "prizes": "Prémios"
     }
   },
 
   "route": {
     "grade": "Grau:",
+    "communityGrade": "Comunidade:",
     "setOn": "Definida em:",
     "wall": "Parede:",
     "setter": "Abridora:",
@@ -244,12 +262,11 @@
     "videoSubmissions": "Vídeos Submetidos",
     "noVideos": "Ainda sem vídeos beta — seja o primeiro a partilhar!",
     "failedToLoad": "Falha ao carregar via",
-    "unfavorite": "Remover dos favoritos",
-    "favorite": "Adicionar aos favoritos",
     "noRoutesFound": "Nenhuma via encontrada",
     "unnamedRoute": "Via Sem Nome",
     "result": "Resultado",
     "howWouldYouRate": "Como avaliaria esta via?",
+    "whatGrade": "Que grau achas que é?",
     "comments": "Comentários",
     "commentsPlaceholder": "Partilhe o seu beta, condições ou pensamentos...",
     "climbingStyle": "Estilo de Escalada"
@@ -333,6 +350,7 @@
     "reasonSpam": "Spam",
     "reasonHarassment": "Assédio",
     "reasonDangerous": "Atividade perigosa",
+    "reasonCheating": "Batota",
     "reasonOther": "Outro",
     "reportSubmitted": "Relatório submetido",
     "reportThankYou": "Obrigado por ajudar a manter a nossa comunidade segura.",
@@ -428,12 +446,34 @@
     "tapToRetry": "Toque para tentar novamente",
     "loadingVideo": "A carregar vídeo...",
     "deleteVideo": "Eliminar vídeo",
+    "deleteConfirm": "Tem a certeza que deseja eliminar este vídeo? Esta ação não pode ser desfeita.",
     "ownershipTitle": "Propriedade do Conteúdo",
     "ownershipBody": "Ao carregar, confirma que este vídeo é o seu conteúdo original e que tem o direito de o partilhar. Vídeos que violem direitos de autor podem ser removidos.",
     "ownershipAffirm": "Afirmo que sou proprietário deste conteúdo",
     "upload": "Carregar",
     "playBeta": "Reproduzir vídeo beta de {{name}}",
-    "retryLoad": "Tentar carregar vídeo novamente"
+    "retryLoad": "Tentar carregar vídeo novamente",
+    "uploadSuccess": "Vídeo Enviado",
+    "uploadSuccessMessage": "O teu vídeo beta foi enviado com sucesso!",
+    "uploadFailed": "Envio Falhou",
+    "tapToReplace": "Toca para substituir",
+    "like": "Gostar do vídeo",
+    "unlike": "Remover gosto do vídeo",
+    "sortNewest": "Mais Recentes",
+    "sortMostLiked": "Mais Gostados",
+    "reportVideo": "Denunciar vídeo",
+    "tapToExpand": "Toque para ver vídeo beta de {{name}}"
+  },
+
+  "ascent": {
+    "yourClimb": "A Tua Escalada",
+    "yourOpinion": "A Tua Opinião",
+    "share": "Partilhar"
+  },
+
+  "feedback": {
+    "deleteTip": "Eliminar dica",
+    "deleteConfirm": "Tens a certeza que queres eliminar esta dica? Esta ação não pode ser revertida."
   },
 
   "filter": {
@@ -656,8 +696,11 @@
 
   "leaderboards": {
     "title": "Rankings",
-    "noLeaderboards": "Sem rankings inscritos",
-    "joinPrompt": "Registe escaladas num ginásio para entrar no ranking semanal",
+    "active": "Ativos",
+    "retired": "Retirados",
+    "noLeaderboards": "Nenhum ranking encontrado",
+    "joinPrompt": "Registe escaladas num ginásio para entrar nos rankings",
+    "noRetired": "Ainda sem rankings retirados",
     "findGyms": "Encontrar Ginásios"
   },
 
