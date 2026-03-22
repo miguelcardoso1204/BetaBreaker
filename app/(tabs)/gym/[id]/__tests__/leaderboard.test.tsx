@@ -83,6 +83,8 @@ jest.mock("lucide-react-native", () => {
     ChevronRight: (props: any) => <View testID="icon-chevron" {...props} />,
     ChevronLeft: (props: any) => <View testID="icon-chevron-left" {...props} />,
     Users: (props: any) => <View testID="icon-users" {...props} />,
+    ScrollText: (props: any) => <View testID="icon-scroll-text" {...props} />,
+    X: (props: any) => <View testID="icon-x" {...props} />,
   };
 });
 
@@ -203,7 +205,7 @@ describe("LeaderboardScreen", () => {
 
     render(<LeaderboardScreen />);
 
-    expect(screen.getByText("Summit Climbing")).toBeOnTheScreen();
+    expect(screen.getByText("Summit Climbing Leaderboards")).toBeOnTheScreen();
   });
 
   // ── Detail view tests ──────────────────────────────────────────

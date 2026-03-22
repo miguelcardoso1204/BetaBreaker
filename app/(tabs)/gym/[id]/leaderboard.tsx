@@ -125,6 +125,7 @@ export default function LeaderboardScreen() {
         {/* Header — back to gym */}
         <View className="flex-row items-center px-4 pt-2 pb-1">
           <Pressable
+            testID="back-to-list"
             onPress={() => {
               // If the user deep-linked here from the enrolled leaderboards tab,
               // go back to that tab. Otherwise show the gym's leaderboard list.

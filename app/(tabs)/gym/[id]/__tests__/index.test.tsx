@@ -90,7 +90,17 @@ jest.mock("lucide-react-native", () => {
     MapPin: (props: any) => <View testID="icon-map-pin" {...props} />,
     Clock: (props: any) => <View testID="icon-clock" {...props} />,
     ChevronRight: (props: any) => <View testID="icon-chevron-right" {...props} />,
+    ChevronLeft: (props: any) => <View testID="icon-chevron-left" {...props} />,
     Play: (props: any) => <View testID="icon-play" {...props} />,
+  };
+});
+
+// Mock @expo/vector-icons — Ionicons uses native font assets unavailable
+// in Jest. Replace with a simple View so renders don't crash.
+jest.mock("@expo/vector-icons", () => {
+  const { View } = require("react-native");
+  return {
+    Ionicons: (props: any) => <View testID="icon-ionicons" {...props} />,
   };
 });
 
