@@ -113,10 +113,12 @@ export function BetaVideoPlayer({
   // Subscribe to player status changes via expo's useEvent hook.
   // This returns a reactive value that updates when the player's status
   // transitions between 'idle', 'loading', 'readyToPlay', and 'error'.
-  const { status, error: playerError } = useEvent(player, "statusChange", {
+  const statusEvent = useEvent(player, "statusChange", {
     status: player?.status ?? "idle",
-    error: null,
+    error: null as any,
   });
+  const status = statusEvent?.status ?? "idle";
+  const playerError = statusEvent?.error ?? undefined;
 
   /**
    * Activate the player — called when the user taps the thumbnail.

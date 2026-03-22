@@ -129,7 +129,7 @@ export function useRouteRating(routeId: string) {
         .not("rating", "is", null);
       if (error) throw error;
 
-      const ratings = (data ?? []).map((r: { rating: number }) => r.rating);
+      const ratings = (data ?? []).map((r: { rating: number | null }) => r.rating!).filter(Boolean);
       if (ratings.length === 0) return { average: null, count: 0 };
 
       const sum = ratings.reduce((a: number, b: number) => a + b, 0);

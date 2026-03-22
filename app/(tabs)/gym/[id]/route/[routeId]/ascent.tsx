@@ -356,7 +356,7 @@ export default function AscentFormScreen() {
           {t("route.whatGrade")}
         </Text>
         <GradeSlider
-          value={perceivedGrade ?? route.canonical_grade}
+          value={perceivedGrade ?? route?.canonical_grade ?? 0}
           onChange={setPerceivedGrade}
         />
 
