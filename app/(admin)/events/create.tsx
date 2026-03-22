@@ -40,7 +40,7 @@ const SCORING_OPTIONS: { value: ScoringModel; label: string }[] = [
 ];
 
 export default function CreateEventScreen() {
-  const { user } = useAuth();
+  const { user, adminGymId } = useAuth();
   const router = useRouter();
   const createEvent = useCreateEvent();
 
@@ -64,11 +64,11 @@ export default function CreateEventScreen() {
   function handleSubmit() {
     // Validate: name is required
     if (!name.trim()) return;
-    if (!user?.homeGymId) return;
+    if (!adminGymId) return;
 
     createEvent.mutate(
       {
-        gymId: user.homeGymId,
+        gymId: adminGymId,
         name: name.trim(),
         scoringModel,
         startDate,

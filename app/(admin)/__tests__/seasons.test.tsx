@@ -12,7 +12,7 @@
  * Mock strategy (matching maintenance.test.tsx):
  *   - useSeasons: mutable __mockData pattern
  *   - useCreateSeason / useCloseSeason / useDeleteSeason: jest.fn() mutateAsync
- *   - useAuth: stable admin user with homeGymId
+ *   - useAuth: stable admin user with adminGymId
  *   - lucide-react-native: Text stubs
  */
 
@@ -23,7 +23,8 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));

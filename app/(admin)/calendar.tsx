@@ -8,7 +8,7 @@
  *   4. Workload summary — route count per setter this month
  *
  * DATA FLOW:
- *   1. useAuth() → homeGymId for the current admin
+ *   1. useAuth() → adminGymId for the current admin
  *   2. useSettingSessions(gymId, start, end) → sessions for the month
  *   3. useSetterWorkload(gymId, start, end) → route counts per setter
  *   4. useGymSetters(gymId) → setter list for the assignment dropdown
@@ -56,8 +56,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function CalendarScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   // ── Month navigation state ──────────────────────────────────────
   const [currentMonth, setCurrentMonth] = useState(() => new Date());

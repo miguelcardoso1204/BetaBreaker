@@ -12,7 +12,7 @@
  *   - useSettingSessions / useSetterWorkload: mutable __mockData pattern
  *   - useCreateSettingSession / useUpdateSettingSession / useDeleteSettingSession: jest.fn()
  *   - useGymSetters: provides setter list for the dropdown
- *   - useAuth: provides homeGymId for gym-scoped queries
+ *   - useAuth: provides adminGymId for gym-scoped queries
  *   - CalendarGrid: simplified mock to avoid date-fns complexity in screen tests
  */
 
@@ -22,7 +22,8 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));

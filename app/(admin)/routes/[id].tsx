@@ -15,7 +15,7 @@
  * DATA FLOW:
  *   - useLocalSearchParams() → routeId from the URL
  *   - useRouteDetail(routeId) → fetches route with setter profile
- *   - useGymSetters(homeGymId) → setter list for reassignment
+ *   - useGymSetters(adminGymId) → setter list for reassignment
  *   - Mutations: useUpdateRoute, useDeleteRoute, useGenerateQr
  */
 
@@ -43,11 +43,11 @@ import { canonicalToDisplay } from "@/utils/grades";
 export default function EditRouteScreen() {
   const { id: routeId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, adminGymId } = useAuth();
 
   // ── Data fetching ────────────────────────────────────────────────
   const { data: route, isLoading, error } = useRouteDetail(routeId!);
-  const { setters } = useGymSetters(user?.homeGymId);
+  const { setters } = useGymSetters(adminGymId);
 
   // ── Mutations ────────────────────────────────────────────────────
   const updateRoute = useUpdateRoute();

@@ -16,7 +16,7 @@
  *      - Timestamp
  *
  * DATA FLOW:
- *   useAuth() → homeGymId → useAuditLog(gymId) → FlatList
+ *   useAuth() → adminGymId → useAuditLog(gymId) → FlatList
  *   No mutations — audit log is read-only from the client.
  *
  * STATES:
@@ -131,8 +131,8 @@ function formatTimestamp(isoString: string): string {
 
 export default function AuditLogScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   // ── Data hook ──────────────────────────────────────────────────────
   const { entries, isLoading, error } = useAuditLog(gymId);

@@ -17,7 +17,7 @@
  *      - Delete button (trash icon)
  *
  * DATA FLOW:
- *   useAuth() → homeGymId → useMaintenanceTickets(gymId) → FlatList
+ *   useAuth() → adminGymId → useMaintenanceTickets(gymId) → FlatList
  *   Mutations: useUpdateTicketStatus, useDeleteTicket
  *
  * STATES:
@@ -69,8 +69,8 @@ type FilterKey = (typeof FILTER_TABS)[number]["key"];
 
 export default function MaintenanceScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   // ── Data hooks ────────────────────────────────────────────────────
   const { tickets, isLoading, error } = useMaintenanceTickets(gymId);

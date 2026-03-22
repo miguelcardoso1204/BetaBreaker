@@ -11,7 +11,7 @@
  *   3. FlatList of GradeConsensusCard items (each expandable)
  *
  * DATA FLOW:
- *   useAuth() → homeGymId → useRoutesGradeConsensus(gymId) → FlatList
+ *   useAuth() → adminGymId → useRoutesGradeConsensus(gymId) → FlatList
  *   Each card fetches its own distribution lazily via useGradeSubmissions
  *
  * STATES:
@@ -40,8 +40,8 @@ const DIVERGENCE_THRESHOLD = 2;
 
 export default function ConsensusScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   const { routes, isLoading, error } = useRoutesGradeConsensus(gymId);
 

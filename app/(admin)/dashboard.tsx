@@ -6,8 +6,8 @@
  *   2. Recent activity feed — latest ascents with climber/route info
  *
  * DATA FLOW:
- *   1. useAuth() → get homeGymId for the current admin
- *   2. useAdminDashboard(homeGymId) → dashboardService → PostgREST
+ *   1. useAuth() → get adminGymId for the current admin
+ *   2. useAdminDashboard(adminGymId) → dashboardService → PostgREST
  *      → Postgres (RLS: gym_admin/super_admin policy)
  *
  * STATES:
@@ -62,8 +62,8 @@ function StatWidget({ value, label }: { value: number; label: string }) {
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   const {
     activeRoutes,

@@ -1,7 +1,7 @@
 /**
  * Admin Route List Screen — Browse & Navigate to Routes
  *
- * Displays all climbing routes at the admin's home gym in a FlatList.
+ * Displays all climbing routes at the admin's gym in a FlatList.
  * Each route card shows: name, V-scale grade, status badge, and color dot.
  * Tapping a card navigates to the edit/detail screen. A create button
  * navigates to the create form.
@@ -10,8 +10,8 @@
  * archived) so admins can manage the full route lifecycle.
  *
  * DATA FLOW:
- *   1. useAuth() → get homeGymId for the current admin
- *   2. useAdminRoutes(homeGymId) → routeService.getRoutes() with all statuses
+ *   1. useAuth() → get adminGymId for the current admin
+ *   2. useAdminRoutes(adminGymId) → routeService.getRoutes() with all statuses
  *   3. Tap route card → router.push to edit screen
  *   4. Tap create button → router.push to create form
  */
@@ -37,8 +37,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function RouteListScreen() {
-  const { user } = useAuth();
-  const { routes, isLoading, error } = useAdminRoutes(user?.homeGymId);
+  const { user, adminGymId } = useAuth();
+  const { routes, isLoading, error } = useAdminRoutes(adminGymId);
   const router = useRouter();
 
   // ── Loading state ────────────────────────────────────────────────

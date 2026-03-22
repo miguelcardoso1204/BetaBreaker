@@ -47,10 +47,10 @@ const GRADE_OPTIONS = GRADE_TABLE.reduce<{ label: string; canonical: number }[]>
 );
 
 export default function CreateRouteScreen() {
-  const { user } = useAuth();
+  const { user, adminGymId } = useAuth();
   const router = useRouter();
   const createRoute = useCreateRoute();
-  const { setters } = useGymSetters(user?.homeGymId);
+  const { setters } = useGymSetters(adminGymId);
 
   // ── Form state ────────────────────────────────────────────────────
   const [name, setName] = useState("");
@@ -63,11 +63,11 @@ export default function CreateRouteScreen() {
   function handleSubmit() {
     // Grade is the only required field — can't create a route without difficulty
     if (canonicalGrade === null) return;
-    if (!user?.homeGymId) return;
+    if (!adminGymId) return;
 
     createRoute.mutate(
       {
-        gymId: user.homeGymId,
+        gymId: adminGymId,
         name: name.trim() || undefined,
         canonicalGrade,
         color: color.trim() || undefined,

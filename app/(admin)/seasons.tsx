@@ -17,7 +17,7 @@
  *      - Closed seasons → delete button (trash icon)
  *
  * DATA FLOW:
- *   useAuth() → homeGymId → useSeasons(gymId) → FlatList
+ *   useAuth() → adminGymId → useSeasons(gymId) → FlatList
  *   Mutations: useCreateSeason, useCloseSeason, useDeleteSeason
  *
  * STATES:
@@ -67,8 +67,8 @@ type FilterKey = (typeof FILTER_TABS)[number]["key"];
 
 export default function SeasonsScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const gymId = user?.homeGymId ?? null;
+  const { user, adminGymId } = useAuth();
+  const gymId = adminGymId;
 
   // ── Data hooks ────────────────────────────────────────────────────
   const { seasons, isLoading, error } = useSeasons(gymId);

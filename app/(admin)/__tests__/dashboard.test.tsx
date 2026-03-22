@@ -8,7 +8,7 @@
  *
  * Mock strategy:
  *   - useAdminDashboard: mutable __mockData pattern (from billing.test.tsx)
- *   - useAuth: provides homeGymId for gym-scoped queries
+ *   - useAuth: provides adminGymId for gym-scoped queries
  */
 
 import React from "react";
@@ -17,7 +17,8 @@ import { render, screen } from "@testing-library/react-native";
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));

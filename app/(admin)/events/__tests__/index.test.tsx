@@ -6,7 +6,7 @@
  *
  * Mock strategy:
  *   - useEvents: control events data via mutable __mockEventsData
- *   - useAuth: provide a stable user with homeGymId
+ *   - useAuth: provide a stable admin user with adminGymId
  *   - expo-router: capture navigation calls (push for create/edit)
  */
 
@@ -22,7 +22,8 @@ jest.mock("expo-router", () => ({
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));

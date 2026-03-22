@@ -1,14 +1,14 @@
 /**
  * Admin Event List Screen — Browse & Navigate to Events
  *
- * Displays all competition events at the admin's home gym in a FlatList.
+ * Displays all competition events at the admin's gym in a FlatList.
  * Each event card shows: name, status badge, scoring model, and date range.
  * Tapping a card navigates to the edit/detail screen. A create button
  * navigates to the create form.
  *
  * DATA FLOW:
- *   1. useAuth() → get homeGymId for the current admin
- *   2. useEvents(homeGymId) → eventsService.getEvents() → PostgREST → Postgres
+ *   1. useAuth() → get adminGymId for the current admin
+ *   2. useEvents(adminGymId) → eventsService.getEvents() → PostgREST → Postgres
  *   3. Tap event card → router.push to edit screen
  *   4. Tap create button → router.push to create form
  *
@@ -60,8 +60,8 @@ function formatDate(dateString: string): string {
 }
 
 export default function EventListScreen() {
-  const { user } = useAuth();
-  const { events, isLoading, error } = useEvents(user?.homeGymId);
+  const { user, adminGymId } = useAuth();
+  const { events, isLoading, error } = useEvents(adminGymId);
   const router = useRouter();
 
   // ── Loading state ──────────────────────────────────────────────────

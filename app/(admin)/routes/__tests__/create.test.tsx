@@ -8,7 +8,7 @@
  * Mock strategy (matching events/create.test.tsx):
  *   - useCreateRoute: capture mutation calls
  *   - useGymSetters: provide setter options
- *   - useAuth: provide homeGymId
+ *   - useAuth: provide adminGymId
  *   - expo-router: capture navigation (back after create)
  */
 
@@ -24,7 +24,8 @@ jest.mock("expo-router", () => ({
 // ── Mock useAuth ──────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));

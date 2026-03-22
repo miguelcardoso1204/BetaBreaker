@@ -9,7 +9,7 @@
  *
  * Mock strategy:
  *   - useRoutesGradeConsensus: mutable __mockData pattern
- *   - useAuth: provides homeGymId
+ *   - useAuth: provides adminGymId
  *   - GradeConsensusCard: simplified mock to avoid nested hook complexity
  *   - lucide-react-native: mocked for SVG processing
  */
@@ -20,7 +20,8 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     role: "gym_admin",
   }),
 }));
