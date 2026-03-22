@@ -29,6 +29,7 @@
 -- - user_badges:          Auto-populated by check_and_award_badges() trigger
 -- - user_streaks:         Auto-populated by recompute_streak() trigger
 -- - leaderboard_entries:  Auto-populated by compute_leaderboard() trigger
+--                         (requires leaderboards to exist first — seeded in Section 14)
 -- ===========================================================================
 
 
@@ -62,8 +63,8 @@ ON CONFLICT (id) DO NOTHING;
 -- ===========================================================================
 -- Inserting into auth.users fires the handle_new_user() trigger, which
 -- automatically creates a profile row with display_name from raw_user_meta_data.
--- After the trigger fires, we UPDATE profiles to set home_gym_id and
--- onboarding_completed (the trigger only sets id + display_name).
+-- After the trigger fires, we UPDATE profiles to set onboarding_completed
+-- and INSERT into favorite_gyms (the trigger only sets id + display_name).
 --
 -- The instance_id, aud, role, and token fields are required by auth.users
 -- but aren't meaningful for local dev — they're set to Supabase defaults.
@@ -119,17 +120,23 @@ INSERT INTO auth.users (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Now update the auto-created profiles with home gym and onboarding status.
+-- Now update the auto-created profiles to mark onboarding complete.
 -- The handle_new_user trigger already created these rows with display_name;
 -- we just add the fields the trigger doesn't set.
 UPDATE public.profiles
-SET home_gym_id = '10000000-0000-0000-0000-000000000001',
-    onboarding_completed = true
+SET onboarding_completed = true
 WHERE id IN (
   '20000000-0000-0000-0000-000000000001',
   '20000000-0000-0000-0000-000000000002',
   '20000000-0000-0000-0000-000000000003'
 );
+
+-- Add the gym as a favorite for all seed users (replaces the old home_gym_id).
+INSERT INTO public.favorite_gyms (user_id, gym_id) VALUES
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001'),
+  ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001'),
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000001')
+ON CONFLICT (user_id, gym_id) DO NOTHING;
 
 
 -- ===========================================================================
@@ -535,13 +542,172 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ===========================================================================
--- Section 14: Alex's Ascents at Other Gyms
+-- Section 14: Leaderboards (must exist BEFORE ascents so triggers find them)
 -- ===========================================================================
--- Gives Alex a presence at multiple gyms so the app has ascent history
--- beyond Summit. These fire the gamification triggers (streak, badges,
--- leaderboards) for those gyms too.
+-- Admin-created leaderboards with custom time windows. The on_ascent_insert
+-- trigger checks for active leaderboards whose time window covers the ascent
+-- and recomputes scores. We insert these before the ascents below so the
+-- triggers auto-populate leaderboard_entries.
+--
+-- Porto gyms get active + retired leaderboards so both tabs have data.
+-- Lisbon gyms get one active leaderboard each.
 
--- Vertical World — Alex visited last week
+INSERT INTO public.leaderboards (id, gym_id, name, starts_at, ends_at) VALUES
+  -- Vertigo Climbing Center (Lisboa) — active monthly challenge
+  ('80000000-0000-0000-0000-000000000001',
+   '10000000-0000-0000-0000-000000000001',
+   'March Madness',
+   now() - interval '2 weeks', now() + interval '2 weeks'),
+
+  -- 9.8 Gravity (Prior Velho) — active weekly challenge
+  ('80000000-0000-0000-0000-000000000002',
+   '10000000-0000-0000-0000-000000000002',
+   'Volume Week',
+   now() - interval '1 week', now() + interval '1 week'),
+
+  -- São Rock Climbing (Porto) — active monthly
+  ('80000000-0000-0000-0000-000000000003',
+   '10000000-0000-0000-0000-000000000004',
+   'Porto Power Month',
+   now() - interval '3 weeks', now() + interval '1 week'),
+
+  -- São Rock Climbing (Porto) — retired February challenge
+  ('80000000-0000-0000-0000-000000000004',
+   '10000000-0000-0000-0000-000000000004',
+   'February Flash Fest',
+   now() - interval '6 weeks', now() - interval '2 weeks'),
+
+  -- The North Wall (Porto area) — active challenge
+  ('80000000-0000-0000-0000-000000000005',
+   '10000000-0000-0000-0000-000000000005',
+   'North Wall Volume Blitz',
+   now() - interval '2 weeks', now() + interval '2 weeks'),
+
+  -- The North Wall (Porto area) — retired winter challenge
+  ('80000000-0000-0000-0000-000000000006',
+   '10000000-0000-0000-0000-000000000005',
+   'Winter Crush',
+   now() - interval '8 weeks', now() - interval '4 weeks'),
+
+  -- PROA Climbing Center (Matosinhos) — active challenge
+  ('80000000-0000-0000-0000-000000000007',
+   '10000000-0000-0000-0000-000000000007',
+   'Flash March',
+   now() - interval '2 weeks', now() + interval '2 weeks'),
+
+  -- Zone Climb (Gaia) — active challenge
+  ('80000000-0000-0000-0000-000000000008',
+   '10000000-0000-0000-0000-000000000008',
+   'Gaia Grind',
+   now() - interval '1 week', now() + interval '3 weeks'),
+
+  -- Zone Climb (Gaia) — retired challenge
+  ('80000000-0000-0000-0000-000000000009',
+   '10000000-0000-0000-0000-000000000008',
+   'New Year Volume Rush',
+   now() - interval '10 weeks', now() - interval '6 weeks')
+
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 15: Alex's Ascents at Porto Gyms
+-- ===========================================================================
+-- Alex climbs at all 4 Porto-area gyms. These ascents fire on_ascent_insert
+-- which finds the active leaderboards above and populates leaderboard_entries.
+
+-- São Rock Climbing (Porto) — Alex visited last week
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000301',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000301',
+   'flash', 1, 0, now() - interval '5 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000302',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000303',
+   'send', 2, 10, now() - interval '5 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000303',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000304',
+   'send', 4, 13, now() - interval '4 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000304',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000305',
+   'send', 7, 20, now() - interval '4 days');
+
+-- The North Wall (São Mamede de Infesta) — Alex visited 3 days ago
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000305',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000401',
+   'flash', 1, 0, now() - interval '3 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000306',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000403',
+   'flash', 1, 5, now() - interval '3 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000307',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000405',
+   'send', 3, 15, now() - interval '3 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000308',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000406',
+   'send', 5, 18, now() - interval '3 days');
+
+-- PROA Climbing Center (Matosinhos) — Alex visited 2 days ago
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000309',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000601',
+   'flash', 1, 0, now() - interval '2 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000310',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000602',
+   'flash', 1, 5, now() - interval '2 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000311',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000604',
+   'send', 3, 13, now() - interval '2 days');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000312',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000605',
+   'send', 6, 18, now() - interval '2 days');
+
+-- Zone Climb (Gaia) — Alex visited yesterday
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000313',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000701',
+   'flash', 1, 0, now() - interval '1 day');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000314',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000703',
+   'flash', 1, 10, now() - interval '1 day');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000315',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000704',
+   'send', 2, 13, now() - interval '1 day');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000316',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000705',
+   'send', 4, 18, now() - interval '1 day');
+
+
+-- ===========================================================================
+-- Section 16: Alex's Ascents at Lisbon Gyms (Other Gyms)
+-- ===========================================================================
+-- Gives Alex a presence at Lisbon gyms so the app has ascent history
+-- beyond the main gym.
+
+-- 9.8 Gravity — Alex visited last week
 INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
   ('50000000-0000-0000-0000-000000000101',
    '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000101',
@@ -557,7 +723,7 @@ INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perce
    '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000104',
    'send', 5, 13, now() - interval '5 days');
 
--- The Circuit — Alex visited yesterday
+-- Escala25 — Alex visited yesterday
 INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
   ('50000000-0000-0000-0000-000000000201',
    '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000201',
@@ -570,7 +736,7 @@ INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perce
 
 
 -- ===========================================================================
--- Section 15: Saved Route Favorites
+-- Section 17: Saved Route Favorites (original Section 15)
 -- ===========================================================================
 -- The Route Detail screen checks saved_routes with save_type = 'favorite'
 -- to show the star icon as filled/unfilled. These give Alex some pre-
@@ -588,36 +754,114 @@ ON CONFLICT (user_id, route_id, save_type) DO NOTHING;
 
 
 -- ===========================================================================
--- Section 16: Route Feedback (beta tips)
+-- Section 18: Route Feedback (beta tips)
 -- ===========================================================================
 -- Route Detail will eventually show beta tips from other climbers.
 -- Seeding a few gives content for when that feature is wired up.
 INSERT INTO public.route_feedback (id, route_id, user_id, body, score) VALUES
+  -- Crimpy Corner (V3)
   ('70000000-0000-0000-0000-000000000001',
    '30000000-0000-0000-0000-000000000004',
    '20000000-0000-0000-0000-000000000002',
    'Match on the second hold before reaching for the crimp — much more stable.',
    3),
+  -- Power Play (V5)
   ('70000000-0000-0000-0000-000000000002',
    '30000000-0000-0000-0000-000000000008',
    '20000000-0000-0000-0000-000000000002',
    'Drop knee on the left side to get the clip. Don''t campus it.',
    5),
+  ('70000000-0000-0000-0000-000000000016',
+   '30000000-0000-0000-0000-000000000008',
+   '20000000-0000-0000-0000-000000000001',
+   'There''s a kneebar rest before the last hard move. Shake out there.',
+   3),
+  -- Dyno Drama (V4)
   ('70000000-0000-0000-0000-000000000003',
    '30000000-0000-0000-0000-000000000007',
    '20000000-0000-0000-0000-000000000001',
    'The dyno is shorter if you use the right foot chip — most people miss it.',
    7),
+  ('70000000-0000-0000-0000-000000000017',
+   '30000000-0000-0000-0000-000000000007',
+   '20000000-0000-0000-0000-000000000003',
+   'Aim for the top of the hold, not the face. The lip is much better.',
+   2),
+  -- Campus King (V8)
   ('70000000-0000-0000-0000-000000000004',
    '30000000-0000-0000-0000-000000000013',
    '20000000-0000-0000-0000-000000000003',
    'Lock off hard on the undercling before committing to the throw. Feet are everything here.',
-   2)
+   2),
+  -- Baby Steps (V0)
+  ('70000000-0000-0000-0000-000000000005',
+   '30000000-0000-0000-0000-000000000001',
+   '20000000-0000-0000-0000-000000000002',
+   'Use the big jug at the start to set your feet properly. No need to rush.',
+   4),
+  ('70000000-0000-0000-0000-000000000006',
+   '30000000-0000-0000-0000-000000000001',
+   '20000000-0000-0000-0000-000000000003',
+   'Keep your hips close to the wall and trust the footholds — they''re bigger than they look.',
+   6),
+  -- First Timer (V0)
+  ('70000000-0000-0000-0000-000000000007',
+   '30000000-0000-0000-0000-000000000002',
+   '20000000-0000-0000-0000-000000000002',
+   'Straight arms save energy. Let your skeleton do the work, not your biceps.',
+   8),
+  -- Easy Street (V1)
+  ('70000000-0000-0000-0000-000000000008',
+   '30000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001',
+   'Flag your right foot on the third move — it keeps you from barn-dooring off.',
+   3),
+  -- Balance Act (V2)
+  ('70000000-0000-0000-0000-000000000009',
+   '30000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000003',
+   'This one is all about body tension. Squeeze your core through the slab section.',
+   5),
+  -- Pocket Rocket (V3)
+  ('70000000-0000-0000-0000-000000000010',
+   '30000000-0000-0000-0000-000000000006',
+   '20000000-0000-0000-0000-000000000002',
+   'Open-hand grip on the pockets to save your tendons. Crimping them is a ticket to injury.',
+   9),
+  ('70000000-0000-0000-0000-000000000011',
+   '30000000-0000-0000-0000-000000000006',
+   '20000000-0000-0000-0000-000000000001',
+   'The second pocket is a two-finger — use your middle and ring finger, not index.',
+   4),
+  -- Sloper City (V6)
+  ('70000000-0000-0000-0000-000000000012',
+   '30000000-0000-0000-0000-000000000009',
+   '20000000-0000-0000-0000-000000000003',
+   'Chalk up properly and use maximum contact area on the slopers. Wrist position matters.',
+   6),
+  -- Tech Master (V7)
+  ('70000000-0000-0000-0000-000000000013',
+   '30000000-0000-0000-0000-000000000010',
+   '20000000-0000-0000-0000-000000000002',
+   'Read the wall carefully — there''s a hidden toe hook on the volume that makes the crux trivial.',
+   11),
+  -- Roof Rider (V7)
+  ('70000000-0000-0000-0000-000000000014',
+   '30000000-0000-0000-0000-000000000011',
+   '20000000-0000-0000-0000-000000000001',
+   'Heel hook the lip early. If you cut feet you''ll swing out and it''s over.',
+   7),
+  -- Crimp Nightmare (V8)
+  ('70000000-0000-0000-0000-000000000015',
+   '30000000-0000-0000-0000-000000000012',
+   '20000000-0000-0000-0000-000000000003',
+   'Half-crimp, not full crimp. Your pulleys will thank you. Move quickly through the crux.',
+   4)
 ON CONFLICT (id) DO NOTHING;
 
 
 -- ===========================================================================
--- Section 17: Follows (social graph)
+-- Section 19: Follows (social graph)
 -- ===========================================================================
 -- Wire up follow relationships between the three seed users.
 -- This data will be used when the Activity Feed and profile screens
@@ -632,3 +876,200 @@ INSERT INTO public.follows (follower_id, following_id) VALUES
   ('20000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001'),
   ('20000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000002')
 ON CONFLICT (follower_id, following_id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 20: Porto Gym Roles & Favorites for Alex
+-- ===========================================================================
+-- Alex needs climber roles and favorites at Porto gyms so the app shows
+-- him as a member and the gyms appear in his favorites list.
+INSERT INTO public.user_gym_roles (user_id, gym_id, role) VALUES
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000004', 'climber'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000005', 'climber'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000007', 'climber'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000008', 'climber')
+ON CONFLICT (user_id, gym_id) DO NOTHING;
+
+INSERT INTO public.favorite_gyms (user_id, gym_id) VALUES
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000004'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000005'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000007'),
+  ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000008')
+ON CONFLICT (user_id, gym_id) DO NOTHING;
+
+-- Jordan Admin needs admin role at Porto gyms so the leaderboards are visible
+-- (RLS requires admin role for INSERT but SELECT is open to all authenticated).
+INSERT INTO public.user_gym_roles (user_id, gym_id, role) VALUES
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000004', 'gym_admin'),
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000005', 'gym_admin'),
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000007', 'gym_admin'),
+  ('20000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000008', 'gym_admin')
+ON CONFLICT (user_id, gym_id) DO NOTHING;
+
+
+-- ===========================================================================
+-- Section 21: Retired Leaderboard Ascents
+-- ===========================================================================
+-- The retired leaderboards have time windows in the past, so the on_ascent_insert
+-- trigger won't find them for the ascents above (which are recent). We insert
+-- ascents with timestamps inside the retired windows so the triggers auto-populate.
+
+-- February Flash Fest at São Rock (retired: now-6w to now-2w)
+-- Alex climbed there 4 weeks ago (inside the window)
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000401',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000301',
+   'flash', 1, 0, now() - interval '4 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000402',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000302',
+   'flash', 1, 5, now() - interval '4 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000403',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000303',
+   'send', 3, 10, now() - interval '4 weeks');
+
+-- Winter Crush at The North Wall (retired: now-8w to now-4w)
+-- Alex climbed there 6 weeks ago (inside the window)
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000404',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000404',
+   'send', 4, 8, now() - interval '6 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000405',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000405',
+   'send', 5, 15, now() - interval '6 weeks');
+
+-- New Year Volume Rush at Zone Climb (retired: now-10w to now-6w)
+-- Alex climbed there 8 weeks ago (inside the window)
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000406',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000701',
+   'flash', 1, 0, now() - interval '8 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000407',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000702',
+   'flash', 1, 5, now() - interval '8 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000408',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000703',
+   'send', 2, 10, now() - interval '8 weeks');
+
+INSERT INTO public.route_ascents (id, user_id, route_id, status, attempts, perceived_grade, created_at) VALUES
+  ('50000000-0000-0000-0000-000000000409',
+   '20000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000704',
+   'send', 3, 13, now() - interval '8 weeks');
+
+
+-- ===========================================================================
+-- Section 22: Sessions (climbing session records)
+-- ===========================================================================
+-- Each session represents a visit to a gym. We create sessions that match
+-- the timestamp windows of the ascent sections above, then UPDATE the
+-- ascents to link them via session_id. This is cleaner than modifying
+-- 40+ existing INSERT statements.
+--
+-- UUID prefix 70000000-... for sessions (following the deterministic pattern:
+-- 1000=gyms, 2000=users, 3000=routes, 4000=tags, 5000=ascents, 7000=sessions)
+
+-- Alex's sessions at Summit (Sections 7 — weekly ascents)
+INSERT INTO public.sessions (id, user_id, gym_id, started_at, ended_at, duration_minutes) VALUES
+  ('70000000-0000-0000-0000-000000000001',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+   now() - interval '3 weeks', now() - interval '3 weeks' + interval '75 minutes', 75),
+  ('70000000-0000-0000-0000-000000000002',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+   now() - interval '2 weeks', now() - interval '2 weeks' + interval '90 minutes', 90),
+  ('70000000-0000-0000-0000-000000000003',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+   now() - interval '1 week', now() - interval '1 week' + interval '60 minutes', 60),
+  ('70000000-0000-0000-0000-000000000004',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001',
+   now() - interval '30 minutes', now(), 30)
+ON CONFLICT (id) DO NOTHING;
+
+-- Alex's sessions at Porto gyms (Section 15)
+INSERT INTO public.sessions (id, user_id, gym_id, started_at, ended_at, duration_minutes) VALUES
+  ('70000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000004',
+   now() - interval '5 days', now() - interval '5 days' + interval '80 minutes', 80),
+  ('70000000-0000-0000-0000-000000000006',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000005',
+   now() - interval '3 days', now() - interval '3 days' + interval '70 minutes', 70),
+  ('70000000-0000-0000-0000-000000000007',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000007',
+   now() - interval '2 days', now() - interval '2 days' + interval '65 minutes', 65),
+  ('70000000-0000-0000-0000-000000000008',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000008',
+   now() - interval '1 day', now() - interval '1 day' + interval '55 minutes', 55)
+ON CONFLICT (id) DO NOTHING;
+
+-- Alex's sessions at Lisbon gyms (Section 16)
+INSERT INTO public.sessions (id, user_id, gym_id, started_at, ended_at, duration_minutes) VALUES
+  ('70000000-0000-0000-0000-000000000009',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002',
+   now() - interval '5 days', now() - interval '5 days' + interval '60 minutes', 60),
+  ('70000000-0000-0000-0000-000000000010',
+   '20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003',
+   now() - interval '1 day', now() - interval '1 day' + interval '45 minutes', 45)
+ON CONFLICT (id) DO NOTHING;
+
+-- Sam Setter's session at Summit (Section 7)
+INSERT INTO public.sessions (id, user_id, gym_id, started_at, ended_at, duration_minutes) VALUES
+  ('70000000-0000-0000-0000-000000000011',
+   '20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001',
+   now() - interval '1 week', now() - interval '1 week' + interval '45 minutes', 45)
+ON CONFLICT (id) DO NOTHING;
+
+-- Link ascents to sessions by matching user + approximate timestamp window.
+-- Summit Week 1 ascents → session 001
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000001'
+  WHERE user_id = '20000000-0000-0000-0000-000000000001'
+    AND id IN ('50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000002', '50000000-0000-0000-0000-000000000003');
+
+-- Summit Week 2 ascents → session 002
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000002'
+  WHERE user_id = '20000000-0000-0000-0000-000000000001'
+    AND id IN ('50000000-0000-0000-0000-000000000004', '50000000-0000-0000-0000-000000000005', '50000000-0000-0000-0000-000000000006');
+
+-- Summit Week 3 ascents → session 003
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000003'
+  WHERE user_id = '20000000-0000-0000-0000-000000000001'
+    AND id IN ('50000000-0000-0000-0000-000000000007', '50000000-0000-0000-0000-000000000008', '50000000-0000-0000-0000-000000000009');
+
+-- Summit Week 4 ascent → session 004
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000004'
+  WHERE id = '50000000-0000-0000-0000-000000000010';
+
+-- São Rock ascents → session 005
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000005'
+  WHERE id IN ('50000000-0000-0000-0000-000000000301', '50000000-0000-0000-0000-000000000302', '50000000-0000-0000-0000-000000000303', '50000000-0000-0000-0000-000000000304');
+
+-- The North Wall ascents → session 006
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000006'
+  WHERE id IN ('50000000-0000-0000-0000-000000000305', '50000000-0000-0000-0000-000000000306', '50000000-0000-0000-0000-000000000307', '50000000-0000-0000-0000-000000000308');
+
+-- PROA ascents → session 007
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000007'
+  WHERE id IN ('50000000-0000-0000-0000-000000000309', '50000000-0000-0000-0000-000000000310', '50000000-0000-0000-0000-000000000311', '50000000-0000-0000-0000-000000000312');
+
+-- Zone Climb ascents → session 008
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000008'
+  WHERE id IN ('50000000-0000-0000-0000-000000000313', '50000000-0000-0000-0000-000000000314', '50000000-0000-0000-0000-000000000315', '50000000-0000-0000-0000-000000000316');
+
+-- 9.8 Gravity ascents → session 009
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000009'
+  WHERE id IN ('50000000-0000-0000-0000-000000000101', '50000000-0000-0000-0000-000000000102', '50000000-0000-0000-0000-000000000103');
+
+-- Escala25 ascents → session 010
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000010'
+  WHERE id IN ('50000000-0000-0000-0000-000000000201', '50000000-0000-0000-0000-000000000202');
+
+-- Sam Setter's ascents → session 011
+UPDATE public.route_ascents SET session_id = '70000000-0000-0000-0000-000000000011'
+  WHERE id IN ('50000000-0000-0000-0000-000000000011', '50000000-0000-0000-0000-000000000012');

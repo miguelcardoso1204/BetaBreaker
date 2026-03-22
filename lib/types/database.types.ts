@@ -406,6 +406,39 @@ export type Database = {
           },
         ]
       }
+      favorite_gyms: {
+        Row: {
+          created_at: string
+          gym_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gym_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gym_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_gyms_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_gyms_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -523,30 +556,27 @@ export type Database = {
         Row: {
           gym_id: string
           id: string
-          period: string
+          leaderboard_id: string
           rank: number
           score: number
-          scoring_model: string
           updated_at: string
           user_id: string
         }
         Insert: {
           gym_id: string
           id?: string
-          period: string
+          leaderboard_id: string
           rank?: number
           score?: number
-          scoring_model?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           gym_id?: string
           id?: string
-          period?: string
+          leaderboard_id?: string
           rank?: number
           score?: number
-          scoring_model?: string
           updated_at?: string
           user_id?: string
         }
@@ -559,10 +589,58 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leaderboard_entries_leaderboard_id_fkey"
+            columns: ["leaderboard_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboards"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leaderboard_entries_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leaderboards: {
+        Row: {
+          created_at: string
+          ends_at: string
+          gym_id: string
+          id: string
+          name: string
+          prizes: string | null
+          rules: string | null
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          gym_id: string
+          id?: string
+          name: string
+          prizes?: string | null
+          rules?: string | null
+          starts_at: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          gym_id?: string
+          id?: string
+          name?: string
+          prizes?: string | null
+          rules?: string | null
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboards_gym_id_fkey"
+            columns: ["gym_id"]
+            isOneToOne: false
+            referencedRelation: "gyms"
             referencedColumns: ["id"]
           },
         ]
@@ -700,7 +778,6 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
-          home_gym_id: string | null
           id: string
           onboarding_completed: boolean
           pinned_badge_ids: string[]
@@ -711,7 +788,6 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
-          home_gym_id?: string | null
           id: string
           onboarding_completed?: boolean
           pinned_badge_ids?: string[]
@@ -722,22 +798,13 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
-          home_gym_id?: string | null
           id?: string
           onboarding_completed?: boolean
           pinned_badge_ids?: string[]
           preferred_grade_system?: string
           tier?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_home_gym_id_fkey"
-            columns: ["home_gym_id"]
-            isOneToOne: false
-            referencedRelation: "gyms"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       promo_codes: {
         Row: {
@@ -811,6 +878,7 @@ export type Database = {
           id: string
           notes: string | null
           perceived_grade: number | null
+          rating: number | null
           route_id: string
           status: string
           user_id: string
@@ -821,6 +889,7 @@ export type Database = {
           id?: string
           notes?: string | null
           perceived_grade?: number | null
+          rating?: number | null
           route_id: string
           status: string
           user_id: string
@@ -831,6 +900,7 @@ export type Database = {
           id?: string
           notes?: string | null
           perceived_grade?: number | null
+          rating?: number | null
           route_id?: string
           status?: string
           user_id?: string
@@ -934,6 +1004,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          likes_count: number
           ownership_affirmed: boolean
           route_id: string
           type: string
@@ -943,6 +1014,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          likes_count?: number
           ownership_affirmed?: boolean
           route_id: string
           type: string
@@ -952,6 +1024,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          likes_count?: number
           ownership_affirmed?: boolean
           route_id?: string
           type?: string
@@ -968,6 +1041,39 @@ export type Database = {
           },
           {
             foreignKeyName: "route_media_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      route_media_likes: {
+        Row: {
+          media_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          media_id: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          media_id?: string
+          user_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_media_likes_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "route_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_media_likes_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -1454,26 +1560,10 @@ export type Database = {
         Args: { p_route_id: string }
         Returns: undefined
       }
-      compute_leaderboard:
-        | {
-            Args: {
-              p_gym_id: string
-              p_period_end: string
-              p_period_label: string
-              p_period_start: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_gym_id: string
-              p_period_end: string
-              p_period_label: string
-              p_period_start: string
-              p_scoring_model?: string
-            }
-            Returns: undefined
-          }
+      compute_leaderboard: {
+        Args: { p_leaderboard_id: string }
+        Returns: undefined
+      }
       delete_own_account: { Args: never; Returns: undefined }
       expire_trials: { Args: never; Returns: undefined }
       export_user_data: { Args: never; Returns: Json }
@@ -1482,15 +1572,19 @@ export type Database = {
         Returns: undefined
       }
       get_enrolled_leaderboards: {
-        Args: { p_user_id: string }
+        Args: { p_active?: boolean; p_user_id: string }
         Returns: {
+          ends_at: string
           gym_id: string
           gym_name: string
           id: string
-          period: string
+          leaderboard_id: string
+          leaderboard_name: string
+          prizes: string
           rank: number
+          rules: string
           score: number
-          scoring_model: string
+          starts_at: string
           total_participants: number
         }[]
       }
@@ -1504,6 +1598,18 @@ export type Database = {
       get_gym_active_user_count: {
         Args: { p_gym_id: string; p_period_end: string; p_period_start: string }
         Returns: number
+      }
+      get_gym_leaderboards: {
+        Args: { p_active?: boolean; p_gym_id: string }
+        Returns: {
+          ends_at: string
+          id: string
+          name: string
+          prizes: string
+          rules: string
+          starts_at: string
+          total_participants: number
+        }[]
       }
       get_profile_stats: {
         Args: { p_user_id: string }
