@@ -8,13 +8,14 @@
  * This screen integrates:
  *   - react-native-maps MapView + Marker for the interactive map
  *   - useGyms() to fetch all gyms (filtered client-side by search + coordinates)
- *   - useAuth() for the user's homeGymId (favorites filter)
+ *   - useFavoriteGyms() for the user's favorited gym IDs (favorites filter)
+ *   - useAuth() for user identity
  *   - expo-router for marker → gym page navigation
  *
  * Mock strategy (matching gym/[id]/__tests__/index.test.tsx patterns):
  *   - react-native-maps: MapView as View with testID, Marker as Pressable
- *   - @/hooks/useGyms: useGyms() with __mockData pattern (array data)
- *   - @/hooks/useAuth: mutable mockUser with homeGymId
+ *   - @/hooks/useGyms: useGyms() with __mockData pattern (array data), useFavoriteGyms()
+ *   - @/hooks/useAuth: mutable mockUser
  *   - expo-router: useRouter returns { push: mockPush }
  *   - lucide-react-native: icons as simple Views with testIDs
  */
@@ -79,26 +80,32 @@ jest.mock("expo-router", () => ({
 
 // Mock useGyms — control gym data via __mockData pattern.
 // Unlike the gym detail tests (single object), map tests need an ARRAY of gyms.
+// Also mock useFavoriteGyms for the favorites filter.
 jest.mock("@/hooks/useGyms", () => {
   const mockData = {
     data: null as any[] | null,
     isLoading: false,
     error: null as Error | null,
   };
+  const mockFavData = {
+    data: null as { ids: Set<string>; gyms: any[] } | null,
+    isLoading: false,
+    error: null as Error | null,
+  };
   return {
     useGyms: () => mockData,
+    useFavoriteGyms: () => mockFavData,
     __mockData: mockData,
+    __mockFavData: mockFavData,
     // Include other exports the module might need (prevents import errors)
     useGym: jest.fn(),
-    useSetHomeGym: jest.fn(),
+    useToggleFavoriteGym: jest.fn(),
   };
 });
 
-// Mock useAuth — provide user with homeGymId for favorites filter.
-// Mutable so individual tests can change homeGymId.
+// Mock useAuth — provide user identity for favorites queries.
 const mockUser = {
   id: "user-1",
-  homeGymId: null as string | null,
 };
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: mockUser }),
@@ -118,10 +125,15 @@ jest.mock("lucide-react-native", () => {
 
 import MapScreen from "../map";
 
-// Access __mockData to control gym data before each render.
-const { __mockData } = jest.requireMock<{
+// Access __mockData and __mockFavData to control gym and favorites data before each render.
+const { __mockData, __mockFavData } = jest.requireMock<{
   __mockData: {
     data: any[] | null;
+    isLoading: boolean;
+    error: Error | null;
+  };
+  __mockFavData: {
+    data: { ids: Set<string>; gyms: any[] } | null;
     isLoading: boolean;
     error: Error | null;
   };
@@ -177,8 +189,10 @@ function resetMocks() {
   __mockData.data = null;
   __mockData.isLoading = false;
   __mockData.error = null;
+  __mockFavData.data = null;
+  __mockFavData.isLoading = false;
+  __mockFavData.error = null;
   mockUser.id = "user-1";
-  mockUser.homeGymId = null;
 }
 
 // ── Tests ────────────────────────────────────────────────────────
@@ -286,7 +300,7 @@ describe("MapScreen", () => {
     // The callout content is rendered inside the marker. Tap it to navigate.
     fireEvent.press(screen.getByTestId("callout-gym-1"));
 
-    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1");
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/gym/gym-1");
   });
 
   // ── 7. Search shows dropdown results ─────────────────────────────

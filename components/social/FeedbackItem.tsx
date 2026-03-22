@@ -4,8 +4,7 @@
  * Renders one beta tip in the route detail's "Beta Tips" section.
  * Each card shows:
  *   - Author avatar + display name + relative time
- *   - The tip body text
- *   - Upvote/downvote buttons with the current score
+ *   - The tip body text with a right-aligned like button
  *   - A delete button (only for the tip's author)
  *
  * PRESENTATIONAL COMPONENT:
@@ -15,17 +14,16 @@
  * passes everything down. This pattern makes the component easy
  * to test because you control all inputs.
  *
- * VOTE COLOR SCHEME:
- *   - Active upvote: green (#22C55E) — positive/approval
- *   - Active downvote: red (#EF4444) — negative/disagreement
- *   - Inactive: muted gray (#6B6B80) — neutral/available
+ * LIKE COLOR SCHEME (matches video submissions):
+ *   - Liked: filled red (#EF4444)
+ *   - Not liked: outline gray (#9CA3AF)
  */
 
 import React from "react";
 import { View, Text, Pressable } from "react-native";
-import { ThumbsUp, ThumbsDown, Trash2, Flag } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { Heart, Trash2, Flag } from "lucide-react-native";
 import { Avatar } from "@/components/ui/Avatar";
-import { useTranslation } from "react-i18next";
 
 /**
  * Shape of a feedback row with its author profile joined via PostgREST.
@@ -63,27 +61,6 @@ export interface FeedbackItemProps {
   onReport?: (feedbackId: string) => void;
 }
 
-/**
- * Formats a timestamp into a relative time string like "2h ago" or "3d ago".
- *
- * Uses simple math on millisecond differences rather than a library like
- * date-fns. This keeps the bundle small — we only need rough relative
- * times, not precise "2 hours, 14 minutes ago" formatting.
- */
-function timeAgo(dateString: string): string {
-  const seconds = Math.floor(
-    (Date.now() - new Date(dateString).getTime()) / 1000
-  );
-
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 export function FeedbackItem({
   feedback,
   userVote,
@@ -92,30 +69,32 @@ export function FeedbackItem({
   onDelete,
   onReport,
 }: FeedbackItemProps) {
+  const router = useRouter();
   const { profile } = feedback;
   const isAuthor = feedback.user_id === currentUserId;
 
-  // Determine icon colors based on the user's current vote.
-  // Active state uses a bright color; inactive uses muted gray.
-  const upColor = userVote === "up" ? "#22C55E" : "#6B6B80";
-  const downColor = userVote === "down" ? "#EF4444" : "#6B6B80";
+  const isLiked = userVote === "up";
 
   return (
     <View className="bg-surface rounded-lg p-3 mb-2">
-      {/* ── Author row: avatar + name + time + delete ──────────── */}
+      {/* ── Author row: avatar + name (tappable) + time + delete ── */}
       <View className="flex-row items-center mb-2">
-        <Avatar
-          uri={profile.avatar_url ?? undefined}
-          name={profile.display_name}
-          size="sm"
-          testID="feedback-avatar"
-        />
-        <Text className="text-text-primary font-medium ml-2 flex-1">
-          {profile.display_name}
-        </Text>
-        <Text className="text-text-secondary text-xs mr-2">
-          {timeAgo(feedback.created_at)}
-        </Text>
+        <Pressable
+          className="flex-row items-center flex-1"
+          onPress={() => router.push(`/profile/${feedback.user_id}` as any)}
+          accessibilityRole="link"
+          accessibilityLabel={`View ${profile.display_name}'s profile`}
+        >
+          <Avatar
+            uri={profile.avatar_url ?? undefined}
+            name={profile.display_name}
+            size="sm"
+            testID="feedback-avatar"
+          />
+          <Text className="text-text-primary font-medium ml-2 flex-1">
+            {profile.display_name}
+          </Text>
+        </Pressable>
         {/* Report button — only visible for tips the user did NOT author.
             You don't report your own content. The flag icon opens the
             ReportSheet via the parent's callback. */}
@@ -146,39 +125,31 @@ export function FeedbackItem({
         )}
       </View>
 
-      {/* ── Tip body text ──────────────────────────────────────── */}
-      <Text className="text-text-primary text-sm mb-2">
-        {feedback.body}
-      </Text>
-
-      {/* ── Vote row: up arrow + score + down arrow ────────────── */}
-      {/* The vote buttons use Pressable for the modern touch API.
-          Each button calls onVote with the feedback ID and direction.
-          The parent (route detail) handles the actual vote/unvote logic
-          by checking the current userVote state. */}
-      <View className="flex-row items-center gap-3">
-        <Pressable
-          testID="vote-up-button"
-          onPress={() => onVote(feedback.id, "up")}
-          accessibilityRole="button"
-          accessibilityLabel="Upvote"
-          className="p-1"
-        >
-          <ThumbsUp size={18} color={upColor} />
-        </Pressable>
-
-        <Text className="text-text-primary text-sm font-medium min-w-[20px] text-center">
-          {feedback.score}
+      {/* ── Body + like row ─────────────────────────────────────── */}
+      <View className="flex-row items-end">
+        <Text className="text-text-primary text-sm flex-1">
+          {feedback.body}
         </Text>
 
+        {/* Heart button — filled red when liked, outline gray when not.
+            Matches the video submissions like pattern. */}
         <Pressable
-          testID="vote-down-button"
-          onPress={() => onVote(feedback.id, "down")}
+          testID="like-button"
+          onPress={() => onVote(feedback.id, "up")}
           accessibilityRole="button"
-          accessibilityLabel="Downvote"
-          className="p-1"
+          accessibilityLabel={isLiked ? "Unlike" : "Like"}
+          className="flex-row items-center p-1 ml-2"
         >
-          <ThumbsDown size={18} color={downColor} />
+          {feedback.score > 0 && (
+            <Text testID="like-count" className="text-text-secondary text-sm mr-1">
+              {feedback.score}
+            </Text>
+          )}
+          <Heart
+            size={18}
+            color={isLiked ? "#EF4444" : "#9CA3AF"}
+            fill={isLiked ? "#EF4444" : "none"}
+          />
         </Pressable>
       </View>
     </View>

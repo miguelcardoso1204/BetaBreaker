@@ -8,7 +8,7 @@
  *   - expo-image-picker for recording or selecting a video
  *   - videoValidation utils for constraint checking
  *   - OwnershipModal for FR-K1 compliance
- *   - useUploadVideo mutation for the actual upload
+ *   - useUploadVideo mutation for the actual upload (via Cloudinary)
  *
  * We mock all external dependencies and test the orchestration logic.
  */
@@ -26,9 +26,11 @@ jest.mock('expo-image-picker', () => ({
   MediaTypeOptions: { Videos: 'Videos' },
 }));
 
-// Mock expo-file-system for getInfoAsync (file size check)
-jest.mock('expo-file-system', () => ({
-  getInfoAsync: jest.fn(),
+// Mock expo-file-system/next for the new File API (file size check)
+jest.mock('expo-file-system/next', () => ({
+  File: jest.fn().mockImplementation(() => ({
+    size: 10 * 1024 * 1024, // 10 MB default
+  })),
 }));
 
 // Mock the useUploadVideo hook
@@ -58,16 +60,15 @@ jest.mock('lucide-react-native', () => {
 // Mock videoValidation — we test the real validators separately
 jest.mock('@/utils/videoValidation', () => ({
   validateVideoForUpload: jest.fn(),
-  buildStoragePath: jest.fn(),
   VIDEO_MAX_DURATION_SECONDS: 60,
-  VIDEO_MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024,
+  VIDEO_MAX_FILE_SIZE_BYTES: 150 * 1024 * 1024,
 }));
 
 import { VideoUploadButton } from '../VideoUploadButton';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system/next';
 import { useUploadVideo } from '@/hooks/useMedia';
-import { validateVideoForUpload, buildStoragePath } from '@/utils/videoValidation';
+import { validateVideoForUpload } from '@/utils/videoValidation';
 
 const mockMutate = jest.fn();
 const mockUseUploadVideo = useUploadVideo as jest.Mock;
@@ -123,11 +124,6 @@ describe('VideoUploadButton', () => {
       }],
     });
 
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValueOnce({
-      exists: true,
-      size: 10 * 1024 * 1024,
-    });
-
     // Validation fails
     (validateVideoForUpload as jest.Mock).mockReturnValueOnce({
       valid: false,
@@ -168,11 +164,6 @@ describe('VideoUploadButton', () => {
       }],
     });
 
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValueOnce({
-      exists: true,
-      size: 10 * 1024 * 1024,
-    });
-
     (validateVideoForUpload as jest.Mock).mockReturnValueOnce({
       valid: true,
       errors: [],
@@ -209,24 +200,10 @@ describe('VideoUploadButton', () => {
       }],
     });
 
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValueOnce({
-      exists: true,
-      size: 10 * 1024 * 1024,
-    });
-
     (validateVideoForUpload as jest.Mock).mockReturnValueOnce({
       valid: true,
       errors: [],
     });
-
-    (buildStoragePath as jest.Mock).mockReturnValueOnce(
-      'user-1/route-1/12345.mp4'
-    );
-
-    // Mock global fetch for the blob conversion
-    global.fetch = jest.fn().mockResolvedValueOnce({
-      blob: () => Promise.resolve(new Blob(['video-data'])),
-    }) as jest.Mock;
 
     jest.spyOn(Alert, 'alert');
 
@@ -253,12 +230,14 @@ describe('VideoUploadButton', () => {
       fireEvent.press(screen.getByTestId('ownership-upload-button'));
     });
 
+    // The mutation should receive uri and mimeType (not blob/storagePath)
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalledWith(
         expect.objectContaining({
-          storagePath: 'user-1/route-1/12345.mp4',
+          uri: 'file:///video.mp4',
           mimeType: 'video/mp4',
-        })
+        }),
+        expect.any(Object) // onSuccess/onError callbacks
       );
     });
   });

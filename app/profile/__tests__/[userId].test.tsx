@@ -88,12 +88,7 @@ const mockPinnedBadgesReturn = {
   isLoading: false,
 };
 
-const mockRecentAscentsReturn = {
-  data: null as any[] | null,
-  isLoading: false,
-};
-
-// Mock useSocial hooks — follow counts, toggle, and recent ascents
+// Mock useSocial hooks — follow counts and toggle
 jest.mock("@/hooks/useSocial", () => ({
   useFollowCounts: () => ({
     followers: 42,
@@ -106,7 +101,50 @@ jest.mock("@/hooks/useSocial", () => ({
     toggleFollow: jest.fn(),
     isPending: false,
   }),
-  useUserRecentAscents: () => mockRecentAscentsReturn,
+}));
+
+// Mock useRecentSessions — recent session history for profile
+jest.mock("@/hooks/useRecentSessions", () => ({
+  useRecentSessions: () => ({
+    data: [
+      {
+        id: "session-1",
+        user_id: "user-2",
+        gym_id: "gym-1",
+        started_at: "2026-03-15T10:00:00Z",
+        ended_at: "2026-03-15T11:15:00Z",
+        duration_minutes: 75,
+        gym: { name: "Summit Climbing", logo_url: null },
+        ascentCount: 5,
+      },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+// Mock useEnrolledLeaderboards — active leaderboard standings for profile
+jest.mock("@/hooks/useEnrolledLeaderboards", () => ({
+  useEnrolledLeaderboards: () => ({
+    data: [
+      {
+        id: "entry-1",
+        leaderboard_id: "lb-1",
+        gym_id: "gym-1",
+        gym_name: "Summit Climbing",
+        leaderboard_name: "March Madness",
+        starts_at: "2026-03-01",
+        ends_at: "2026-03-31",
+        rank: 3,
+        score: 1250,
+        total_participants: 50,
+        rules: null,
+        prizes: null,
+      },
+    ],
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 // Mock useBadges hooks — earned badges, pinned badges, streak
@@ -134,6 +172,9 @@ jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
     ArrowLeft: (props: any) => <View testID="icon-arrow-left" {...props} />,
+    ChevronRight: (props: any) => <View testID="icon-chevron-right" {...props} />,
+    Clock: (props: any) => <View testID="icon-clock" {...props} />,
+    Trophy: (props: any) => <View testID="icon-trophy" {...props} />,
   };
 });
 
@@ -173,9 +214,6 @@ function resetMockData() {
 
   mockPinnedBadgesReturn.data = null;
   mockPinnedBadgesReturn.isLoading = false;
-
-  mockRecentAscentsReturn.data = null;
-  mockRecentAscentsReturn.isLoading = false;
 }
 
 /** Standard profile data used in most tests */
@@ -192,6 +230,15 @@ describe("UserProfileScreen", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     resetMockData();
+    // Pin time so deriveStreakStatus() produces deterministic results.
+    // Without this, streak tests fail when the real date drifts far from
+    // the mock last_active_date values.
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date(2026, 1, 17)); // Feb 17, 2026
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   // ── Existing tests ──────────────────────────────────────────────
@@ -315,42 +362,28 @@ describe("UserProfileScreen", () => {
     expect(screen.getByText(/No pinned badges/)).toBeOnTheScreen();
   });
 
-  // ── Recent sends ───────────────────────────────────────────────
+  // ── Recent Sessions ────────────────────────────────────────────
 
-  it("renders recent sends as FeedItem entries", () => {
+  it("renders recent sessions with gym name and duration", () => {
     __mockProfileData.data = baseProfile;
-    mockRecentAscentsReturn.data = [
-      {
-        id: "ascent-1",
-        user_id: "user-2",
-        status: "sent",
-        attempts: 3,
-        created_at: "2026-02-15T10:00:00Z",
-        route: { name: "Crimpy Arete", canonical_grade: 10, color: "#EF4444" },
-        profile: { display_name: "Alex Climber", avatar_url: null },
-      },
-      {
-        id: "ascent-2",
-        user_id: "user-2",
-        status: "flashed",
-        attempts: 1,
-        created_at: "2026-02-14T09:00:00Z",
-        route: { name: "Slab City", canonical_grade: 6, color: "#22C55E" },
-        profile: { display_name: "Alex Climber", avatar_url: null },
-      },
-    ];
     render(<UserProfileScreen />);
 
-    // FeedItem renders route names and action verbs
-    expect(screen.getByText(/Crimpy Arete/)).toBeOnTheScreen();
-    expect(screen.getByText(/Slab City/)).toBeOnTheScreen();
+    // Session card should show the gym name from the mock
+    expect(screen.getByTestId("session-card-session-1")).toBeOnTheScreen();
+    // Duration: 75 min = "1h 15m"
+    expect(screen.getByText(/1h 15m/)).toBeOnTheScreen();
+    // Ascent count
+    expect(screen.getByText(/5 ascents/)).toBeOnTheScreen();
   });
 
-  it("shows empty state when no recent sends", () => {
+  // ── Enrolled Leaderboards ─────────────────────────────────────
+
+  it("renders enrolled leaderboards with rank and score", () => {
     __mockProfileData.data = baseProfile;
-    mockRecentAscentsReturn.data = [];
     render(<UserProfileScreen />);
 
-    expect(screen.getByText(/No recent sends/)).toBeOnTheScreen();
+    expect(screen.getByText("March Madness")).toBeOnTheScreen();
+    expect(screen.getByText("#3")).toBeOnTheScreen();
+    expect(screen.getByText(/1,250 pts/)).toBeOnTheScreen();
   });
 });

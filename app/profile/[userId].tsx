@@ -29,16 +29,18 @@ import {
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, Clock, Trophy } from "lucide-react-native";
+import { Image } from "expo-image";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { BadgeIcon } from "@/components/ui/BadgeIcon";
 import { FollowButton } from "@/components/social/FollowButton";
-import { FeedItem } from "@/components/social/FeedItem";
 import { StreakCard } from "@/components/streaks/StreakCard";
-import { useFollowCounts, useUserRecentAscents } from "@/hooks/useSocial";
+import { useFollowCounts } from "@/hooks/useSocial";
 import { useUserBadges, useUserStreak, usePinnedBadges } from "@/hooks/useBadges";
 import { useProfileStats } from "@/hooks/useProfile";
+import { useRecentSessions } from "@/hooks/useRecentSessions";
+import { useEnrolledLeaderboards } from "@/hooks/useEnrolledLeaderboards";
 import { profileService } from "@/services/profile.service";
 import { canonicalToDisplay } from "@/utils/grades";
 import { deriveStreakStatus } from "@/utils/streakStatus";
@@ -71,7 +73,8 @@ export default function UserProfileScreen() {
   const { data: streakData } = useUserStreak(userId);
   const { data: userBadges } = useUserBadges(userId);
   const { data: pinnedData } = usePinnedBadges(userId);
-  const { data: recentAscents } = useUserRecentAscents(userId);
+  const { data: recentSessions } = useRecentSessions(userId, 5);
+  const { data: enrolledLeaderboards } = useEnrolledLeaderboards(userId, true);
 
   // ── Derived values ───────────────────────────────────────────────
 
@@ -214,19 +217,106 @@ export default function UserProfileScreen() {
         )}
       </View>
 
-      {/* Recent sends */}
+      {/* Recent Sessions — shows gym visits with duration and ascent count */}
       <View className="py-4">
-        <Text className="text-text-secondary text-sm font-semibold mb-2 mx-4">
-          {t("profile.recentSends")}
+        <Text className="text-text-primary text-lg font-bold mb-2 mx-4">
+          {t("profile.recentSessions")}
         </Text>
-        {recentAscents && recentAscents.length > 0 ? (
-          recentAscents.map((ascent: any) => (
-            <FeedItem key={ascent.id} item={ascent} />
+        {recentSessions && recentSessions.length > 0 ? (
+          recentSessions.map((session: any) => {
+            const mins = session.duration_minutes ?? 0;
+            const hours = Math.floor(mins / 60);
+            const remainingMins = mins % 60;
+            const durationStr = hours > 0
+              ? `${hours}h ${remainingMins}m`
+              : `${mins}m`;
+            const sessionDate = new Date(session.started_at).toLocaleDateString(
+              undefined,
+              { month: "short", day: "numeric", year: "numeric" }
+            );
+            return (
+              <View
+                key={session.id}
+                testID={`session-card-${session.id}`}
+                className="bg-card rounded-xl p-3 mx-4 mb-2 flex-row items-center"
+              >
+                {session.gym?.logo_url ? (
+                  <Image
+                    source={{ uri: session.gym.logo_url }}
+                    style={{ width: 40, height: 40, borderRadius: 8 }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <View className="bg-accent rounded-lg w-10 h-10 items-center justify-center">
+                    <Clock size={18} color="#ffffff" />
+                  </View>
+                )}
+                <View className="w-3" />
+                <View className="flex-1 mr-2">
+                  <Text className="text-text-primary font-semibold text-sm" numberOfLines={1}>
+                    {session.gym?.name ?? "Unknown Gym"}
+                  </Text>
+                  <Text className="text-text-secondary text-xs mt-0.5">
+                    {sessionDate} · {durationStr}
+                  </Text>
+                </View>
+                <Text className="text-text-primary font-bold text-sm">
+                  {session.ascentCount} {t("profile.ascents")}
+                </Text>
+              </View>
+            );
+          })
+        ) : (
+          <View className="px-4 py-4 items-center">
+            <Clock size={32} color="#6B7280" />
+            <Text className="text-text-secondary text-sm mt-2">
+              {t("profile.noRecentSessions")}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Enrolled Leaderboards — shows active leaderboard standings */}
+      <View className="py-4" testID="enrolled-leaderboards-section">
+        <Text className="text-text-primary text-lg font-bold mb-2 mx-4">
+          {t("profile.enrolledLeaderboards")}
+        </Text>
+        {enrolledLeaderboards && enrolledLeaderboards.length > 0 ? (
+          enrolledLeaderboards.slice(0, 3).map((lb: any) => (
+            <Pressable
+              key={lb.id}
+              testID={`enrolled-lb-${lb.leaderboard_id}`}
+              onPress={() =>
+                router.push(`/(tabs)/gym/${lb.gym_id}/leaderboard?lb=${lb.leaderboard_id}` as any)
+              }
+              className="bg-card rounded-xl p-3 mx-4 mb-2 flex-row items-center"
+            >
+              <View className="bg-accent rounded-lg w-10 h-10 items-center justify-center mr-3">
+                <Text className="text-white font-bold text-base">
+                  #{lb.rank}
+                </Text>
+              </View>
+              <View className="flex-1 mr-2">
+                <Text className="text-text-primary font-semibold text-sm" numberOfLines={1}>
+                  {lb.leaderboard_name}
+                </Text>
+                <Text className="text-text-secondary text-xs mt-0.5" numberOfLines={1}>
+                  {lb.gym_name}
+                </Text>
+              </View>
+              <Text className="text-text-primary font-bold text-sm mr-1">
+                {lb.score.toLocaleString()} pts
+              </Text>
+              <ChevronRight size={16} color="#6B7280" />
+            </Pressable>
           ))
         ) : (
-          <Text className="text-text-secondary text-sm mx-4">
-            {t("profile.noRecentSends")}
-          </Text>
+          <View className="px-4 py-4 items-center">
+            <Trophy size={32} color="#6B7280" />
+            <Text className="text-text-secondary text-sm mt-2">
+              {t("profile.noEnrolledLeaderboards")}
+            </Text>
+          </View>
         )}
       </View>
     </ScrollView>

@@ -3,7 +3,7 @@
  *
  * The main screen users see after logging in. Shows:
  *   - Welcome header with notification bell
- *   - Personalized route suggestions (Pro-only, requires home gym)
+ *   - Personalized route suggestions (Pro-only, gym-specific)
  *   - Chronological feed of recent ascents from followed users
  *   - Empty state when not following anyone or no recent activity
  *
@@ -37,15 +37,15 @@ export default function HomeScreen() {
   const { count } = useUnreadCount();
   const router = useRouter();
 
-  // Route suggestions: Pro-gated, requires home gym.
-  // The hook handles all the gating internally — we just check
-  // hasAccess and noHomeGym to decide whether to render the card.
+  // Route suggestions: Pro-gated, requires a gym context.
+  // On the home feed, no gymId is passed so suggestions are disabled.
+  // They appear on specific gym screens where gymId is provided.
   const suggestions = useRouteSuggestions();
 
   // Whether to show the suggestions section. Hidden when:
   // - User is on free tier (hasAccess: false)
-  // - User has no home gym set (noHomeGym: true)
-  const showSuggestions = suggestions.hasAccess && !suggestions.noHomeGym;
+  // - No gym context available (noGym: true — always true on home feed)
+  const showSuggestions = suggestions.hasAccess && !suggestions.noGym;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
@@ -58,7 +58,7 @@ export default function HomeScreen() {
           {/* Bell icon — tapping opens the notification center */}
           <NotificationBell
             count={count}
-            onPress={() => router.push("/notifications")}
+            onPress={() => router.push("/(tabs)/notifications" as any)}
           />
         </View>
         <Text className="text-text-secondary text-base mt-1">

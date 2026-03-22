@@ -256,7 +256,7 @@ describe('ScanScreen', () => {
     });
 
     fireEvent.press(screen.getByText(/view route/i));
-    expect(mockPush).toHaveBeenCalledWith('/gym/gym-456/route/route-123');
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/gym/gym-456/route/route-123');
   });
 
   // ── Comp Score integration tests ───────────────────────────────────
@@ -334,6 +334,6 @@ describe('ScanScreen', () => {
     });
 
     fireEvent.press(screen.getByText(/comp score/i));
-    expect(mockPush).toHaveBeenCalledWith('/events/event-42');
+    expect(mockPush).toHaveBeenCalledWith('/(tabs)/events/event-42');
   });
 });

@@ -26,12 +26,16 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import i18n from "@/lib/i18n";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
 import { useSessionDetail } from "@/hooks/useSessions";
 import { SessionSummary } from "@/components/session/SessionSummary";
 import { Badge } from "@/components/ui/Badge";
@@ -83,6 +87,7 @@ const STATUS_BADGE_VARIANT: Record<string, "success" | "warning" | "default"> = 
 
 export default function SessionDetailScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   // Extract the date param from the URL (e.g., "2026-02-09")
   const { date } = useLocalSearchParams<{ date: string }>();
 
@@ -117,15 +122,25 @@ export default function SessionDetailScreen() {
 
   const { summary, ascents } = data;
 
-  // Calculate session duration as 0 — the sessions table doesn't exist,
-  // so we can't compute a real duration. The SessionSummary component
-  // will display "0 min" which is acceptable for this iteration.
-  // Phase 5.7+ could add duration tracking via a sessions table.
-  const durationMinutes = 0;
-
   return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      {/* Header — back button + session date */}
+      <View className="flex-row items-center px-4 pt-2 pb-1">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={28} color="#ffffff" />
+        </Pressable>
+        <Text className="text-text-primary text-lg font-bold ml-2">
+          {formatDate(date)}
+        </Text>
+      </View>
+
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       testID="session-detail-screen"
     >
       {/* ── Session Summary Card ─────────────────────────────────── */}
@@ -135,7 +150,7 @@ export default function SessionDetailScreen() {
       <View className="p-4">
         <SessionSummary
           date={formatDate(date)}
-          durationMinutes={durationMinutes}
+          durationMinutes={0}
           totalAscents={summary.totalAscents}
           sends={summary.sends}
           flashes={summary.flashes}
@@ -204,5 +219,6 @@ export default function SessionDetailScreen() {
         )}
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

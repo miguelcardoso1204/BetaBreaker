@@ -14,7 +14,7 @@
 // - useUpdateProfile: Mocked to verify edit save
 // - useExportData: Mocked to verify export mutation
 // - useDeleteAccount: Mocked to verify delete mutation
-// - useGyms / useSetHomeGym: Mocked for gym picker
+// - useGyms: Mocked for gym list
 // - expo-image: Mocked as View (no native image runtime in Jest)
 //
 // Each test configures these mocks to simulate different user states.
@@ -32,6 +32,14 @@ jest.mock("expo-router", () => ({
   }),
 }));
 
+// Mock useQueryClient — used for pull-to-refresh bulk cache invalidation.
+const mockInvalidateQueries = jest.fn().mockResolvedValue(undefined);
+jest.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({
+    invalidateQueries: mockInvalidateQueries,
+  }),
+}));
+
 // Mock lucide-react-native — Settings icon used in the profile header.
 // Jest can't process SVG transforms from Lucide, so we stub all icons
 // that the profile screen imports.
@@ -39,6 +47,9 @@ jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
     Settings: (props: any) => <View testID="icon-settings" {...props} />,
+    Trophy: (props: any) => <View testID="icon-trophy" {...props} />,
+    ChevronRight: (props: any) => <View testID="icon-chevron-right" {...props} />,
+    Clock: (props: any) => <View testID="icon-clock" {...props} />,
   };
 });
 
@@ -52,7 +63,6 @@ const mockUser = {
   tier: "free",
   pinnedBadgeIds: ["b1"],
   preferredGradeSystem: "v-scale",
-  homeGymId: null,
   onboardingCompleted: true,
   createdAt: "2026-01-01T00:00:00Z",
 };
@@ -151,6 +161,37 @@ jest.mock("@/hooks/useChallenges", () => ({
   useChallengeProgress: () => mockUseChallengeProgressReturn,
 }));
 
+// Mock useEnrolledLeaderboards — returns enrolled leaderboard standings
+let mockUseEnrolledLeaderboardsReturn: any = {
+  data: null,
+  isLoading: false,
+  error: null,
+};
+
+jest.mock("@/hooks/useEnrolledLeaderboards", () => ({
+  useEnrolledLeaderboards: () => mockUseEnrolledLeaderboardsReturn,
+}));
+
+// Mock useRecentSessions — returns recent climbing sessions for the profile.
+jest.mock("@/hooks/useRecentSessions", () => ({
+  useRecentSessions: () => ({
+    data: [
+      {
+        id: "session-1",
+        user_id: "user-1",
+        gym_id: "gym-1",
+        started_at: "2026-03-15T10:00:00Z",
+        ended_at: "2026-03-15T11:15:00Z",
+        duration_minutes: 75,
+        gym: { name: "Summit Climbing", logo_url: null },
+        ascentCount: 5,
+      },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 // Mock useProfileStats — returns total sends + max grade
 let mockUseProfileStatsReturn: any = {
   data: [{ total_sends: 42, max_grade: 20 }],
@@ -186,7 +227,7 @@ jest.mock("@/hooks/useProfile", () => ({
   useDeleteAccount: () => mockUseDeleteAccountReturn,
 }));
 
-// Mock useGyms — returns gym list for picker
+// Mock useGyms — returns gym list
 let mockUseGymsReturn: any = {
   data: [
     { id: "gym-1", name: "Ape Index" },
@@ -196,15 +237,8 @@ let mockUseGymsReturn: any = {
   error: null,
 };
 
-const mockSetHomeGymMutateAsync = jest.fn().mockResolvedValue(undefined);
-const mockUseSetHomeGymReturn = {
-  mutateAsync: mockSetHomeGymMutateAsync,
-  isPending: false,
-};
-
 jest.mock("@/hooks/useGyms", () => ({
   useGyms: () => mockUseGymsReturn,
-  useSetHomeGym: () => mockUseSetHomeGymReturn,
 }));
 
 // Mock expo-image (no native runtime in Jest)
@@ -270,6 +304,11 @@ describe("ProfileScreen", () => {
         { id: "gym-1", name: "Ape Index" },
         { id: "gym-2", name: "Summit Gym" },
       ],
+      isLoading: false,
+      error: null,
+    };
+    mockUseEnrolledLeaderboardsReturn = {
+      data: null,
       isLoading: false,
       error: null,
     };
@@ -390,7 +429,7 @@ describe("ProfileScreen", () => {
   it('renders "Active Challenges" section when challenges exist', () => {
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
-      user: { ...mockUser, homeGymId: "gym-1" },
+      user: { ...mockUser },
     };
     mockUseActiveChallengesReturn = {
       data: [
@@ -427,7 +466,7 @@ describe("ProfileScreen", () => {
   it("shows challenge progress from hook data", () => {
     mockUseAuthReturn = {
       ...mockUseAuthReturn,
-      user: { ...mockUser, homeGymId: "gym-1" },
+      user: { ...mockUser },
     };
     mockUseActiveChallengesReturn = {
       data: [
@@ -562,58 +601,9 @@ describe("ProfileScreen", () => {
     });
   });
 
-  it("gym picker opens in edit mode", () => {
-    render(<ProfileScreen />);
-
-    fireEvent.press(screen.getByTestId("edit-profile-button"));
-    fireEvent.press(screen.getByTestId("edit-gym-picker"));
-
-    // The gym picker modal should show with gym names
-    expect(screen.getByText("Select Home Gym")).toBeOnTheScreen();
-    expect(screen.getByText("Ape Index")).toBeOnTheScreen();
-    expect(screen.getByText("Summit Gym")).toBeOnTheScreen();
-  });
-
-  // ── Account actions tests ──────────────────────────────────────────
-
-  it("renders export and delete buttons", () => {
-    render(<ProfileScreen />);
-    expect(screen.getByText("Export My Data")).toBeOnTheScreen();
-    expect(screen.getByText("Delete Account")).toBeOnTheScreen();
-  });
-
-  it("export button triggers Alert confirmation", () => {
-    const alertSpy = jest.spyOn(Alert, "alert");
-    render(<ProfileScreen />);
-
-    fireEvent.press(screen.getByTestId("export-data-button"));
-
-    expect(alertSpy).toHaveBeenCalledWith(
-      "Export My Data",
-      expect.any(String),
-      expect.any(Array),
-    );
-    alertSpy.mockRestore();
-  });
-
-  it("delete button triggers Alert confirmation with destructive option", () => {
-    const alertSpy = jest.spyOn(Alert, "alert");
-    render(<ProfileScreen />);
-
-    fireEvent.press(screen.getByTestId("delete-account-button"));
-
-    expect(alertSpy).toHaveBeenCalledWith(
-      "Delete Account",
-      expect.stringContaining("permanently"),
-      expect.arrayContaining([
-        expect.objectContaining({ text: "Cancel" }),
-        expect.objectContaining({ text: "Delete", style: "destructive" }),
-      ]),
-    );
-    alertSpy.mockRestore();
-  });
-
   // ── Settings navigation tests ──────────────────────────────────────
+  // NOTE: Export/delete account actions were moved to the Settings screen.
+  // Those tests now live in app/settings/__tests__/index.test.tsx.
 
   it("renders settings icon button in view mode", () => {
     render(<ProfileScreen />);
@@ -624,5 +614,146 @@ describe("ProfileScreen", () => {
     render(<ProfileScreen />);
     fireEvent.press(screen.getByTestId("settings-button"));
     expect(mockPush).toHaveBeenCalledWith("/settings");
+  });
+
+  // ── Enrolled Leaderboards tests ────────────────────────────────────
+
+  it("renders enrolled leaderboards section with entries", () => {
+    mockUseEnrolledLeaderboardsReturn = {
+      data: [
+        {
+          id: "entry-1",
+          leaderboard_id: "lb-1",
+          gym_id: "gym-1",
+          gym_name: "Ape Index",
+          leaderboard_name: "March Madness",
+          starts_at: "2026-03-01",
+          ends_at: "2026-03-31",
+          rank: 3,
+          score: 1250,
+          total_participants: 50,
+          rules: null,
+          prizes: null,
+        },
+        {
+          id: "entry-2",
+          leaderboard_id: "lb-2",
+          gym_id: "gym-2",
+          gym_name: "Summit Gym",
+          leaderboard_name: "Weekly Challenge",
+          starts_at: "2026-03-10",
+          ends_at: "2026-03-17",
+          rank: 1,
+          score: 800,
+          total_participants: 20,
+          rules: null,
+          prizes: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+
+    expect(screen.getByTestId("enrolled-leaderboards-section")).toBeOnTheScreen();
+    expect(screen.getByText("March Madness")).toBeOnTheScreen();
+    expect(screen.getByText("Ape Index")).toBeOnTheScreen();
+    expect(screen.getByText("#3")).toBeOnTheScreen();
+    expect(screen.getByText("Weekly Challenge")).toBeOnTheScreen();
+    expect(screen.getByText("#1")).toBeOnTheScreen();
+  });
+
+  it("shows empty state when no enrolled leaderboards", () => {
+    mockUseEnrolledLeaderboardsReturn = {
+      data: [],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+
+    expect(
+      screen.getByText("Not enrolled in any leaderboards yet"),
+    ).toBeOnTheScreen();
+  });
+
+  it("tapping a leaderboard card navigates to gym leaderboard detail", () => {
+    mockUseEnrolledLeaderboardsReturn = {
+      data: [
+        {
+          id: "entry-1",
+          leaderboard_id: "lb-1",
+          gym_id: "gym-1",
+          gym_name: "Ape Index",
+          leaderboard_name: "March Madness",
+          starts_at: "2026-03-01",
+          ends_at: "2026-03-31",
+          rank: 3,
+          score: 1250,
+          total_participants: 50,
+          rules: null,
+          prizes: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("enrolled-lb-lb-1"));
+    expect(mockPush).toHaveBeenCalledWith(
+      "/(tabs)/gym/gym-1/leaderboard?lb=lb-1",
+    );
+  });
+
+  it("'View All' navigates to leaderboards tab", () => {
+    mockUseEnrolledLeaderboardsReturn = {
+      data: [
+        {
+          id: "entry-1",
+          leaderboard_id: "lb-1",
+          gym_id: "gym-1",
+          gym_name: "Ape Index",
+          leaderboard_name: "March Madness",
+          starts_at: "2026-03-01",
+          ends_at: "2026-03-31",
+          rank: 3,
+          score: 1250,
+          total_participants: 50,
+          rules: null,
+          prizes: null,
+        },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+
+    fireEvent.press(screen.getByTestId("view-all-leaderboards"));
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/leaderboards");
+  });
+
+  it("limits displayed leaderboards to 3", () => {
+    mockUseEnrolledLeaderboardsReturn = {
+      data: [
+        { id: "e1", leaderboard_id: "lb-1", gym_id: "g1", gym_name: "G1", leaderboard_name: "LB1", starts_at: "", ends_at: "", rank: 1, score: 100, total_participants: 10, rules: null, prizes: null },
+        { id: "e2", leaderboard_id: "lb-2", gym_id: "g2", gym_name: "G2", leaderboard_name: "LB2", starts_at: "", ends_at: "", rank: 2, score: 200, total_participants: 10, rules: null, prizes: null },
+        { id: "e3", leaderboard_id: "lb-3", gym_id: "g3", gym_name: "G3", leaderboard_name: "LB3", starts_at: "", ends_at: "", rank: 3, score: 300, total_participants: 10, rules: null, prizes: null },
+        { id: "e4", leaderboard_id: "lb-4", gym_id: "g4", gym_name: "G4", leaderboard_name: "LB4", starts_at: "", ends_at: "", rank: 4, score: 400, total_participants: 10, rules: null, prizes: null },
+      ],
+      isLoading: false,
+      error: null,
+    };
+
+    render(<ProfileScreen />);
+
+    // First 3 should render, 4th should not
+    expect(screen.getByTestId("enrolled-lb-lb-1")).toBeOnTheScreen();
+    expect(screen.getByTestId("enrolled-lb-lb-2")).toBeOnTheScreen();
+    expect(screen.getByTestId("enrolled-lb-lb-3")).toBeOnTheScreen();
+    expect(screen.queryByTestId("enrolled-lb-lb-4")).toBeNull();
   });
 });

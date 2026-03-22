@@ -4,24 +4,22 @@
 //
 // Steps:
 //   0. Welcome — introduces the app
-//   1. Gym Selection — pick a home gym (optional)
+//   1. Gym Selection — favorite one or more gyms (optional, multi-select)
 //   2. Grade System — choose V-Scale, Font, or YDS
 //   3. Done — summary + finish button
 //
 // ARCHITECTURE:
 // This is a single-screen wizard managed by local `step` state (not
-// nested routes). All selections are held in component state until the
-// user finishes, then batch-saved via useUpdateProfile in one mutation.
+// nested routes). Grade system is held in component state until the user
+// finishes, then saved via useUpdateProfile. Favorited gyms are saved
+// immediately via useToggleFavoriteGym so the favorite_gyms table is
+// populated even if the user skips later steps.
 //
 // NAVIGATION FLOW:
 // AuthGate routes new users here (onboardingCompleted === false).
 // On save, useUpdateProfile's onSuccess calls refreshProfile(), which
 // updates useAuth's user.onboardingCompleted to true. AuthGate's
 // useEffect detects this change and redirects to /(tabs).
-//
-// WHY A BATCH SAVE?
-// One mutation is simpler and faster than saving each step individually.
-// If the user backs out before finishing, no partial state is written.
 
 import React, { useState } from "react";
 import {
@@ -35,7 +33,7 @@ import { useTranslation } from "react-i18next";
 import { Mountain, Check } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { useUpdateProfile } from "@/hooks/useProfile";
-import { useGyms } from "@/hooks/useGyms";
+import { useGyms, useToggleFavoriteGym } from "@/hooks/useGyms";
 import { Button } from "@/components/ui/Button";
 import type { GradeSystem } from "@/utils/grades";
 
@@ -56,26 +54,52 @@ export default function OnboardingScreen() {
   const { user, refreshProfile } = useAuth();
   const updateProfile = useUpdateProfile(refreshProfile);
   const { data: gyms } = useGyms();
+  const toggleFavorite = useToggleFavoriteGym();
 
   // ── Local wizard state ────────────────────────────────────────────
   const [step, setStep] = useState(0);
-  const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
+  // Multi-select: track which gym IDs the user has favorited during onboarding.
+  const [selectedGymIds, setSelectedGymIds] = useState<Set<string>>(new Set());
   const [selectedGradeSystem, setSelectedGradeSystem] =
     useState<GradeSystem>("v-scale");
 
-  // Derive the selected gym's name for the summary screen
-  const selectedGymName =
-    gyms?.find((g: any) => g.id === selectedGymId)?.name ?? null;
+  // Derive the selected gym names for the summary screen
+  const selectedGymNames = gyms
+    ?.filter((g: any) => selectedGymIds.has(g.id))
+    .map((g: any) => g.name) ?? [];
 
   // ── Handlers ──────────────────────────────────────────────────────
 
-  /** Save all preferences and mark onboarding complete. */
+  /** Toggle a gym's selection state and persist it to favorite_gyms. */
+  function handleToggleGym(gymId: string) {
+    if (!user) return;
+    const isCurrentlySelected = selectedGymIds.has(gymId);
+
+    // Update local state for instant feedback
+    setSelectedGymIds((prev) => {
+      const next = new Set(prev);
+      if (isCurrentlySelected) {
+        next.delete(gymId);
+      } else {
+        next.add(gymId);
+      }
+      return next;
+    });
+
+    // Persist to favorite_gyms table immediately
+    toggleFavorite.mutate({
+      userId: user.id,
+      gymId,
+      isFavorited: isCurrentlySelected,
+    });
+  }
+
+  /** Save grade system preference and mark onboarding complete. */
   function handleFinish() {
     if (!user) return;
     updateProfile.mutate({
       userId: user.id,
       fields: {
-        home_gym_id: selectedGymId,
         preferred_grade_system: selectedGradeSystem,
         onboarding_completed: true,
       },
@@ -141,28 +165,26 @@ export default function OnboardingScreen() {
           </View>
         )}
 
-        {/* Step 1: Gym Selection */}
+        {/* Step 1: Gym Selection (multi-select favorites) */}
         {step === 1 && (
           <View className="flex-1">
             <Text className="text-text-primary text-2xl font-bold mb-1">
-              {t("onboarding.selectHomeGym")}
+              {t("onboarding.favoriteGyms")}
             </Text>
             <Text className="text-text-secondary text-sm mb-4">
-              {t("onboarding.changeGymLater")}
+              {t("onboarding.favoriteGymsSubtitle")}
             </Text>
 
-            {/* FlatList of available gyms — tap to select, tap again to deselect */}
+            {/* FlatList of available gyms — tap to toggle favorite */}
             <FlatList
               data={gyms ?? []}
               keyExtractor={(item: any) => item.id}
               className="flex-1"
               renderItem={({ item }: { item: any }) => {
-                const isSelected = selectedGymId === item.id;
+                const isSelected = selectedGymIds.has(item.id);
                 return (
                   <Pressable
-                    onPress={() =>
-                      setSelectedGymId(isSelected ? null : item.id)
-                    }
+                    onPress={() => handleToggleGym(item.id)}
                     testID={`gym-item-${item.id}`}
                     className={`py-3 px-4 mb-2 rounded-lg ${
                       isSelected ? "bg-accent" : "bg-surface"
@@ -190,10 +212,7 @@ export default function OnboardingScreen() {
                 size="lg"
               />
               <Pressable
-                onPress={() => {
-                  setSelectedGymId(null);
-                  setStep(2);
-                }}
+                onPress={() => setStep(2)}
                 className="mt-3 py-2 items-center"
               >
                 <Text className="text-text-secondary">{t("common.skip")}</Text>
@@ -257,9 +276,11 @@ export default function OnboardingScreen() {
             {/* Summary of selections */}
             <View className="mt-6 w-full bg-surface rounded-lg p-4">
               <View className="flex-row justify-between mb-2">
-                <Text className="text-text-secondary">{t("profile.homeGym")}</Text>
+                <Text className="text-text-secondary">{t("onboarding.favoriteGymsLabel")}</Text>
                 <Text className="text-text-primary font-semibold">
-                  {selectedGymName ?? t("onboarding.noGymSelected")}
+                  {selectedGymNames.length > 0
+                    ? selectedGymNames.join(", ")
+                    : t("onboarding.noGymsSelected")}
                 </Text>
               </View>
               <View className="flex-row justify-between">

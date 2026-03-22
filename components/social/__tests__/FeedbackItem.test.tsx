@@ -4,7 +4,7 @@
  * Tests the individual beta tip card that displays:
  *   - Author avatar + display name + relative timestamp
  *   - Tip body text
- *   - Upvote/downvote buttons with score display
+ *   - Like button (right-aligned) with score display
  *   - Delete button (only visible for the tip's author)
  *
  * The component is a presentational (dumb) component — it receives
@@ -18,12 +18,17 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
-    ThumbsUp: (props: any) => <View testID="icon-thumbs-up" {...props} />,
-    ThumbsDown: (props: any) => <View testID="icon-thumbs-down" {...props} />,
+    Heart: (props: any) => <View testID="icon-heart" {...props} />,
     Trash2: (props: any) => <View testID="icon-trash" {...props} />,
     Flag: (props: any) => <View testID="icon-flag" {...props} />,
   };
 });
+
+// Mock expo-router — FeedbackItem now uses useRouter for profile navigation.
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
 
 // Mock expo-image — native module unavailable in Jest
 jest.mock("expo-image", () => {
@@ -72,41 +77,44 @@ describe("FeedbackItem", () => {
     ).toBeOnTheScreen();
   });
 
-  it("renders score between vote buttons", () => {
-    // The score (net upvotes minus downvotes) should be visible
-    // between the two vote buttons.
+  it("renders score next to like button when score > 0", () => {
     render(<FeedbackItem {...defaultProps} />);
 
     expect(screen.getByText("5")).toBeOnTheScreen();
   });
 
-  it("highlights up-vote button when userVote is 'up'", () => {
-    // When the current user has upvoted this tip, the thumbs-up
-    // button should have a green highlight color.
+  it("hides score when score is 0", () => {
+    render(
+      <FeedbackItem
+        {...defaultProps}
+        feedback={{ ...baseFeedback, score: 0 }}
+      />
+    );
+
+    expect(screen.queryByText("0")).toBeNull();
+  });
+
+  it("shows filled red heart when liked", () => {
     render(<FeedbackItem {...defaultProps} userVote="up" />);
 
-    const upButton = screen.getByTestId("vote-up-button");
-    // The icon should receive the active color (green)
-    const icon = screen.getByTestId("icon-thumbs-up");
-    expect(icon.props.color).toBe("#22C55E");
-  });
-
-  it("highlights down-vote button when userVote is 'down'", () => {
-    // When the current user has downvoted, the thumbs-down button
-    // should have a red highlight color.
-    render(<FeedbackItem {...defaultProps} userVote="down" />);
-
-    const icon = screen.getByTestId("icon-thumbs-down");
+    const icon = screen.getByTestId("icon-heart");
     expect(icon.props.color).toBe("#EF4444");
+    expect(icon.props.fill).toBe("#EF4444");
   });
 
-  it("calls onVote('up') when up button pressed", () => {
-    // Tapping the thumbs-up button should call onVote with the
-    // feedback ID and 'up' direction.
+  it("shows outline gray heart when not liked", () => {
+    render(<FeedbackItem {...defaultProps} userVote={null} />);
+
+    const icon = screen.getByTestId("icon-heart");
+    expect(icon.props.color).toBe("#9CA3AF");
+    expect(icon.props.fill).toBe("none");
+  });
+
+  it("calls onVote('up') when heart pressed", () => {
     const onVote = jest.fn();
     render(<FeedbackItem {...defaultProps} onVote={onVote} />);
 
-    fireEvent.press(screen.getByTestId("vote-up-button"));
+    fireEvent.press(screen.getByTestId("like-button"));
 
     expect(onVote).toHaveBeenCalledWith("fb-1", "up");
   });

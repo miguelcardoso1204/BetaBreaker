@@ -58,6 +58,25 @@ export default function TabLayout() {
           long press). Registering it here makes it part of the (tabs) group
           so back navigation returns to the previous tab. */}
       <Tabs.Screen name="scan" options={{ href: null }} />
+
+      {/* Active Session — session hub during a climbing session. Hidden from
+          the tab bar (accessed via FAB). */}
+      <Tabs.Screen name="active-session" options={{ href: null }} />
+
+      {/* Gym — nested Stack for gym detail, routes, route detail, leaderboard,
+          and ascent form. Hidden from the tab bar but registered in (tabs) so
+          the tab bar stays visible during gym navigation. The gym Stack's own
+          _layout.tsx handles push/pop within these screens. */}
+      <Tabs.Screen name="gym" options={{ href: null }} />
+
+      {/* Events — nested Stack for event detail and scoreboard. Hidden from
+          the tab bar; accessed via QR scan results. */}
+      <Tabs.Screen name="events" options={{ href: null }} />
+
+      {/* Notifications — notification center. Hidden from the tab bar;
+          accessed via the bell icon on the home tab. */}
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+
     </Tabs>
   );
 }

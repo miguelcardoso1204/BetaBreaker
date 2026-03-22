@@ -169,13 +169,14 @@ export default function StartSessionScreen() {
           )}
 
           {/* Primary CTA — start the session in Zustand store and navigate
-              to the gym page where the user can browse routes and log ascents. */}
+              to the active session hub where the user can see their timer,
+              browse routes, scan QR codes, and manage logged ascents. */}
           <View className="w-full mt-8">
             <Button
               label={t("session.yesStart")}
               onPress={() => {
                 startSession(state.gym.id);
-                router.replace(`/gym/${state.gym.id}`);
+                router.replace("/(tabs)/active-session");
               }}
               size="lg"
             />

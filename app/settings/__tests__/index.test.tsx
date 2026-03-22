@@ -41,13 +41,21 @@ jest.mock("@/hooks/useAuth", () => ({
   }),
 }));
 
-// Mock useUpdateProfile — captures grade system mutation calls.
-// The hook takes refreshProfile as a param and returns a mutation object.
+// Mock useProfile hooks — useUpdateProfile captures grade system mutation calls,
+// useExportData and useDeleteAccount are used for account actions on this screen.
 const mockMutate = jest.fn();
 
 jest.mock("@/hooks/useProfile", () => ({
   useUpdateProfile: () => ({
     mutate: mockMutate,
+    isPending: false,
+  }),
+  useExportData: () => ({
+    mutateAsync: jest.fn().mockResolvedValue({ profile: {} }),
+    isPending: false,
+  }),
+  useDeleteAccount: () => ({
+    mutateAsync: jest.fn().mockResolvedValue(undefined),
     isPending: false,
   }),
 }));
@@ -100,6 +108,8 @@ jest.mock("lucide-react-native", () => {
     Globe: (props: any) => <View testID="icon-globe" {...props} />,
     LogOut: (props: any) => <View testID="icon-log-out" {...props} />,
     Check: (props: any) => <View testID="icon-check" {...props} />,
+    Download: (props: any) => <View testID="icon-download" {...props} />,
+    Trash2: (props: any) => <View testID="icon-trash" {...props} />,
   };
 });
 

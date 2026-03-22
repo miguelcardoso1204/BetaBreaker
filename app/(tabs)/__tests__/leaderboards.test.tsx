@@ -2,22 +2,21 @@
  * Enrolled Leaderboards Tab Tests
  *
  * Tests the Leaderboards tab screen which shows the user's enrolled
- * leaderboard entries across gyms. Each entry shows rank, score, gym name,
- * and the competition period. Users tap a card to navigate to the full
- * leaderboard detail for that gym.
+ * leaderboard entries across gyms, filterable by active/retired status.
+ * Each entry shows rank, leaderboard name, gym name, scoring model, and score.
  *
  * This screen integrates:
  *   - useAuth() for the current user's ID
- *   - useEnrolledLeaderboards(userId) for fetching leaderboard data
+ *   - useEnrolledLeaderboards(userId, active) for fetching data
  *   - expo-router for card → gym leaderboard navigation
  *   - Button component for "Find Gyms" CTA in empty state
  *
- * Mock strategy (matching map.test.tsx __mockData pattern):
+ * Mock strategy (matching __mockData pattern):
  *   - @/hooks/useEnrolledLeaderboards: __mockData pattern (array data)
  *   - @/hooks/useAuth: returns { user: { id: 'test-user-id' } }
  *   - expo-router: useRouter returns { push: mockPush }
- *   - lucide-react-native: Trophy/ChevronRight as simple Views with testIDs
- *   - expo-image: Image as View with testID
+ *   - lucide-react-native: Trophy/ChevronRight as simple Views
+ *   - expo-image: Image as View
  */
 
 import React from "react";
@@ -25,8 +24,7 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 
 // ── Mocks ────────────────────────────────────────────────────────
 
-// Track what userId is passed to useEnrolledLeaderboards.
-// The hook now requires a userId parameter (from useAuth).
+// Track what args are passed to useEnrolledLeaderboards.
 const mockUseEnrolledLeaderboards = jest.fn();
 jest.mock("@/hooks/useEnrolledLeaderboards", () => {
   const mockData = {
@@ -43,8 +41,7 @@ jest.mock("@/hooks/useEnrolledLeaderboards", () => {
   };
 });
 
-// Mock useAuth — provides the current user context to the screen.
-// The screen passes user.id to useEnrolledLeaderboards.
+// Mock useAuth — provides the current user context
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
     user: { id: "test-user-id" },
@@ -55,14 +52,13 @@ jest.mock("@/hooks/useAuth", () => ({
   }),
 }));
 
-// Mock expo-router — useRouter returns push for card tap navigation.
+// Mock expo-router
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-// Mock lucide-react-native — replace SVG icons with simple Views.
-// Trophy is used in the empty state, ChevronRight in list item cards.
+// Mock lucide-react-native — replace SVG icons with simple Views
 jest.mock("lucide-react-native", () => {
   const { View } = require("react-native");
   return {
@@ -73,7 +69,7 @@ jest.mock("lucide-react-native", () => {
   };
 });
 
-// Mock expo-image — Image component isn't available in Jest (native module).
+// Mock expo-image
 jest.mock("expo-image", () => {
   const { View } = require("react-native");
   return {
@@ -94,26 +90,27 @@ const { __mockData } = jest.requireMock<{
 
 // ── Fixtures ─────────────────────────────────────────────────────
 
-/**
- * Two mock leaderboard entries — different gyms, different ranks/scores.
- * This lets us verify that both entries render and that tap navigation
- * targets the correct gym.
- */
 const mockLeaderboards = [
   {
     id: "entry-1",
+    leaderboard_id: "lb-1",
     gym_id: "gym-1",
     gym_name: "Summit Climbing Gym",
-    period: "2026-W06",
+    leaderboard_name: "March Madness",
+    starts_at: "2026-03-01T00:00:00Z",
+    ends_at: "2026-03-31T23:59:59Z",
     rank: 3,
     score: 1250,
     total_participants: 45,
   },
   {
     id: "entry-2",
+    leaderboard_id: "lb-2",
     gym_id: "gym-2",
     gym_name: "Vertical World",
-    period: "2026-W06",
+    leaderboard_name: "Volume Week",
+    starts_at: "2026-03-01T00:00:00Z",
+    ends_at: "2026-03-07T23:59:59Z",
     rank: 1,
     score: 2100,
     total_participants: 30,
@@ -122,7 +119,6 @@ const mockLeaderboards = [
 
 // ── Helper ───────────────────────────────────────────────────────
 
-/** Reset mock data to defaults before each test. */
 function resetMocks() {
   __mockData.data = [];
   __mockData.isLoading = false;
@@ -137,82 +133,71 @@ describe("LeaderboardsScreen", () => {
     resetMocks();
   });
 
-  // ── 1. Loading state ────────────────────────────────────────────
-
   it("shows loading state", () => {
-    // When leaderboard data is still loading, the screen should display
-    // an ActivityIndicator so users know content is being fetched.
     __mockData.isLoading = true;
-
     render(<LeaderboardsScreen />);
-
     expect(screen.getByTestId("loading-indicator")).toBeOnTheScreen();
   });
 
-  // ── 2. Renders leaderboard list ─────────────────────────────────
-
-  it("renders leaderboard list with gym names, ranks, and scores", () => {
-    // When data is loaded, each leaderboard entry should display the
-    // gym name, rank position, and score so users can see their standings.
+  it("renders leaderboard list with names, ranks, and scores", () => {
     __mockData.data = mockLeaderboards;
-
     render(<LeaderboardsScreen />);
 
-    // Both gym names should be visible
+    // Leaderboard names
+    expect(screen.getByText("March Madness")).toBeOnTheScreen();
+    expect(screen.getByText("Volume Week")).toBeOnTheScreen();
+
+    // Gym names
     expect(screen.getByText("Summit Climbing Gym")).toBeOnTheScreen();
     expect(screen.getByText("Vertical World")).toBeOnTheScreen();
 
-    // Rank displayed as "#N" format
+    // Ranks
     expect(screen.getByText("#3")).toBeOnTheScreen();
     expect(screen.getByText("#1")).toBeOnTheScreen();
 
-    // Scores should be visible
-    expect(screen.getByText("1,250")).toBeOnTheScreen();
-    expect(screen.getByText("2,100")).toBeOnTheScreen();
+    // Scores
+    expect(screen.getByText("1,250 pts")).toBeOnTheScreen();
+    expect(screen.getByText("2,100 pts")).toBeOnTheScreen();
   });
 
-  // ── 3. Empty state ──────────────────────────────────────────────
-
   it("shows empty state with Find Gyms button when no leaderboards", () => {
-    // When the user has no leaderboard entries, we show an encouraging
-    // empty state with a CTA to find gyms and start climbing.
     __mockData.data = [];
-
     render(<LeaderboardsScreen />);
 
-    expect(screen.getByText("No enrolled leaderboards")).toBeOnTheScreen();
-    expect(
-      screen.getByText(
-        "Log climbs at a gym to join their weekly leaderboard"
-      )
-    ).toBeOnTheScreen();
-    // "Find Gyms" button should be visible as a CTA
+    expect(screen.getByText("No leaderboards found")).toBeOnTheScreen();
+    expect(screen.getByText("Log climbs at a gym to join their leaderboards")).toBeOnTheScreen();
     expect(screen.getByText("Find Gyms")).toBeOnTheScreen();
   });
 
-  // ── 4. Tap navigates to gym leaderboard detail ──────────────────
-
   it("navigates to gym leaderboard on card press", () => {
-    // Tapping a leaderboard card should push the gym leaderboard route
-    // so the user can see the full standings for that gym.
     __mockData.data = mockLeaderboards;
-
     render(<LeaderboardsScreen />);
 
-    // Press the first leaderboard card (Summit Climbing Gym)
-    fireEvent.press(screen.getByText("Summit Climbing Gym"));
+    fireEvent.press(screen.getByTestId("leaderboard-card-lb-1"));
 
-    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/leaderboard");
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/gym/gym-1/leaderboard?lb=lb-1");
   });
 
-  // ── 5. Passes userId from useAuth to useEnrolledLeaderboards ────
-
-  it("passes userId from useAuth to useEnrolledLeaderboards", () => {
-    // The screen should get the user's ID from useAuth() and pass it
-    // to useEnrolledLeaderboards(userId) for personalized data.
+  it("passes userId and active flag to useEnrolledLeaderboards", () => {
     render(<LeaderboardsScreen />);
 
-    // Verify the hook was called with the mocked user's ID
-    expect(mockUseEnrolledLeaderboards).toHaveBeenCalledWith("test-user-id");
+    // Default: active=true
+    expect(mockUseEnrolledLeaderboards).toHaveBeenCalledWith("test-user-id", true);
+  });
+
+  it("shows active/retired filter buttons", () => {
+    render(<LeaderboardsScreen />);
+
+    expect(screen.getByTestId("filter-active")).toBeOnTheScreen();
+    expect(screen.getByTestId("filter-retired")).toBeOnTheScreen();
+  });
+
+  it("switches to retired filter on press", () => {
+    render(<LeaderboardsScreen />);
+
+    fireEvent.press(screen.getByTestId("filter-retired"));
+
+    // After pressing retired, the hook should be called with active=false
+    expect(mockUseEnrolledLeaderboards).toHaveBeenCalledWith("test-user-id", false);
   });
 });

@@ -47,6 +47,10 @@ export default function LogbookLayout() {
 
       {/* Per-date session detail — summary card + ascent list */}
       <Stack.Screen name="[date]" options={{ title: "Session Detail" }} />
+
+      {/* Per-session-ID detail — accessed from profile session cards.
+          Header hidden because the screen renders its own SafeAreaView header. */}
+      <Stack.Screen name="session/[sessionId]" options={{ headerShown: false }} />
     </Stack>
   );
 }

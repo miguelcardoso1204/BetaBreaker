@@ -159,8 +159,8 @@ describe("SessionDetailScreen", () => {
     render(<SessionDetailScreen />);
 
     expect(screen.getByText("Session Summary")).toBeOnTheScreen();
-    // The stub renders the date prop as text
-    expect(screen.getByText("Feb 9, 2026")).toBeOnTheScreen();
+    // The summary card is rendered with the correct testID
+    expect(screen.getByTestId("session-summary")).toBeOnTheScreen();
   });
 
   // ── 3. Renders ascent list ────────────────────────────────────

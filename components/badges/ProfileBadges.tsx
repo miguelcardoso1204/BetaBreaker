@@ -89,21 +89,23 @@ export function ProfileBadges({
         </Pressable>
       </View>
 
-      {/* Badge row: pinned badges + empty slots */}
-      <View className="flex-row gap-4">
+      {/* Badge row: pinned badges + empty slots.
+          Always centered and using the large size so medals feel prominent. */}
+      <View className="flex-row gap-4 justify-center">
         {/* Render each pinned badge as a BadgeIcon */}
         {pinnedBadges.map((ub) => (
           <BadgeIcon
             key={ub.badge_id}
             iconKey={ub.badge.icon_key}
             name={ub.badge.name}
-            size="sm"
+            size="lg"
           />
         ))}
 
         {/* Render empty slots as dashed circle placeholders.
             These visually indicate remaining pin capacity and
-            encourage users to earn more badges to fill the slots. */}
+            encourage users to earn more badges to fill the slots.
+            Sized to match the large BadgeIcon beside them. */}
         {Array.from({ length: emptySlotCount }).map((_, index) => (
           <View
             key={`empty-${index}`}
@@ -113,12 +115,12 @@ export function ProfileBadges({
           >
             <View
               className="rounded-full items-center justify-center border-2 border-dashed border-text-secondary"
-              style={{ width: 36, height: 36 }}
+              style={{ width: 72, height: 72 }}
             >
-              <Text className="text-text-secondary text-xs">+</Text>
+              <Text className="text-text-secondary text-lg">+</Text>
             </View>
             {/* Spacer to match BadgeIcon's name label height */}
-            <Text className="text-transparent text-xs mt-1"> </Text>
+            <Text className="text-transparent text-sm mt-1"> </Text>
           </View>
         ))}
       </View>

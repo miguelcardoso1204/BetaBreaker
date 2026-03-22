@@ -64,7 +64,7 @@ jest.mock("@/hooks/useGyms", () => {
     useGyms: () => mockData,
     __mockData: mockData,
     useGym: jest.fn(),
-    useSetHomeGym: jest.fn(),
+    useToggleFavoriteGym: jest.fn(),
   };
 });
 
@@ -193,10 +193,10 @@ describe("StartSessionScreen", () => {
 
   // ── 3. "Yes" button starts session and navigates to gym page ──
 
-  it("starts session and navigates to gym page when 'Yes, start session!' is pressed", async () => {
+  it("starts session and navigates to active session hub when 'Yes, start session!' is pressed", async () => {
     // The primary CTA should start the session in Zustand store (so
     // the app knows a climbing session is active) and then replace
-    // the modal with the gym detail page.
+    // the modal with the active session hub.
     __mockData.data = mockGyms;
 
     render(<StartSessionScreen />);
@@ -208,7 +208,7 @@ describe("StartSessionScreen", () => {
     fireEvent.press(screen.getByText("Yes, start session!"));
 
     expect(mockStartSession).toHaveBeenCalledWith("gym-1");
-    expect(mockReplace).toHaveBeenCalledWith("/gym/gym-1");
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)/active-session");
   });
 
   // ── 4. "No" button navigates to map ──────────────────────────

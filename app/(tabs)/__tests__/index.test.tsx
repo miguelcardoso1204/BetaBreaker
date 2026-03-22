@@ -89,7 +89,7 @@ jest.mock("@/hooks/useRouteSuggestions", () => {
     tier: "pro",
     hasMore: false,
     refresh: jest.fn(),
-    noHomeGym: false,
+    noGym: false,
   };
   return {
     useRouteSuggestions: () => mockSuggestionsData,
@@ -123,7 +123,7 @@ const { __mockSuggestionsData } = jest.requireMock<{
     tier: string;
     hasMore: boolean;
     refresh: jest.Mock;
-    noHomeGym: boolean;
+    noGym: boolean;
   };
 }>("@/hooks/useRouteSuggestions");
 
@@ -141,7 +141,7 @@ function resetMockData() {
   __mockSuggestionsData.hasAccess = true;
   __mockSuggestionsData.tier = "pro";
   __mockSuggestionsData.hasMore = false;
-  __mockSuggestionsData.noHomeGym = false;
+  __mockSuggestionsData.noGym = false;
   mockPush.mockClear();
 }
 
@@ -246,7 +246,7 @@ describe("HomeScreen", () => {
 
     fireEvent.press(screen.getByRole("button", { name: "Notifications" }));
 
-    expect(mockPush).toHaveBeenCalledWith("/notifications");
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/notifications");
   });
 
   // ── Suggestions Card Tests ──────────────────────────────────────
@@ -266,7 +266,7 @@ describe("HomeScreen", () => {
       },
     ];
     __mockSuggestionsData.hasAccess = true;
-    __mockSuggestionsData.noHomeGym = false;
+    __mockSuggestionsData.noGym = false;
 
     render(<HomeScreen />);
 

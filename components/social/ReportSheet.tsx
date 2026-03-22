@@ -26,12 +26,13 @@
  *   - Spam (promotional, off-topic, repetitive)
  *   - Harassment (targeting another user)
  *   - Dangerous activity (unsafe climbing practices)
+ *   - Cheating (using wrong holds, invalid start, grade inflation)
  *   - Other (catch-all)
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Modal, Pressable, Text, View } from "react-native";
+import { Animated, Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useCreateReport } from "@/hooks/useModeration";
 
 // ── Props ─────────────────────────────────────────────────────────────
@@ -60,6 +61,7 @@ const REPORT_REASONS = [
   { value: "Spam", labelKey: "social.reasonSpam" },
   { value: "Harassment", labelKey: "social.reasonHarassment" },
   { value: "Dangerous activity", labelKey: "social.reasonDangerous" },
+  { value: "Cheating", labelKey: "social.reasonCheating" },
   { value: "Other", labelKey: "social.reasonOther" },
 ] as const;
 
@@ -116,9 +118,30 @@ export function ReportSheet({
     );
   }
 
+  // Slide-up animation for the sheet content. The Modal itself uses
+  // animationType="fade" so the backdrop fades in smoothly, while
+  // the sheet panel slides up independently via translateY.
+  const { height: screenHeight } = useWindowDimensions();
+  const slideAnim = useRef(new Animated.Value(screenHeight)).current;
+
+  useEffect(() => {
+    if (visible) {
+      // Slide the sheet up from off-screen when the modal becomes visible
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 200,
+      }).start();
+    } else {
+      // Reset to off-screen so it's ready for the next open
+      slideAnim.setValue(screenHeight);
+    }
+  }, [visible, slideAnim, screenHeight]);
+
   return (
     <Modal
-      animationType="slide"
+      animationType="fade"
       transparent
       visible={visible}
       onRequestClose={onDismiss}
@@ -132,8 +155,11 @@ export function ReportSheet({
           accessibilityLabel={t("social.closeReportSheet")}
         />
 
-        {/* Sheet content */}
-        <View className="bg-surface rounded-t-2xl px-6 pt-6 pb-8">
+        {/* Sheet content — slides up independently of the fade */}
+        <Animated.View
+          style={{ transform: [{ translateY: slideAnim }] }}
+          className="bg-surface rounded-t-2xl px-6 pt-6 pb-8"
+        >
           {isSuccess ? (
             // ── Success state ──────────────────────────────────────
             // Brief confirmation that the report was submitted.
@@ -210,7 +236,7 @@ export function ReportSheet({
               </Pressable>
             </>
           )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );

@@ -27,12 +27,13 @@
 
 import React, { useState } from "react";
 import { View, Text, Pressable, Platform, Modal } from "react-native";
-import { Home, MapPin, Plus, Trophy, User, ScanLine } from "lucide-react-native";
+import { Home, MapPin, Plus, Timer, Trophy, User, ScanLine } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { useSessionStore } from "@/stores/sessionStore";
 
 // ── Constants ────────────────────────────────────────────────────────
 
@@ -111,23 +112,36 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
   // This must be called inside the component so it re-renders on language change.
   const { t } = useTranslation();
 
+  // Read session state directly from the Zustand store (not useSession hook)
+  // to avoid pulling TanStack Query context into the tab bar. The tab bar
+  // renders outside QueryClientProvider's scope in some navigation configs,
+  // so a direct store selector is safer and lighter.
+  const isSessionActive = useSessionStore((s) => s.isActive);
+
   // Tracks whether the FAB action menu is visible (opened via long press).
   // The menu appears as a card above the FAB with additional actions like
   // "Scan QR Code" — actions that are useful but don't warrant a tab slot.
   const [showMenu, setShowMenu] = useState(false);
 
   /**
-   * Handle FAB press: trigger haptic feedback + navigate to session modal.
+   * Handle FAB press: trigger haptic feedback + navigate.
+   *
+   * When a session is active, navigate to the active session hub.
+   * Otherwise, open the start-session modal to begin a new session.
    *
    * WHY HAPTICS?
    * The FAB is the primary call-to-action in the app. Haptic feedback
    * makes it feel more "physical" and satisfying than a regular tap,
-   * reinforcing that this is a special action (starting a climbing session).
-   * We use Medium impact — strong enough to notice, not so strong it's jarring.
+   * reinforcing that this is a special action. We use Medium impact —
+   * strong enough to notice, not so strong it's jarring.
    */
   const handleFabPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/start-session");
+    if (isSessionActive) {
+      router.push("/(tabs)/active-session");
+    } else {
+      router.push("/start-session");
+    }
   };
 
   /**
@@ -241,7 +255,7 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
           // accessibilityRole="button" (not "tab") because the FAB
           // isn't a tab — it's an action button that opens a modal.
           accessibilityRole="button"
-          accessibilityLabel={t("session.startSession")}
+          accessibilityLabel={isSessionActive ? t("session.viewSession") : t("session.startSession")}
           // The FAB is a 56x56 circle with accent background.
           // marginTop: -28 pulls it up by half its height, creating
           // the raised/floating effect above the tab bar edge.
@@ -251,8 +265,13 @@ export function CustomTabBar({ state, navigation, insets }: BottomTabBarProps) {
             ...FAB_SHADOW,
           }}
         >
-          {/* Plus icon in white, centered inside the purple circle */}
-          <Plus size={28} color="#FFFFFF" strokeWidth={2.5} />
+          {/* Icon swaps between Timer (active session) and Plus (no session)
+              so the user gets visual feedback that a session is running. */}
+          {isSessionActive ? (
+            <Timer size={28} color="#FFFFFF" strokeWidth={2.5} />
+          ) : (
+            <Plus size={28} color="#FFFFFF" strokeWidth={2.5} />
+          )}
         </Pressable>
       </View>
 

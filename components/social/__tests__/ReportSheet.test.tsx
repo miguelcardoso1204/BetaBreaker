@@ -58,6 +58,7 @@ describe("ReportSheet", () => {
     expect(screen.getByText("Spam")).toBeOnTheScreen();
     expect(screen.getByText("Harassment")).toBeOnTheScreen();
     expect(screen.getByText("Dangerous activity")).toBeOnTheScreen();
+    expect(screen.getByText("Cheating")).toBeOnTheScreen();
     expect(screen.getByText("Other")).toBeOnTheScreen();
   });
 

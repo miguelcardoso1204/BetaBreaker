@@ -6,7 +6,7 @@
  *   - Pan and zoom the map to explore gym locations
  *   - Tap a marker to navigate to the Gym Main Page (/gym/[id])
  *   - Search gyms by name using the overlay search bar
- *   - Toggle a favorites filter to show only their home gym
+ *   - Toggle a favorites filter to show only their favorited gyms
  *   - See a count of visible gyms in a bottom sheet
  *
  * WHY react-native-maps?
@@ -35,7 +35,7 @@ import { useRouter } from "expo-router";
 import * as Location from "expo-location";
 import { Search, Star, ChevronRight, LocateFixed } from "lucide-react-native";
 
-import { useGyms } from "@/hooks/useGyms";
+import { useGyms, useFavoriteGyms } from "@/hooks/useGyms";
 import { useAuth } from "@/hooks/useAuth";
 import { IconButton } from "@/components/ui/IconButton";
 
@@ -88,6 +88,14 @@ const DEFAULT_CENTER = {
   longitudeDelta: 5,
 };
 
+/** Height of a single gym list item in the bottom panel (px).
+ * Each item shows name + address + hours in a py-3 (12px) padded row
+ * plus a 1px bottom border. */
+const GYM_ITEM_HEIGHT = 66;
+
+/** The bottom gym list is sized to show exactly 3 items without scrolling. */
+const GYM_LIST_HEIGHT = GYM_ITEM_HEIGHT * 3;
+
 // ── Component ─────────────────────────────────────────────────────
 
 export default function MapScreen() {
@@ -95,6 +103,7 @@ export default function MapScreen() {
   const router = useRouter();
   const { data: gyms, isLoading } = useGyms();
   const { user } = useAuth();
+  const { data: favData } = useFavoriteGyms(user?.id);
   const mapRef = useRef<any>(null);
 
   // Local state for the search query and favorites toggle.
@@ -152,18 +161,19 @@ export default function MapScreen() {
 
   // ── Gyms with coordinates (for map markers) ─────────────────
   // All gyms that have valid lat/lng get a marker on the map.
-  // Favorites toggle optionally limits to just the user's home gym.
+  // Favorites toggle optionally limits to the user's favorited gyms.
+  const favoriteIds = favData?.ids ?? new Set<string>();
   const mappableGyms = useMemo(() => {
     if (!gyms) return [];
 
     return gyms.filter((gym) => {
       if (gym.latitude == null || gym.longitude == null) return false;
-      if (showFavoritesOnly && user?.homeGymId) {
-        return gym.id === user.homeGymId;
+      if (showFavoritesOnly) {
+        return favoriteIds.has(gym.id);
       }
       return true;
     });
-  }, [gyms, showFavoritesOnly, user?.homeGymId]);
+  }, [gyms, showFavoritesOnly, favoriteIds]);
 
   // ── Search results (global, not limited to viewport) ────────
   // Matches gym names against the search query across ALL gyms.
@@ -180,29 +190,11 @@ export default function MapScreen() {
     );
   }, [gyms, searchQuery]);
 
-  // ── Visible gyms (within current map viewport) ──────────────
-  // Derived from mappableGyms + the current visible region. When the user
-  // pans or zooms, onRegionChangeComplete updates visibleRegion, which
-  // triggers a recompute of this list. The bottom sheet shows only these.
-  const visibleGyms = useMemo(() => {
-    if (!visibleRegion) return mappableGyms;
-
-    const latMin = visibleRegion.latitude - visibleRegion.latitudeDelta / 2;
-    const latMax = visibleRegion.latitude + visibleRegion.latitudeDelta / 2;
-    const lngMin = visibleRegion.longitude - visibleRegion.longitudeDelta / 2;
-    const lngMax = visibleRegion.longitude + visibleRegion.longitudeDelta / 2;
-
-    return mappableGyms.filter((gym) => {
-      const lat = gym.latitude!;
-      const lng = gym.longitude!;
-      return lat >= latMin && lat <= latMax && lng >= lngMin && lng <= lngMax;
-    });
-  }, [mappableGyms, visibleRegion]);
-
   // ── Initial map region ────────────────────────────────────────
   // Priority: user's GPS location → average of gym positions → Portugal fallback.
   // Using `initialRegion` means this only sets the starting view — the user
   // can freely pan/zoom afterwards.
+  // Declared before visibleGyms because visibleGyms references it as a fallback.
   const initialRegion = useMemo(() => {
     // If we got the user's GPS, center on them with a tighter zoom so
     // nearby gyms are immediately visible.
@@ -222,18 +214,49 @@ export default function MapScreen() {
 
     if (withCoords.length === 0) return DEFAULT_CENTER;
 
-    const avgLat =
-      withCoords.reduce((sum, g) => sum + g.latitude!, 0) / withCoords.length;
-    const avgLng =
-      withCoords.reduce((sum, g) => sum + g.longitude!, 0) / withCoords.length;
+    const lats = withCoords.map((g) => g.latitude!);
+    const lngs = withCoords.map((g) => g.longitude!);
+    const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+    const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+
+    // Compute delta from actual gym spread with 50% padding so all
+    // markers fit on screen. Minimum 0.5° so a single gym doesn't
+    // over-zoom.
+    const latSpan = Math.max(...lats) - Math.min(...lats);
+    const lngSpan = Math.max(...lngs) - Math.min(...lngs);
 
     return {
       latitude: avgLat,
       longitude: avgLng,
-      latitudeDelta: 2,
-      longitudeDelta: 2,
+      latitudeDelta: Math.max(latSpan * 1.5, 0.5),
+      longitudeDelta: Math.max(lngSpan * 1.5, 0.5),
     };
   }, [gyms, userLocation]);
+
+  // ── Visible gyms (within current map viewport) ──────────────
+  // Derived from mappableGyms + the current visible region. When the user
+  // pans or zooms, onRegionChangeComplete updates visibleRegion, which
+  // triggers a recompute of this list. The bottom sheet shows only these.
+  //
+  // Before the first onRegionChangeComplete fires, visibleRegion is null
+  // and we show all mappable gyms (matching the full initial map view).
+  const visibleGyms = useMemo(() => {
+    // Use the live viewport region once the user has panned/zoomed,
+    // otherwise fall back to the initial region so the list matches
+    // what the map shows on first render.
+    const region = visibleRegion ?? initialRegion;
+
+    const latMin = region.latitude - region.latitudeDelta / 2;
+    const latMax = region.latitude + region.latitudeDelta / 2;
+    const lngMin = region.longitude - region.longitudeDelta / 2;
+    const lngMax = region.longitude + region.longitudeDelta / 2;
+
+    return mappableGyms.filter((gym) => {
+      const lat = gym.latitude!;
+      const lng = gym.longitude!;
+      return lat >= latMin && lat <= latMax && lng >= lngMin && lng <= lngMax;
+    });
+  }, [mappableGyms, visibleRegion, initialRegion]);
 
   // ── Loading state ─────────────────────────────────────────────
   // Wait for both gym data AND location resolution before rendering the map.
@@ -291,7 +314,7 @@ export default function MapScreen() {
               <Callout
                 tooltip
                 testID={`callout-${gym.id}`}
-                onPress={() => router.push(`/gym/${gym.id}` as any)}
+                onPress={() => router.push(`/(tabs)/gym/${gym.id}` as any)}
               >
                 <View
                   className="bg-surface rounded-xl p-3 border border-border"
@@ -409,7 +432,7 @@ export default function MapScreen() {
           }}
           className="absolute right-4 z-10 bg-surface border border-border rounded-full p-3"
           style={{
-            bottom: visibleGyms.length > 0 ? 208 : 24,
+            bottom: visibleGyms.length > 0 ? GYM_LIST_HEIGHT + 8 : 24,
             elevation: 4, shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2, shadowRadius: 4,
@@ -424,18 +447,24 @@ export default function MapScreen() {
         <View
           testID="bottom-sheet"
           className="absolute left-0 right-0 bottom-0 bg-surface border-t border-border"
-          style={{ maxHeight: 200 }}
+          style={{ height: GYM_LIST_HEIGHT }}
         >
           <FlatList
             data={visibleGyms}
             keyExtractor={(item) => item.id}
+            getItemLayout={(_, index) => ({
+              length: GYM_ITEM_HEIGHT,
+              offset: GYM_ITEM_HEIGHT * index,
+              index,
+            })}
             renderItem={({ item }) => {
               const todayHours = getTodayHours(item.operating_hours);
               return (
                 <Pressable
                   testID={`gym-list-item-${item.id}`}
-                  onPress={() => router.push(`/gym/${item.id}` as any)}
-                  className="flex-row items-center px-4 py-3 border-b border-border"
+                  onPress={() => router.push(`/(tabs)/gym/${item.id}` as any)}
+                  className="flex-row items-center px-4 border-b border-border"
+                  style={{ height: GYM_ITEM_HEIGHT }}
                 >
                   <View className="flex-1 mr-2">
                     <Text className="text-text-primary font-medium" numberOfLines={1}>

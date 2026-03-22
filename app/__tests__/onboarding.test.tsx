@@ -1,14 +1,14 @@
 // app/__tests__/onboarding.test.tsx
 //
 // Tests for the onboarding wizard screen — a 4-step flow that collects
-// home gym and grade system preferences from new users.
+// favorite gyms and grade system preferences from new users.
 //
-// Steps: Welcome → Gym Selection → Grade System → Done
+// Steps: Welcome → Gym Selection (multi-select) → Grade System → Done
 //
 // MOCK STRATEGY (same pattern as settings/index.test.tsx):
 //   - useAuth: controls user data + refreshProfile
 //   - useProfile: captures useUpdateProfile mutation calls
-//   - useGyms: provides gym list
+//   - useGyms: provides gym list + useToggleFavoriteGym for favorites
 //   - lucide-react-native: stubs icons as plain Views
 
 import React from "react";
@@ -22,7 +22,6 @@ let mockUser: any = {
   id: "user-onboarding",
   displayName: "NewClimber",
   preferredGradeSystem: "v-scale",
-  homeGymId: null,
   onboardingCompleted: false,
 };
 
@@ -45,7 +44,9 @@ jest.mock("@/hooks/useProfile", () => ({
   }),
 }));
 
-// Mock useGyms — provides a list of gyms for the gym selection step
+// Mock useGyms — provides a list of gyms for the gym selection step.
+// Also mock useToggleFavoriteGym for the multi-select favorite pattern.
+const mockToggleFavoriteMutate = jest.fn();
 jest.mock("@/hooks/useGyms", () => ({
   useGyms: () => ({
     data: [
@@ -54,6 +55,9 @@ jest.mock("@/hooks/useGyms", () => ({
       { id: "gym-3", name: "Boulder House" },
     ],
     isLoading: false,
+  }),
+  useToggleFavoriteGym: () => ({
+    mutate: mockToggleFavoriteMutate,
   }),
 }));
 
@@ -74,12 +78,12 @@ describe("OnboardingScreen", () => {
   beforeEach(() => {
     mockMutate.mockClear();
     mockRefreshProfile.mockClear();
+    mockToggleFavoriteMutate.mockClear();
     mockIsPending = false;
     mockUser = {
       id: "user-onboarding",
       displayName: "NewClimber",
       preferredGradeSystem: "v-scale",
-      homeGymId: null,
       onboardingCompleted: false,
     };
   });
@@ -108,7 +112,7 @@ describe("OnboardingScreen", () => {
       render(<OnboardingScreen />);
       fireEvent.press(screen.getByText("Let's get started"));
       // Step 1 heading should now be visible
-      expect(screen.getByText("Select Your Home Gym")).toBeOnTheScreen();
+      expect(screen.getByText("Favorite Your Gyms")).toBeOnTheScreen();
     });
 
     it("calls mutation with onboarding_completed when 'Skip setup' is pressed", () => {
@@ -132,9 +136,9 @@ describe("OnboardingScreen", () => {
 
     it("renders gym selection heading", () => {
       goToStep1();
-      expect(screen.getByText("Select Your Home Gym")).toBeOnTheScreen();
+      expect(screen.getByText("Favorite Your Gyms")).toBeOnTheScreen();
       expect(
-        screen.getByText("You can change this later in settings.")
+        screen.getByText("Select the gyms you climb at. You can change this anytime.")
       ).toBeOnTheScreen();
     });
 
@@ -241,9 +245,9 @@ describe("OnboardingScreen", () => {
       expect(screen.getByText("The Crag")).toBeOnTheScreen();
     });
 
-    it("shows 'No gym selected' when gym was skipped", () => {
+    it("shows 'No gyms selected' when gym was skipped", () => {
       goToStep3();
-      expect(screen.getByText("No gym selected")).toBeOnTheScreen();
+      expect(screen.getByText("No gyms selected")).toBeOnTheScreen();
     });
 
     it("shows selected grade system label", () => {
@@ -252,12 +256,13 @@ describe("OnboardingScreen", () => {
     });
 
     it("calls mutation with selected preferences when 'Get Started' is pressed", () => {
+      // Gym favorites are persisted immediately via useToggleFavoriteGym
+      // during step 1. The final mutation only saves grade system + onboarding flag.
       goToStep3({ selectGym: true, selectFont: true });
       fireEvent.press(screen.getByText("Get Started"));
       expect(mockMutate).toHaveBeenCalledWith({
         userId: "user-onboarding",
         fields: {
-          home_gym_id: "gym-1",
           preferred_grade_system: "font",
           onboarding_completed: true,
         },
@@ -270,7 +275,6 @@ describe("OnboardingScreen", () => {
       expect(mockMutate).toHaveBeenCalledWith({
         userId: "user-onboarding",
         fields: {
-          home_gym_id: null,
           preferred_grade_system: "v-scale",
           onboarding_completed: true,
         },

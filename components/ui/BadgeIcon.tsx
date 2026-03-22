@@ -40,8 +40,8 @@ export interface BadgeIconProps {
   iconKey: string;
   /** Human-readable badge name displayed below the icon circle */
   name: string;
-  /** Size preset: "sm" (36px) for compact layouts, "md" (48px) for galleries */
-  size?: "sm" | "md";
+  /** Size preset: "sm" (36px) for compact layouts, "md" (48px) for galleries, "lg" (72px) for featured display */
+  size?: "sm" | "md" | "lg";
   /** Whether the badge has been earned. Defaults to true. False = dimmed. */
   earned?: boolean;
   /** Optional testID for finding this element in tests */
@@ -56,6 +56,7 @@ export interface BadgeIconProps {
 const sizeConfig = {
   sm: { dimension: 36, textClass: "text-xs", nameClass: "text-xs" },
   md: { dimension: 48, textClass: "text-sm", nameClass: "text-xs" },
+  lg: { dimension: 72, textClass: "text-xl", nameClass: "text-sm" },
 } as const;
 
 /**

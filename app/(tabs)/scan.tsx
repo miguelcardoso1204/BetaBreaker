@@ -115,7 +115,7 @@ export default function ScanScreen() {
    */
   const handleViewRoute = () => {
     if (scanState.status === 'success') {
-      router.push(`/gym/${scanState.payload.gym_id}/route/${scanState.payload.sub}`);
+      router.push(`/(tabs)/gym/${scanState.payload.gym_id}/route/${scanState.payload.sub}` as any);
     }
   };
 
@@ -133,7 +133,7 @@ export default function ScanScreen() {
    */
   const handleCompScore = () => {
     if (activeEvents.length > 0) {
-      router.push(`/events/${activeEvents[0].id}` as any);
+      router.push(`/(tabs)/events/${activeEvents[0].id}` as any);
     }
   };
 
@@ -178,10 +178,14 @@ export default function ScanScreen() {
           barcodeScannerSettings restricts detection to QR codes only —
           we don't want to accidentally trigger on barcodes, Data Matrix,
           or other symbologies that might be on product packaging nearby. */}
+      {/* mode="picture" prevents the camera from claiming the audio session,
+          which would otherwise interrupt background music playback. We only
+          need the camera feed for barcode detection, not video/audio recording. */}
       <CameraView
         testID="camera-view"
         style={{ flex: 1 }}
         facing="back"
+        mode="picture"
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
       >

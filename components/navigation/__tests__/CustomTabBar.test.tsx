@@ -40,6 +40,10 @@ jest.mock("lucide-react-native", () => ({
     const { Text } = require("react-native");
     return <Text {...props} testID="icon-Plus">Plus</Text>;
   },
+  Timer: (props: any) => {
+    const { Text } = require("react-native");
+    return <Text {...props} testID="icon-Timer">Timer</Text>;
+  },
   Trophy: (props: any) => {
     const { Text } = require("react-native");
     return <Text {...props} testID="icon-Trophy">Trophy</Text>;
@@ -65,6 +69,14 @@ jest.mock("expo-haptics", () => ({
 const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush }),
+}));
+
+// Mock session store — controls whether the FAB shows Timer vs Plus icon.
+// The component uses useSessionStore((s) => s.isActive) directly to avoid
+// pulling TanStack Query into the tab bar.
+const mockSessionState = { isActive: false };
+jest.mock("@/stores/sessionStore", () => ({
+  useSessionStore: (selector: any) => selector(mockSessionState),
 }));
 
 // Import the component under test AFTER mocks are in place.
@@ -159,6 +171,8 @@ function createMockTabBarProps(activeIndex: number): BottomTabBarProps {
 describe("CustomTabBar", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset session state so each test starts with no active session.
+    mockSessionState.isActive = false;
   });
 
   it("renders 4 tab icons and a FAB button", () => {
@@ -282,5 +296,50 @@ describe("CustomTabBar", () => {
 
     // Should navigate to the scan screen
     expect(mockPush).toHaveBeenCalledWith("/(tabs)/scan");
+  });
+
+  // ── Session-aware FAB behavior ──────────────────────────────────
+
+  it("FAB navigates to /active-session when session is active", () => {
+    // When a climbing session is running, the FAB should take the user
+    // to the active session hub (not the start-session modal).
+    mockSessionState.isActive = true;
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    fireEvent.press(screen.getByTestId("fab-button"));
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/active-session");
+  });
+
+  it("FAB navigates to /start-session when no session is active", () => {
+    // When no session is running, the FAB should open the start-session
+    // modal to let the user pick a gym and begin climbing.
+    mockSessionState.isActive = false;
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    fireEvent.press(screen.getByTestId("fab-button"));
+    expect(mockPush).toHaveBeenCalledWith("/start-session");
+  });
+
+  it("FAB shows Timer icon when session is active", () => {
+    // Visual indicator that a session is running — the Plus icon swaps
+    // to a Timer icon so the user knows they can tap to view their session.
+    mockSessionState.isActive = true;
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    expect(screen.getByTestId("icon-Timer")).toBeOnTheScreen();
+    expect(screen.queryByTestId("icon-Plus")).not.toBeOnTheScreen();
+  });
+
+  it("FAB shows Plus icon when no session is active", () => {
+    // Default state — Plus icon invites the user to start a new session.
+    mockSessionState.isActive = false;
+    const props = createMockTabBarProps(0);
+    render(<CustomTabBar {...props} />);
+
+    expect(screen.getByTestId("icon-Plus")).toBeOnTheScreen();
+    expect(screen.queryByTestId("icon-Timer")).not.toBeOnTheScreen();
   });
 });
