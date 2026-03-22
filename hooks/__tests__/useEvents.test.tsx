@@ -16,7 +16,7 @@
  *
  * Mock strategy (matching useModeration.test.tsx):
  *   - Mock eventsService (not Supabase) — hooks don't know about PostgREST
- *   - Mock useAuth to provide a stable user ID + homeGymId
+ *   - Mock useAuth to provide a stable user ID + adminGymId
  *   - Wrap renderHook in QueryClientProvider with retry: false
  */
 
@@ -44,7 +44,8 @@ jest.mock("@/services/events.service", () => ({
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     session: { user: { id: "admin-1" } },
     isAuthenticated: true,
     role: "gym_admin",

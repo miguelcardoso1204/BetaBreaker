@@ -37,7 +37,7 @@ export type {
   GymSetter,
 } from "./routes.service";
 
-// gymService — fetches gym directory, gym details, and sets home gym.
+// gymService — fetches gym directory, gym details, and manages favorite gyms.
 export { gymService } from "./gyms.service";
 
 // Sessions service — persists ascent logs and aggregates session summaries.

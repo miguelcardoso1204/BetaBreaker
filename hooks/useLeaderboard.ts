@@ -1,41 +1,28 @@
 /**
- * Leaderboard Hook — TanStack Query Wrapper for Gym Leaderboards
+ * Leaderboard Hook — TanStack Query Wrapper for Leaderboard Entries
  *
- * Fetches ranked leaderboard entries for a specific gym, time period, and
- * scoring model. Each entry includes the user's profile info (display_name,
- * avatar_url) for rendering names and avatars alongside scores and ranks.
+ * Fetches ranked entries for a specific leaderboard. Each entry includes
+ * the user's profile info (display_name, avatar_url) for rendering.
  *
- * QUERY KEY: ["leaderboard", gymId, period, model]
+ * QUERY KEY: ["leaderboard", leaderboardId]
  *
- * Why include gymId, period, AND model in the key?
- * TanStack Query uses the key for cache identity. A gym's hardest_grade
- * leaderboard and its flash_rate leaderboard are different datasets — by
- * including the model in the key, switching between scoring models uses
- * separate cache entries, enabling instant tab switching for loaded data.
+ * Simplified from the old (gymId, period, model) key since each leaderboard
+ * now has its own ID that encapsulates gym, time window, and scoring model.
  */
 
 import { useQuery } from "@tanstack/react-query";
-import {
-  leaderboardService,
-  type ScoringModel,
-} from "@/services/leaderboard.service";
+import { leaderboardService } from "@/services/leaderboard.service";
 
 /**
- * Fetch leaderboard entries for a gym in a specific time period and model.
+ * Fetch ranked entries for a specific leaderboard.
  *
- * @param gymId - The UUID of the gym whose leaderboard to display
- * @param period - Time period filter (e.g., "2026-W06")
- * @param model - Scoring model: 'hardest_grade' (default), 'flash_rate', or 'volume'
+ * @param leaderboardId - The UUID of the leaderboard to display
  */
-export function useLeaderboard(
-  gymId: string,
-  period: string,
-  model: ScoringModel = "hardest_grade",
-) {
+export function useLeaderboard(leaderboardId: string) {
   return useQuery({
-    queryKey: ["leaderboard", gymId, period, model],
+    queryKey: ["leaderboard", leaderboardId],
     queryFn: async () => {
-      const result = await leaderboardService.getLeaderboard(gymId, period, model);
+      const result = await leaderboardService.getLeaderboardEntries(leaderboardId);
       if (result.error) throw result.error;
       return result.data;
     },

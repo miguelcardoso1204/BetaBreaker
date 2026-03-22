@@ -37,7 +37,7 @@ jest.mock("@/services/scores.service", () => ({
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "athlete-1", homeGymId: "gym-1" },
+    user: { id: "athlete-1" },
     session: { user: { id: "athlete-1" } },
     isAuthenticated: true,
     role: "climber",

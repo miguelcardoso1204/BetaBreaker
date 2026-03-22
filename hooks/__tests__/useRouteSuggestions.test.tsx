@@ -2,7 +2,7 @@
  * useRouteSuggestions Hook Tests
  *
  * Tests the Pro-gated route suggestion hook that composes:
- *   - useAuth (user identity + home gym)
+ *   - useAuth (user identity)
  *   - useEntitlement (Pro-tier gate)
  *   - useGradePyramid (max grade derivation)
  *   - useStyleInsights (weak style detection)
@@ -40,9 +40,8 @@ jest.mock("@/services/routes.service", () => ({
 const mockAuthReturn = {
   user: {
     id: "user-1",
-    homeGymId: "gym-1",
     tier: "pro",
-  } as { id: string; homeGymId: string | null; tier: string } | null,
+  } as { id: string; tier: string } | null,
   isAuthenticated: true,
   isLoading: false,
 };
@@ -144,7 +143,7 @@ const mockCandidates = [
 // ── Helpers ─────────────────────────────────────────────────────
 
 function resetMocks() {
-  mockAuthReturn.user = { id: "user-1", homeGymId: "gym-1", tier: "pro" };
+  mockAuthReturn.user = { id: "user-1", tier: "pro" };
   mockAuthReturn.isAuthenticated = true;
   mockAuthReturn.isLoading = false;
   mockEntitlementReturn.hasAccess = true;
@@ -177,11 +176,11 @@ describe("useRouteSuggestions", () => {
     resetMocks();
   });
 
-  it("returns scored suggestions for a Pro user with home gym", async () => {
-    // Happy path: Pro user with home gym, pyramid data, and style data.
+  it("returns scored suggestions for a Pro user with a gym", async () => {
+    // Happy path: Pro user with a gym, pyramid data, and style data.
     // The hook should fetch sent routes + candidates, score them, and
     // return sorted suggestions.
-    const { result } = renderHook(() => useRouteSuggestions(), {
+    const { result } = renderHook(() => useRouteSuggestions("gym-1"), {
       wrapper: createWrapper(),
     });
 
@@ -213,7 +212,7 @@ describe("useRouteSuggestions", () => {
     expect(result.current.suggestions![1].id).toBe("r1"); // overhang+crimpy, score 2, grade 13
     expect(result.current.suggestions![2].id).toBe("r2"); // slab, score 0
     expect(result.current.hasAccess).toBe(true);
-    expect(result.current.noHomeGym).toBe(false);
+    expect(result.current.noGym).toBe(false);
   });
 
   it("disables query for free-tier users", async () => {
@@ -240,14 +239,12 @@ describe("useRouteSuggestions", () => {
     expect(sessionsService.getSentRouteIds).not.toHaveBeenCalled();
   });
 
-  it("sets noHomeGym flag when user has no home gym", async () => {
-    mockAuthReturn.user = { id: "user-1", homeGymId: null, tier: "pro" };
-
+  it("sets noGym flag when no gymId is provided", async () => {
     const { result } = renderHook(() => useRouteSuggestions(), {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.noHomeGym).toBe(true);
+    expect(result.current.noGym).toBe(true);
     expect(result.current.suggestions).toBeUndefined();
     expect(sessionsService.getSentRouteIds).not.toHaveBeenCalled();
   });
@@ -278,7 +275,7 @@ describe("useRouteSuggestions", () => {
       new Error("Network error")
     );
 
-    const { result } = renderHook(() => useRouteSuggestions(), {
+    const { result } = renderHook(() => useRouteSuggestions("gym-1"), {
       wrapper: createWrapper(),
     });
 
@@ -293,7 +290,7 @@ describe("useRouteSuggestions", () => {
     // Mark r2 as already sent — it should be excluded from results
     sessionsService.getSentRouteIds.mockResolvedValueOnce(new Set(["r2"]));
 
-    const { result } = renderHook(() => useRouteSuggestions(), {
+    const { result } = renderHook(() => useRouteSuggestions("gym-1"), {
       wrapper: createWrapper(),
     });
 

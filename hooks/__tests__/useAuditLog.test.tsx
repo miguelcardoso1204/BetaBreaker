@@ -90,7 +90,7 @@ describe('useAuditLog', () => {
   });
 
   it('is disabled when gymId is null', () => {
-    // When the user's profile hasn't loaded yet (no homeGymId),
+    // When the user's profile hasn't loaded yet (no adminGymId),
     // the query should not fire — stays idle, no service call.
     const { result } = renderHook(
       () => useAuditLog(null),

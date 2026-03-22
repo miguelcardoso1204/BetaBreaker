@@ -15,7 +15,6 @@ import {
   ROLES,
   ROUTE_STATUSES,
   GRADE_SYSTEMS,
-  SCORING_MODELS,
   ASCENT_STATUSES,
   NOTIFICATION_CATEGORIES,
   SAVE_TYPES,
@@ -46,7 +45,6 @@ import type {
   Tier,
   RouteStatus,
   AscentStatus,
-  ScoringModel,
   GradeSystem,
   NotificationCategory,
   SaveType,
@@ -136,19 +134,6 @@ describe('GRADE_SYSTEMS', () => {
   });
 });
 
-/* ── SCORING_MODELS ─────────────────────────────────────────────────────── */
-
-describe('SCORING_MODELS', () => {
-  it('contains all 3 competition scoring models', () => {
-    // Each scoring model rewards a different climbing style:
-    // hardest_grade (strength), flash_rate (consistency), volume (endurance)
-    expect(SCORING_MODELS).toContain('hardest_grade');
-    expect(SCORING_MODELS).toContain('flash_rate');
-    expect(SCORING_MODELS).toContain('volume');
-    expect(SCORING_MODELS).toHaveLength(3);
-  });
-});
-
 /* ── NOTIFICATION_CATEGORIES ────────────────────────────────────────────── */
 
 describe('NOTIFICATION_CATEGORIES', () => {
@@ -215,7 +200,6 @@ describe('type inference', () => {
     const tier: Tier = 'free';
     const routeStatus: RouteStatus = 'active';
     const ascentStatus: AscentStatus = 'flash';
-    const scoringModel: ScoringModel = 'volume';
     const gradeSystem: GradeSystem = 'font';
     const notificationCategory: NotificationCategory = 'friends';
     const saveType: SaveType = 'project';
@@ -226,7 +210,6 @@ describe('type inference', () => {
     expect(tier).toBe('free');
     expect(routeStatus).toBe('active');
     expect(ascentStatus).toBe('flash');
-    expect(scoringModel).toBe('volume');
     expect(gradeSystem).toBe('font');
     expect(notificationCategory).toBe('friends');
     expect(saveType).toBe('project');

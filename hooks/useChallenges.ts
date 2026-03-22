@@ -27,7 +27,7 @@ import { challengesService } from "@/services/challenges.service";
  *
  * Active = started and not yet ended. Used by the profile screen and
  * challenge list to show what the user can currently work toward.
- * Disabled when gymId is undefined (no home gym set).
+ * Disabled when gymId is undefined (no gym context).
  *
  * @param gymId - The gym UUID, or undefined to disable the query
  */

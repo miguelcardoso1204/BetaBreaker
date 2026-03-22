@@ -57,6 +57,8 @@ export interface LogAscentInput {
   notes?: string;
   /** User's perceived difficulty as a canonical grade integer (0–30). */
   perceivedGrade?: number;
+  /** Quality/enjoyment rating (1–5 stars). Undefined means not rated. */
+  rating?: number;
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────
@@ -77,27 +79,96 @@ export function useSession() {
   const gymId = useSessionStore((s) => s.gymId);
   const pendingLogs = useSessionStore((s) => s.pendingLogs);
   const duration = useSessionStore((s) => s.duration);
+  const sessionId = useSessionStore((s) => s.sessionId);
 
   // ── Store actions ──────────────────────────────────────────────
   // Actions are stable references (they never change) so selecting
   // them individually doesn't cause unnecessary re-renders.
-  const startSession = useSessionStore((s) => s.startSession);
-  const endSession = useSessionStore((s) => s.endSession);
+  const storeStartSession = useSessionStore((s) => s.startSession);
+  const storeEndSession = useSessionStore((s) => s.endSession);
   const reset = useSessionStore((s) => s.reset);
+
+  // ── startSessionMutation ──────────────────────────────────────
+  // Persists the session to the database. Called after the Zustand
+  // store is updated (for immediate UI) — the DB INSERT is async.
+  // On success, stores the returned session UUID so ascents can be
+  // linked to it via route_ascents.session_id.
+  const startSessionMutation = useMutation({
+    mutationFn: async ({ gymId: gId }: { gymId: string }) => {
+      if (!user?.id) throw new Error("Must be logged in to start a session");
+      const result = await sessionsService.createSession(user.id, gId);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: (data) => {
+      // Store the DB-generated session UUID in Zustand so subsequent
+      // logAscent calls can include it as session_id.
+      useSessionStore.getState().setSessionId(data.id);
+    },
+  });
+
+  // ── endSessionMutation ──────────────────────────────────────
+  // Persists the session end time and duration to the database.
+  // Called after the Zustand store computes the duration.
+  const endSessionMutation = useMutation({
+    mutationFn: async ({ sessionId: sId, durationMinutes }: { sessionId: string; durationMinutes: number }) => {
+      const result = await sessionsService.endSession(sId, durationMinutes);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSettled: () => {
+      // Invalidate session queries so the profile's "Recent Sessions"
+      // section re-fetches with the newly completed session.
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    },
+  });
+
+  // ── Combined session start/end handlers ─────────────────────
+  // These coordinate the Zustand store (immediate UI) with the
+  // async database mutations (persistence). Screens call these
+  // instead of the raw store actions.
+
+  /**
+   * Start a session: update the store immediately for the timer UI,
+   * then fire an async mutation to persist the session to the DB.
+   */
+  const startSession = (gId: string) => {
+    storeStartSession(gId);
+    startSessionMutation.mutate({ gymId: gId });
+  };
+
+  /**
+   * End a session: compute duration in the store, then persist to DB.
+   * If no sessionId exists (mutation didn't complete), only the store
+   * is updated — the session won't be saved to the DB.
+   */
+  const endSession = () => {
+    storeEndSession();
+    const state = useSessionStore.getState();
+    if (state.sessionId) {
+      endSessionMutation.mutate({
+        sessionId: state.sessionId,
+        durationMinutes: state.duration,
+      });
+    }
+  };
 
   // ── logAscent mutation ─────────────────────────────────────────
   // Uses optimistic updates via the Zustand store: a PendingLog is
   // added immediately in onMutate, then removed on error (rollback).
   // The mutation function calls sessionsService.createAscent with the
-  // authenticated user's ID injected automatically.
+  // authenticated user's ID and the active session's ID injected.
   const logAscent = useMutation({
     mutationFn: async (input: LogAscentInput) => {
       if (!user?.id) {
         throw new Error("Must be logged in to log ascents");
       }
 
-      // Call the service with userId injected from useAuth.
-      // The service maps camelCase fields to snake_case DB columns.
+      // Read sessionId from the store — may be null if no session is
+      // active or if the createSession mutation hasn't completed yet.
+      const currentSessionId = useSessionStore.getState().sessionId;
+
+      // Call the service with userId and sessionId injected.
       const result = await sessionsService.createAscent({
         userId: user.id,
         routeId: input.routeId,
@@ -105,6 +176,8 @@ export function useSession() {
         attempts: input.attempts,
         notes: input.notes,
         perceivedGrade: input.perceivedGrade,
+        rating: input.rating,
+        sessionId: currentSessionId ?? undefined,
       });
 
       // Service returns { data, error } from PostgREST. Throw on error
@@ -178,8 +251,9 @@ export function useSession() {
     gymId,
     pendingLogs,
     duration,
+    sessionId,
 
-    // Store actions
+    // Combined actions (store + DB persistence)
     startSession,
     endSession,
     reset,

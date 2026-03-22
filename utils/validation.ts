@@ -145,7 +145,6 @@ export const routeCreateSchema = z.object({
 export const profileUpdateSchema = z.object({
   displayName: z.string().min(1).max(50),
   avatarUrl: z.url(),
-  homeGymId: z.uuid(),
   preferredGradeSystem: z.enum(GRADE_SYSTEMS),
 }).partial();
 

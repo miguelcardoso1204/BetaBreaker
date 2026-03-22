@@ -65,6 +65,14 @@ interface SessionState {
   pendingLogs: PendingLog[];
   /** Session duration in whole minutes, computed when endSession() is called. */
   duration: number;
+  /** Currently selected route ID for in-tab session navigation. Set when the
+   *  user taps a route in session-routes, read by session-route-detail and
+   *  session-ascent screens. Null when no route is selected. */
+  selectedRouteId: string | null;
+  /** Database UUID for the persisted session row. Set asynchronously after
+   *  the INSERT succeeds — null until then and during idle state. Used to
+   *  link ascents to their parent session via route_ascents.session_id. */
+  sessionId: string | null;
 
   // ── Actions ──────────────────────────────────────────────────
 
@@ -86,6 +94,13 @@ interface SessionState {
   /** Remove a pending log by its client-generated ID (undo functionality). */
   removePendingLog: (id: string) => void;
 
+  /** Set the currently selected route for in-tab detail/ascent navigation. */
+  setSelectedRouteId: (id: string | null) => void;
+
+  /** Store the database session ID after the async INSERT completes.
+   *  Called by the useSession hook's startSessionMutation onSuccess. */
+  setSessionId: (id: string) => void;
+
   /** Reset the entire store back to its initial idle state. */
   reset: () => void;
 }
@@ -103,6 +118,8 @@ const INITIAL_STATE = {
   gymId: null as string | null,
   pendingLogs: [] as PendingLog[],
   duration: 0,
+  selectedRouteId: null as string | null,
+  sessionId: null as string | null,
 };
 
 // ── Store ────────────────────────────────────────────────────────
@@ -128,6 +145,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     // Starting a session clears any leftover state from a previous session
     // (endTime, pendingLogs, duration) so we start completely fresh.
     // Only startTime and gymId are set; everything else resets to defaults.
+    // sessionId is cleared here because the DB INSERT is async —
+    // it will be set later via setSessionId() once the mutation succeeds.
     set({
       isActive: true,
       startTime: Date.now(),
@@ -135,6 +154,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       gymId,
       pendingLogs: [],
       duration: 0,
+      sessionId: null,
     });
   },
 
@@ -170,6 +190,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set((state) => ({
       pendingLogs: state.pendingLogs.filter((log) => log.id !== id),
     }));
+  },
+
+  setSelectedRouteId: (id: string | null) => {
+    set({ selectedRouteId: id });
+  },
+
+  setSessionId: (id: string) => {
+    set({ sessionId: id });
   },
 
   reset: () => {

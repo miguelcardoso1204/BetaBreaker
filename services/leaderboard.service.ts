@@ -1,16 +1,15 @@
 /**
  * Leaderboard Service — Thin Wrapper Around Supabase Leaderboard Queries
  *
- * This service handles all leaderboard-related data access:
- *   - getLeaderboard: Fetch ranked entries for a gym/period/model
- *   - getEnrolledLeaderboards: Fetch a user's standings across all gyms
+ * Handles all leaderboard-related data access:
+ *   - getLeaderboardEntries: Fetch ranked entries for a specific leaderboard
+ *   - getEnrolledLeaderboards: Fetch a user's standings filtered by active/retired
+ *   - getGymLeaderboards: Fetch leaderboards for a gym filtered by active/retired
+ *   - createLeaderboard: Admin creates a new leaderboard for a gym
  *
- * Why a separate service from gamificationService?
- * The gamificationService previously had a getLeaderboard method, but it
- * didn't support multiple scoring models. This dedicated service is the
- * canonical source for leaderboard queries going forward. It also adds
- * the getEnrolledLeaderboards method (backed by an RPC function) which
- * returns enriched data with gym names and participant counts.
+ * Leaderboards are admin-created entities with a name, scoring model, and
+ * custom time window (starts_at → ends_at). "Active" means ends_at > now(),
+ * "retired" means ends_at <= now().
  *
  * Scoring models:
  *   - 'hardest_grade': MAX(canonical_grade) — rewards pushing limits
@@ -20,51 +19,80 @@
 
 import { supabase } from "@/lib/supabase";
 
-/** Valid scoring model values for leaderboard queries. */
-export type ScoringModel = "hardest_grade" | "flash_rate" | "volume";
-
 export const leaderboardService = {
   /**
-   * Fetch leaderboard entries for a gym in a specific time period and model.
+   * Fetch ranked entries for a specific leaderboard.
    *
    * Each entry includes the user's profile info (display_name, avatar_url)
-   * via PostgREST resource embedding — needed for rendering names and avatars
-   * in the leaderboard UI.
-   *
+   * via PostgREST resource embedding — needed for rendering names and avatars.
    * Sorted by rank ascending (1st place at the top).
    *
-   * @param gymId - The UUID of the gym
-   * @param period - Time period filter (e.g., "2026-W06")
-   * @param model - Scoring model to filter by (defaults to 'hardest_grade')
+   * @param leaderboardId - The UUID of the leaderboard to display
    */
-  getLeaderboard(
-    gymId: string,
-    period: string,
-    model: ScoringModel = "hardest_grade",
-  ) {
+  getLeaderboardEntries(leaderboardId: string) {
     return supabase
       .from("leaderboard_entries")
       .select("*, profile:profiles(display_name, avatar_url)")
-      .eq("gym_id", gymId)
-      .eq("period", period)
-      .eq("scoring_model", model)
+      .eq("leaderboard_id", leaderboardId)
       .order("rank");
   },
 
   /**
    * Fetch a user's enrolled leaderboard standings across all gyms.
    *
-   * Calls the get_enrolled_leaderboards() Postgres function via RPC.
-   * This function joins with gyms for gym_name and computes total_participants
-   * via a lateral subquery — more efficient than multiple PostgREST calls.
-   *
-   * Returns one row per gym per scoring_model — only the most recent period.
+   * Calls the get_enrolled_leaderboards() RPC which joins leaderboard_entries
+   * with leaderboards and gyms, and computes participant counts.
    *
    * @param userId - The UUID of the user whose standings to fetch
+   * @param active - true for active leaderboards, false for retired
    */
-  getEnrolledLeaderboards(userId: string) {
+  getEnrolledLeaderboards(userId: string, active: boolean = true) {
     return supabase.rpc("get_enrolled_leaderboards", {
       p_user_id: userId,
+      p_active: active,
+    });
+  },
+
+  /**
+   * Fetch leaderboards for a specific gym, filtered by active/retired status.
+   *
+   * Calls the get_gym_leaderboards() RPC which returns leaderboard metadata
+   * with participant counts.
+   *
+   * @param gymId - The UUID of the gym
+   * @param active - true for active leaderboards, false for retired
+   */
+  getGymLeaderboards(gymId: string, active: boolean = true) {
+    return supabase.rpc("get_gym_leaderboards", {
+      p_gym_id: gymId,
+      p_active: active,
+    });
+  },
+
+  /**
+   * Create a new leaderboard for a gym.
+   *
+   * Only gym admins can call this (enforced by RLS INSERT policy on the
+   * leaderboards table). The leaderboard starts accepting entries immediately
+   * if starts_at <= now().
+   *
+   * @param params - Leaderboard configuration
+   */
+  createLeaderboard(params: {
+    gymId: string;
+    name: string;
+    startsAt: string;
+    endsAt: string;
+    rules?: string;
+    prizes?: string;
+  }) {
+    return supabase.from("leaderboards").insert({
+      gym_id: params.gymId,
+      name: params.name,
+      starts_at: params.startsAt,
+      ends_at: params.endsAt,
+      rules: params.rules ?? null,
+      prizes: params.prizes ?? null,
     });
   },
 };

@@ -11,7 +11,7 @@
  *
  * Mock strategy (matching useEvents.test.tsx):
  *   - Mock routeService (not Supabase) — hooks don't know about PostgREST
- *   - Mock useAuth to provide a stable user ID + homeGymId
+ *   - Mock useAuth to provide a stable user ID + adminGymId
  *   - Wrap renderHook in QueryClientProvider with retry: false
  */
 
@@ -34,7 +34,8 @@ jest.mock("@/services/routes.service", () => ({
 // ── Mock useAuth ──────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "admin-1", homeGymId: "gym-1" },
+    user: { id: "admin-1" },
+    adminGymId: "gym-1",
     session: { user: { id: "admin-1" } },
     isAuthenticated: true,
     role: "gym_admin",
@@ -111,7 +112,7 @@ describe("useAdminRoutes", () => {
   });
 
   it("is disabled when gymId is null", async () => {
-    // If the admin's home gym hasn't loaded yet, the query should be
+    // If the admin's gym hasn't loaded yet, the query should be
     // disabled to prevent fetching with an undefined gymId.
     const { result } = renderHook(() => useAdminRoutes(null), {
       wrapper: createWrapper(),

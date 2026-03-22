@@ -1,14 +1,13 @@
 /**
- * useGyms / useGym / useSetHomeGym Hook Tests
+ * useGyms / useGym / useFavoriteGyms / useToggleFavoriteGym Hook Tests
  *
  * These hooks wrap gymService methods with TanStack Query, adding
- * caching for gym lists and details, plus a mutation for setting
- * the user's home gym.
+ * caching for gym lists and details, plus queries and mutations for
+ * managing the user's favorite gyms.
  *
- * The setHomeGym mutation is the first useMutation in the codebase.
- * Unlike useQuery (read), useMutation handles write operations and
- * lets us invalidate related caches after the write succeeds — so
- * the auth profile refreshes to show the new homeGymId.
+ * The favorites system uses a join table (favorite_gyms) instead of
+ * a single gym on the profile. Users can favorite multiple gyms.
+ * useToggleFavoriteGym handles both add and remove via the isFavorited flag.
  *
  * Mock strategy: We mock the SERVICE layer (gymService), not Supabase.
  */
@@ -22,17 +21,21 @@ jest.mock("@/services/gyms.service", () => ({
   gymService: {
     getGyms: jest.fn(),
     getGymById: jest.fn(),
-    setHomeGym: jest.fn(),
+    getFavoriteGyms: jest.fn(),
+    addFavoriteGym: jest.fn(),
+    removeFavoriteGym: jest.fn(),
   },
 }));
 
-import { useGyms, useGym, useSetHomeGym } from "../useGyms";
+import { useGyms, useGym, useFavoriteGyms, useToggleFavoriteGym } from "../useGyms";
 
 const { gymService } = jest.requireMock<{
   gymService: {
     getGyms: jest.Mock;
     getGymById: jest.Mock;
-    setHomeGym: jest.Mock;
+    getFavoriteGyms: jest.Mock;
+    addFavoriteGym: jest.Mock;
+    removeFavoriteGym: jest.Mock;
   };
 }>("@/services/gyms.service");
 
@@ -132,22 +135,62 @@ describe("useGym", () => {
   });
 });
 
-describe("useSetHomeGym", () => {
+describe("useFavoriteGyms", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("calls gymService.setHomeGym with userId and gymId", async () => {
-    // The mutation hook wraps the service's setHomeGym method.
-    // useMutation exposes a `mutateAsync` function that the screen
-    // calls when the user taps "Set as Home Gym".
-    gymService.setHomeGym.mockResolvedValueOnce({
+  it("fetches favorite gyms for a user and returns ids Set + gym objects", async () => {
+    // The hook queries the favorite_gyms join table and returns both a
+    // Set of gym IDs (for fast lookup) and the full gym objects.
+    gymService.getFavoriteGyms.mockResolvedValueOnce({
+      data: [
+        { gym_id: "gym-1", gyms: { id: "gym-1", name: "Ape Index" } },
+        { gym_id: "gym-2", gyms: { id: "gym-2", name: "Summit Gym" } },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(
+      () => useFavoriteGyms("user-1"),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.data?.ids).toEqual(new Set(["gym-1", "gym-2"]));
+    expect(result.current.data?.gyms).toHaveLength(2);
+    expect(gymService.getFavoriteGyms).toHaveBeenCalledWith("user-1");
+  });
+
+  it("is disabled when userId is undefined", () => {
+    // When the user isn't logged in, the query shouldn't fire.
+    const { result } = renderHook(
+      () => useFavoriteGyms(undefined),
+      { wrapper: createWrapper() }
+    );
+
+    expect(gymService.getFavoriteGyms).not.toHaveBeenCalled();
+    expect(result.current.data).toBeUndefined();
+  });
+});
+
+describe("useToggleFavoriteGym", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("calls addFavoriteGym when isFavorited is false", async () => {
+    // When the gym is not yet favorited, the toggle should add it.
+    gymService.addFavoriteGym.mockResolvedValueOnce({
       data: null,
       error: null,
     });
 
     const { result } = renderHook(
-      () => useSetHomeGym(),
+      () => useToggleFavoriteGym(),
       { wrapper: createWrapper() }
     );
 
@@ -155,22 +198,48 @@ describe("useSetHomeGym", () => {
       await result.current.mutateAsync({
         userId: "user-1",
         gymId: "gym-1",
+        isFavorited: false,
       });
     });
 
-    expect(gymService.setHomeGym).toHaveBeenCalledWith("user-1", "gym-1");
+    expect(gymService.addFavoriteGym).toHaveBeenCalledWith("user-1", "gym-1");
+    expect(gymService.removeFavoriteGym).not.toHaveBeenCalled();
+  });
+
+  it("calls removeFavoriteGym when isFavorited is true", async () => {
+    // When the gym is currently favorited, the toggle should remove it.
+    gymService.removeFavoriteGym.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const { result } = renderHook(
+      () => useToggleFavoriteGym(),
+      { wrapper: createWrapper() }
+    );
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        userId: "user-1",
+        gymId: "gym-1",
+        isFavorited: true,
+      });
+    });
+
+    expect(gymService.removeFavoriteGym).toHaveBeenCalledWith("user-1", "gym-1");
+    expect(gymService.addFavoriteGym).not.toHaveBeenCalled();
   });
 
   it("sets error state on failure", async () => {
     // When the service returns an error, the mutation's error state
     // should be set so the screen can show a failure message.
-    gymService.setHomeGym.mockResolvedValueOnce({
+    gymService.addFavoriteGym.mockResolvedValueOnce({
       data: null,
       error: { message: "Network error" },
     });
 
     const { result } = renderHook(
-      () => useSetHomeGym(),
+      () => useToggleFavoriteGym(),
       { wrapper: createWrapper() }
     );
 
@@ -179,6 +248,7 @@ describe("useSetHomeGym", () => {
         await result.current.mutateAsync({
           userId: "user-1",
           gymId: "gym-1",
+          isFavorited: false,
         });
       } catch {
         // Expected — mutateAsync throws on error

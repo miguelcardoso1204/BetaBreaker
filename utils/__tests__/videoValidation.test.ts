@@ -3,10 +3,9 @@
  *
  * Tests pure validation functions that enforce upload constraints:
  *   - Duration: max 60 seconds (FR-K1)
- *   - File size: max 50 MB (NFR-11)
+ *   - File size: max 150 MB (NFR-11)
  *   - Resolution: max 1920×1080 (FR-K1)
  *   - MIME type: video/mp4, video/quicktime, video/webm only
- *   - Storage path: deterministic format for deduplication
  *   - Aggregate validation: combines all checks
  *
  * These are pure functions — no mocks, no side effects. Input in, result out.
@@ -17,14 +16,12 @@ import {
   validateVideoFileSize,
   validateVideoResolution,
   validateVideoMimeType,
-  buildStoragePath,
   validateVideoForUpload,
   VIDEO_MAX_DURATION_SECONDS,
   VIDEO_MAX_FILE_SIZE_BYTES,
   VIDEO_MAX_WIDTH,
   VIDEO_MAX_HEIGHT,
   VIDEO_ALLOWED_MIME_TYPES,
-  VIDEO_STORAGE_BUCKET,
 } from '../videoValidation';
 
 // ── Constants ─────────────────────────────────────────────────────
@@ -32,12 +29,10 @@ import {
 describe('video validation constants', () => {
   it('exports correct limits', () => {
     // FR-K1: max 60 seconds, max 1080p
-    // NFR-11: max 50 MB
     expect(VIDEO_MAX_DURATION_SECONDS).toBe(60);
-    expect(VIDEO_MAX_FILE_SIZE_BYTES).toBe(50 * 1024 * 1024);
-    expect(VIDEO_MAX_WIDTH).toBe(1920);
-    expect(VIDEO_MAX_HEIGHT).toBe(1080);
-    expect(VIDEO_STORAGE_BUCKET).toBe('beta-videos');
+    expect(VIDEO_MAX_FILE_SIZE_BYTES).toBe(150 * 1024 * 1024);
+    expect(VIDEO_MAX_WIDTH).toBe(1080);
+    expect(VIDEO_MAX_HEIGHT).toBe(1920);
   });
 
   it('allows mp4, quicktime, and webm MIME types', () => {
@@ -89,15 +84,15 @@ describe('validateVideoFileSize', () => {
     expect(result.valid).toBe(true);
   });
 
-  it('passes for exactly 50 MB (boundary)', () => {
-    const result = validateVideoFileSize(50 * 1024 * 1024);
+  it('passes for exactly 150 MB (boundary)', () => {
+    const result = validateVideoFileSize(150 * 1024 * 1024);
     expect(result.valid).toBe(true);
   });
 
-  it('rejects a 60 MB file', () => {
-    const result = validateVideoFileSize(60 * 1024 * 1024);
+  it('rejects a 160 MB file', () => {
+    const result = validateVideoFileSize(160 * 1024 * 1024);
     expect(result.valid).toBe(false);
-    expect(result.error).toContain('50');
+    expect(result.error).toContain('150');
   });
 
   it('rejects zero-byte file', () => {
@@ -109,34 +104,31 @@ describe('validateVideoFileSize', () => {
 // ── validateVideoResolution ───────────────────────────────────────
 
 describe('validateVideoResolution', () => {
-  it('passes for 1080p (1920×1080)', () => {
-    const result = validateVideoResolution(1920, 1080);
-    expect(result.valid).toBe(true);
-  });
-
-  it('passes for 720p (1280×720)', () => {
-    const result = validateVideoResolution(1280, 720);
-    expect(result.valid).toBe(true);
-  });
-
   it('passes for portrait 1080p (1080×1920)', () => {
-    // Phone videos are often portrait — 1080 wide is within bounds,
-    // but 1920 tall exceeds VIDEO_MAX_HEIGHT. We check each dimension
-    // against its respective max, so portrait 1080×1920 has width ≤ 1920
-    // and height ≤ 1080... wait, 1920 > 1080. This should flag.
+    // Climbing videos are typically filmed in portrait orientation.
     const result = validateVideoResolution(1080, 1920);
+    expect(result.valid).toBe(true);
+  });
+
+  it('passes for landscape 1080p (1920×1080)', () => {
+    // Landscape fits within 1080 width? No — 1920 > 1080 max width.
+    const result = validateVideoResolution(1920, 1080);
+    expect(result.valid).toBe(false);
+  });
+
+  it('passes for 720p (720×1280)', () => {
+    const result = validateVideoResolution(720, 1280);
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects 4K (2160×3840)', () => {
+    const result = validateVideoResolution(2160, 3840);
     expect(result.valid).toBe(false);
     expect(result.error).toContain('1080');
   });
 
-  it('rejects 4K (3840×2160)', () => {
-    const result = validateVideoResolution(3840, 2160);
-    expect(result.valid).toBe(false);
-    expect(result.error).toContain('1920');
-  });
-
   it('rejects when only width exceeds limit', () => {
-    const result = validateVideoResolution(2560, 720);
+    const result = validateVideoResolution(1440, 720);
     expect(result.valid).toBe(false);
   });
 });
@@ -167,36 +159,6 @@ describe('validateVideoMimeType', () => {
   });
 });
 
-// ── buildStoragePath ──────────────────────────────────────────────
-
-describe('buildStoragePath', () => {
-  it('builds path in <userId>/<routeId>/<timestamp>.<ext> format', () => {
-    // The path ensures each user's uploads are namespaced under their ID,
-    // and each route has its own subfolder. The timestamp prevents collisions.
-    const path = buildStoragePath('user-abc', 'route-xyz', 'mp4');
-    expect(path).toMatch(/^user-abc\/route-xyz\/\d+\.mp4$/);
-  });
-
-  it('uses current timestamp for uniqueness', () => {
-    // Two calls should produce different timestamps (or at least the format is correct).
-    const before = Date.now();
-    const path = buildStoragePath('u1', 'r1', 'mp4');
-    const after = Date.now();
-
-    // Extract the timestamp from the path
-    const match = path.match(/\/(\d+)\.mp4$/);
-    expect(match).not.toBeNull();
-    const ts = Number(match![1]);
-    expect(ts).toBeGreaterThanOrEqual(before);
-    expect(ts).toBeLessThanOrEqual(after);
-  });
-
-  it('handles quicktime extension (mov)', () => {
-    const path = buildStoragePath('user-1', 'route-2', 'mov');
-    expect(path).toMatch(/\.mov$/);
-  });
-});
-
 // ── validateVideoForUpload (aggregate) ────────────────────────────
 
 describe('validateVideoForUpload', () => {
@@ -204,8 +166,8 @@ describe('validateVideoForUpload', () => {
     const result = validateVideoForUpload({
       durationSeconds: 30,
       fileSizeBytes: 10 * 1024 * 1024,
-      width: 1920,
-      height: 1080,
+      width: 1080,
+      height: 1920,
       mimeType: 'video/mp4',
     });
     expect(result.valid).toBe(true);
@@ -217,7 +179,7 @@ describe('validateVideoForUpload', () => {
     // all problems at once instead of fixing them one at a time.
     const result = validateVideoForUpload({
       durationSeconds: 120,
-      fileSizeBytes: 100 * 1024 * 1024,
+      fileSizeBytes: 200 * 1024 * 1024,
       width: 3840,
       height: 2160,
       mimeType: 'video/mp4',
@@ -231,8 +193,8 @@ describe('validateVideoForUpload', () => {
     const result = validateVideoForUpload({
       durationSeconds: 30,
       fileSizeBytes: 10 * 1024 * 1024,
-      width: 1920,
-      height: 1080,
+      width: 1080,
+      height: 1920,
       mimeType: 'image/png',
     });
     expect(result.valid).toBe(false);

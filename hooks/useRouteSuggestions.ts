@@ -7,7 +7,7 @@
  * weaker climbing styles.
  *
  * Data flow:
- *   useAuth()           → userId, homeGymId
+ *   useAuth()           → userId
  *   useEntitlement()    → Pro gate (query disabled for free tier)
  *   useGradePyramid()   → maxGrade (highest grade in pyramid, all-time)
  *   useStyleInsights()  → style distribution → weak styles
@@ -24,7 +24,7 @@
  *   without any React or network dependencies.
  *
  * The optional `gymId` parameter supports future gym-detail-screen usage.
- * When omitted, it falls back to the user's home gym.
+ * When omitted, suggestions are disabled (a gym context is required).
  */
 
 import { useState, useCallback } from "react";
@@ -58,14 +58,14 @@ export interface UseRouteSuggestionsReturn {
   hasMore: boolean;
   /** Advance to the next page (wraps to 0 when no more results). */
   refresh: () => void;
-  /** True when the user has no home gym set and no gymId override provided. */
-  noHomeGym: boolean;
+  /** True when no gymId was provided (suggestions require a gym context). */
+  noGym: boolean;
 }
 
 /**
  * Fetch personalized route suggestions for the current user.
  *
- * @param gymId - Optional gym ID override. Defaults to user's home gym.
+ * @param gymId - The gym to fetch suggestions for. Required — no default.
  * @returns Suggestion data, loading/error states, entitlement info, and pagination
  */
 export function useRouteSuggestions(gymId?: string): UseRouteSuggestionsReturn {
@@ -82,9 +82,10 @@ export function useRouteSuggestions(gymId?: string): UseRouteSuggestionsReturn {
   // wrapping to 0 when there are no more results.
   const [page, setPage] = useState(0);
 
-  // Determine the effective gym ID: explicit override > user's home gym.
-  const effectiveGymId = gymId ?? user?.homeGymId ?? null;
-  const noHomeGym = !gymId && !user?.homeGymId;
+  // The gym ID must be explicitly provided. When viewing a specific gym,
+  // the screen passes the gymId. Without it, suggestions are disabled.
+  const effectiveGymId = gymId ?? null;
+  const noGym = !gymId;
 
   // Derive maxGrade from pyramid data. The pyramid is sorted ascending
   // by grade, so the last entry has the highest grade the user has sent.
@@ -152,6 +153,6 @@ export function useRouteSuggestions(gymId?: string): UseRouteSuggestionsReturn {
     tier,
     hasMore: data?.hasMore ?? false,
     refresh,
-    noHomeGym,
+    noGym,
   };
 }

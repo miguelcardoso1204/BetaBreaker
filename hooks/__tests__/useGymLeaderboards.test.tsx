@@ -1,12 +1,9 @@
 /**
- * useLeaderboard Hook Tests
+ * useGymLeaderboards Hook Tests
  *
- * The leaderboard hook wraps leaderboardService.getLeaderboardEntries() with
- * TanStack Query, caching results by leaderboard ID.
- *
- * Each leaderboard is an admin-created entity with its own scoring model
- * and time window, so the hook only needs the leaderboard ID to fetch
- * the ranked entries.
+ * The gym leaderboards hook wraps leaderboardService.getGymLeaderboards()
+ * with TanStack Query. It fetches the list of leaderboards for a specific
+ * gym, filtered by active or retired status.
  *
  * Mock strategy: Mock leaderboardService (not Supabase), renderHook with
  * a fresh QueryClient wrapped in QueryClientProvider.
@@ -19,15 +16,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // ── Mock leaderboardService ────────────────────────────────────────
 jest.mock("@/services/leaderboard.service", () => ({
   leaderboardService: {
-    getLeaderboardEntries: jest.fn(),
+    getGymLeaderboards: jest.fn(),
   },
 }));
 
-import { useLeaderboard } from "../useLeaderboard";
+import { useGymLeaderboards } from "../useGymLeaderboards";
 
 const { leaderboardService } = jest.requireMock<{
   leaderboardService: {
-    getLeaderboardEntries: jest.Mock;
+    getGymLeaderboards: jest.Mock;
   };
 }>("@/services/leaderboard.service");
 
@@ -47,49 +44,36 @@ function createWrapper() {
 
 // ── Fixtures ──────────────────────────────────────────────────────
 
-const mockEntries = [
+const mockLeaderboards = [
   {
-    user_id: "user-1",
-    rank: 1,
-    score: 500,
-    profile: { display_name: "ClimbKing", avatar_url: null },
+    id: "lb-1",
+    name: "March Madness",
+    starts_at: "2026-03-01T00:00:00Z",
+    ends_at: "2026-03-31T23:59:59Z",
+    total_participants: 25,
   },
   {
-    user_id: "user-2",
-    rank: 2,
-    score: 350,
-    profile: { display_name: "BoulderQueen", avatar_url: "https://example.com/avatar.jpg" },
+    id: "lb-2",
+    name: "Flash Friday",
+    starts_at: "2026-03-14T00:00:00Z",
+    ends_at: "2026-03-14T23:59:59Z",
+    total_participants: 12,
   },
 ];
 
-describe("useLeaderboard", () => {
+describe("useGymLeaderboards", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it("returns loading state initially", () => {
-    // Before the query resolves, isLoading is true — the leaderboard
-    // screen shows a spinner during this phase.
-    leaderboardService.getLeaderboardEntries.mockReturnValue(new Promise(() => {}));
-
-    const { result } = renderHook(
-      () => useLeaderboard("lb-1"),
-      { wrapper: createWrapper() }
-    );
-
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.data).toBeUndefined();
-  });
-
-  it("returns leaderboard entries on success", async () => {
-    // Each entry has a rank, score, and embedded profile data.
-    leaderboardService.getLeaderboardEntries.mockResolvedValueOnce({
-      data: mockEntries,
+  it("returns gym leaderboards on success", async () => {
+    leaderboardService.getGymLeaderboards.mockResolvedValueOnce({
+      data: mockLeaderboards,
       error: null,
     });
 
     const { result } = renderHook(
-      () => useLeaderboard("lb-1"),
+      () => useGymLeaderboards("gym-1"),
       { wrapper: createWrapper() }
     );
 
@@ -97,18 +81,49 @@ describe("useLeaderboard", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.data).toEqual(mockEntries);
-    expect(leaderboardService.getLeaderboardEntries).toHaveBeenCalledWith("lb-1");
+    expect(result.current.data).toEqual(mockLeaderboards);
+    // Default active=true
+    expect(leaderboardService.getGymLeaderboards).toHaveBeenCalledWith("gym-1", true);
   });
 
-  it("returns error on failure", async () => {
-    leaderboardService.getLeaderboardEntries.mockResolvedValueOnce({
-      data: null,
-      error: { message: "Timeout" },
+  it("returns loading state initially", () => {
+    leaderboardService.getGymLeaderboards.mockReturnValue(new Promise(() => {}));
+
+    const { result } = renderHook(
+      () => useGymLeaderboards("gym-1"),
+      { wrapper: createWrapper() }
+    );
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.data).toBeUndefined();
+  });
+
+  it("passes active=false for retired leaderboards", async () => {
+    leaderboardService.getGymLeaderboards.mockResolvedValueOnce({
+      data: [],
+      error: null,
     });
 
     const { result } = renderHook(
-      () => useLeaderboard("lb-1"),
+      () => useGymLeaderboards("gym-1", false),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(leaderboardService.getGymLeaderboards).toHaveBeenCalledWith("gym-1", false);
+  });
+
+  it("returns error on failure", async () => {
+    leaderboardService.getGymLeaderboards.mockResolvedValueOnce({
+      data: null,
+      error: { message: "Network error" },
+    });
+
+    const { result } = renderHook(
+      () => useGymLeaderboards("gym-1"),
       { wrapper: createWrapper() }
     );
 

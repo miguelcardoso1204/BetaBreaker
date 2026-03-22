@@ -93,7 +93,6 @@ const mockProfileRow = {
   display_name: "TestClimber",
   avatar_url: "https://example.com/avatar.png",
   preferred_grade_system: "v-scale",
-  home_gym_id: "gym-456",
   onboarding_completed: false,
   tier: "free",
   pinned_badge_ids: [],
@@ -106,7 +105,6 @@ const expectedCamelProfile = {
   displayName: "TestClimber",
   avatarUrl: "https://example.com/avatar.png",
   preferredGradeSystem: "v-scale",
-  homeGymId: "gym-456",
   onboardingCompleted: false,
   tier: "free",
   pinnedBadgeIds: [],
@@ -178,7 +176,7 @@ describe("useAuth", () => {
       error: null,
     });
     profileService.getRoles.mockResolvedValueOnce({
-      data: [{ role: "setter" }],
+      data: [{ role: "setter", gym_id: "gym-456" }],
       error: null,
     });
 
@@ -194,6 +192,8 @@ describe("useAuth", () => {
     expect(result.current.isAuthenticated).toBe(true);
     // User has "setter" role from their gym roles
     expect(result.current.role).toBe("setter");
+    // adminGymId comes from the gym where the highest role applies
+    expect(result.current.adminGymId).toBe("gym-456");
   });
 
   // ── Test 4: signIn triggers auth state change → authenticated ─────
@@ -250,8 +250,9 @@ describe("useAuth", () => {
       expect(result.current.isAuthenticated).toBe(true);
     });
     expect(result.current.user).toEqual(expectedCamelProfile);
-    // No gym roles → defaults to "climber"
+    // No gym roles → defaults to "climber" with no admin gym
     expect(result.current.role).toBe("climber");
+    expect(result.current.adminGymId).toBeNull();
   });
 
   // ── Test 5: signOut clears state ──────────────────────────────────
@@ -267,7 +268,7 @@ describe("useAuth", () => {
       error: null,
     });
     profileService.getRoles.mockResolvedValueOnce({
-      data: [{ role: "setter" }],
+      data: [{ role: "setter", gym_id: "gym-456" }],
       error: null,
     });
     authService.signOut.mockResolvedValueOnce({ error: null });
@@ -351,9 +352,10 @@ describe("useAuth", () => {
   // ── Test 7: Role derivation picks highest privilege ────────────────
 
   it("picks the highest-privilege role from multiple gym roles", async () => {
-    // User has roles at two gyms: "setter" and "gym_admin". The hook
-    // should pick "gym_admin" because it has a higher index in the ROLES
-    // array (lib/constants.ts): ['climber', 'setter', 'judge', 'gym_admin', 'super_admin']
+    // User has roles at two gyms: "setter" at gym-A and "gym_admin" at gym-B.
+    // The hook should pick "gym_admin" because it has a higher index in the
+    // ROLES array (lib/constants.ts): ['climber', 'setter', 'judge', 'gym_admin', 'super_admin'].
+    // The adminGymId should be the gym where the highest role applies.
     authService.getSession.mockResolvedValueOnce({
       data: { session: mockSession },
       error: null,
@@ -363,7 +365,10 @@ describe("useAuth", () => {
       error: null,
     });
     profileService.getRoles.mockResolvedValueOnce({
-      data: [{ role: "setter" }, { role: "gym_admin" }],
+      data: [
+        { role: "setter", gym_id: "gym-A" },
+        { role: "gym_admin", gym_id: "gym-B" },
+      ],
       error: null,
     });
 
@@ -375,5 +380,7 @@ describe("useAuth", () => {
 
     // gym_admin (index 3) > setter (index 1), so gym_admin wins
     expect(result.current.role).toBe("gym_admin");
+    // adminGymId should be gym-B where the gym_admin role applies
+    expect(result.current.adminGymId).toBe("gym-B");
   });
 });

@@ -4,16 +4,17 @@
  * These tests verify that leaderboardService methods correctly build
  * Supabase PostgREST query chains and RPC calls for leaderboard data.
  *
- * The leaderboard system has two main reads:
- *   - getLeaderboard: Ranked entries for a gym/period/model (PostgREST)
- *   - getEnrolledLeaderboards: User's standings across gyms (RPC function)
+ * The leaderboard system has four main operations:
+ *   - getLeaderboardEntries: Ranked entries for a leaderboard (PostgREST)
+ *   - getEnrolledLeaderboards: User's standings filtered by active/retired (RPC)
+ *   - getGymLeaderboards: Gym's leaderboards filtered by active/retired (RPC)
+ *   - createLeaderboard: Admin creates a new leaderboard (PostgREST INSERT)
  *
- * Mock strategy: Same as gamification.service.test.ts — mock `@/lib/supabase`
- * and verify the query chain or RPC call is built correctly.
+ * Mock strategy: Mock `@/lib/supabase` and verify the query chain or RPC
+ * call is built correctly.
  */
 
 // ── Mock Setup ──────────────────────────────────────────────────────
-// Must be inside jest.mock factory due to hoisting (temporal dead zone).
 jest.mock("@/lib/supabase", () => ({
   supabase: {
     from: jest.fn(),
@@ -32,15 +33,14 @@ describe("leaderboardService", () => {
     jest.clearAllMocks();
   });
 
-  // ── getLeaderboard ────────────────────────────────────────────────
+  // ── getLeaderboardEntries ───────────────────────────────────────
 
-  describe("getLeaderboard", () => {
-    it("builds correct query with default hardest_grade model", async () => {
-      // When no model is specified, getLeaderboard defaults to 'hardest_grade'.
-      // The query chain should filter by gym_id, period, AND scoring_model,
-      // then sort by rank ascending.
+  describe("getLeaderboardEntries", () => {
+    it("builds correct query chain for a leaderboard ID", async () => {
+      // The query should select entries with embedded profile data,
+      // filter by leaderboard_id, and sort by rank ascending.
       const mockEntries = [
-        { user_id: "u1", score: 15, rank: 1, scoring_model: "hardest_grade" },
+        { user_id: "u1", score: 15, rank: 1 },
       ];
 
       const chainMock = {
@@ -53,54 +53,29 @@ describe("leaderboardService", () => {
       };
       supabase.from.mockReturnValueOnce(chainMock);
 
-      const result = await leaderboardService.getLeaderboard("gym-1", "2026-W06");
+      const result = await leaderboardService.getLeaderboardEntries("lb-1");
 
       expect(supabase.from).toHaveBeenCalledWith("leaderboard_entries");
       expect(chainMock.select).toHaveBeenCalledWith(
         "*, profile:profiles(display_name, avatar_url)"
       );
-      // Should filter by gym_id, period, AND scoring_model (default)
-      expect(chainMock.eq).toHaveBeenNthCalledWith(1, "gym_id", "gym-1");
-      expect(chainMock.eq).toHaveBeenNthCalledWith(2, "period", "2026-W06");
-      expect(chainMock.eq).toHaveBeenNthCalledWith(3, "scoring_model", "hardest_grade");
+      expect(chainMock.eq).toHaveBeenCalledWith("leaderboard_id", "lb-1");
       expect(chainMock.order).toHaveBeenCalledWith("rank");
       expect(result.data).toEqual(mockEntries);
     });
 
-    it("passes custom scoring_model filter", async () => {
-      // When a specific model is provided, it should be used in the eq filter
-      // instead of the default 'hardest_grade'.
-      const chainMock = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValueOnce({
-          data: [{ score: 0.75, scoring_model: "flash_rate" }],
-          error: null,
-        }),
-      };
-      supabase.from.mockReturnValueOnce(chainMock);
-
-      await leaderboardService.getLeaderboard("gym-1", "2026-W06", "flash_rate");
-
-      // Third .eq() call should use 'flash_rate' instead of 'hardest_grade'
-      expect(chainMock.eq).toHaveBeenNthCalledWith(3, "scoring_model", "flash_rate");
-    });
-
-    it("returns entries on success", async () => {
-      // Verify the full response shape flows through correctly.
+    it("returns entries with profile data on success", async () => {
       const mockEntries = [
         {
           user_id: "u1",
           score: 500,
           rank: 1,
-          scoring_model: "hardest_grade",
           profile: { display_name: "ClimbKing", avatar_url: null },
         },
         {
           user_id: "u2",
           score: 350,
           rank: 2,
-          scoring_model: "hardest_grade",
           profile: { display_name: "BoulderQueen", avatar_url: "https://example.com/a.jpg" },
         },
       ];
@@ -115,27 +90,24 @@ describe("leaderboardService", () => {
       };
       supabase.from.mockReturnValueOnce(chainMock);
 
-      const result = await leaderboardService.getLeaderboard("gym-1", "2026-W06");
+      const result = await leaderboardService.getLeaderboardEntries("lb-1");
 
       expect(result.data).toHaveLength(2);
       expect(result.error).toBeNull();
     });
   });
 
-  // ── getEnrolledLeaderboards ─────────────────────────────────────────
+  // ── getEnrolledLeaderboards ─────────────────────────────────────
 
   describe("getEnrolledLeaderboards", () => {
-    it("calls RPC with userId", async () => {
-      // getEnrolledLeaderboards delegates to the get_enrolled_leaderboards
-      // Postgres function via supabase.rpc(). The function returns enriched
-      // data with gym names and participant counts.
+    it("calls RPC with userId and active=true by default", async () => {
       const mockData = [
         {
           id: "entry-1",
+          leaderboard_id: "lb-1",
           gym_id: "gym-1",
           gym_name: "Boulder Haven",
-          period: "2026-W06",
-          scoring_model: "hardest_grade",
+          leaderboard_name: "March Madness",
           rank: 2,
           score: 15,
           total_participants: 10,
@@ -151,23 +123,94 @@ describe("leaderboardService", () => {
 
       expect(supabase.rpc).toHaveBeenCalledWith("get_enrolled_leaderboards", {
         p_user_id: "user-123",
+        p_active: true,
       });
       expect(result.data).toEqual(mockData);
-      expect(result.error).toBeNull();
+    });
+
+    it("passes active=false for retired leaderboards", async () => {
+      supabase.rpc.mockResolvedValueOnce({ data: [], error: null });
+
+      await leaderboardService.getEnrolledLeaderboards("user-123", false);
+
+      expect(supabase.rpc).toHaveBeenCalledWith("get_enrolled_leaderboards", {
+        p_user_id: "user-123",
+        p_active: false,
+      });
     });
 
     it("returns empty array when user has no entries", async () => {
-      // A user who has never logged ascents at any gym will have no
-      // leaderboard entries. The RPC should return an empty array.
-      supabase.rpc.mockResolvedValueOnce({
-        data: [],
-        error: null,
-      });
+      supabase.rpc.mockResolvedValueOnce({ data: [], error: null });
 
       const result = await leaderboardService.getEnrolledLeaderboards("new-user");
 
       expect(result.data).toEqual([]);
       expect(result.error).toBeNull();
+    });
+  });
+
+  // ── getGymLeaderboards ──────────────────────────────────────────
+
+  describe("getGymLeaderboards", () => {
+    it("calls RPC with gymId and active=true by default", async () => {
+      const mockData = [
+        {
+          id: "lb-1",
+          name: "March Madness",
+          starts_at: "2026-03-01T00:00:00Z",
+          ends_at: "2026-03-31T23:59:59Z",
+          total_participants: 25,
+        },
+      ];
+
+      supabase.rpc.mockResolvedValueOnce({ data: mockData, error: null });
+
+      const result = await leaderboardService.getGymLeaderboards("gym-1");
+
+      expect(supabase.rpc).toHaveBeenCalledWith("get_gym_leaderboards", {
+        p_gym_id: "gym-1",
+        p_active: true,
+      });
+      expect(result.data).toEqual(mockData);
+    });
+
+    it("passes active=false for retired leaderboards", async () => {
+      supabase.rpc.mockResolvedValueOnce({ data: [], error: null });
+
+      await leaderboardService.getGymLeaderboards("gym-1", false);
+
+      expect(supabase.rpc).toHaveBeenCalledWith("get_gym_leaderboards", {
+        p_gym_id: "gym-1",
+        p_active: false,
+      });
+    });
+  });
+
+  // ── createLeaderboard ───────────────────────────────────────────
+
+  describe("createLeaderboard", () => {
+    it("inserts a new leaderboard with correct fields", async () => {
+      const chainMock = {
+        insert: jest.fn().mockResolvedValueOnce({ data: null, error: null }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      await leaderboardService.createLeaderboard({
+        gymId: "gym-1",
+        name: "Flash Friday",
+        startsAt: "2026-03-14T00:00:00Z",
+        endsAt: "2026-03-14T23:59:59Z",
+      });
+
+      expect(supabase.from).toHaveBeenCalledWith("leaderboards");
+      expect(chainMock.insert).toHaveBeenCalledWith({
+        gym_id: "gym-1",
+        name: "Flash Friday",
+        starts_at: "2026-03-14T00:00:00Z",
+        ends_at: "2026-03-14T23:59:59Z",
+        rules: null,
+        prizes: null,
+      });
     });
   });
 });

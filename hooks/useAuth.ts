@@ -53,7 +53,6 @@ export interface UserProfile {
   displayName: string | null;
   avatarUrl: string | null;
   preferredGradeSystem: string;
-  homeGymId: string | null;
   onboardingCompleted: boolean;
   tier: string;
   /** Badge UUIDs the user has pinned to their profile (max depends on tier). */
@@ -70,6 +69,12 @@ export interface UseAuthReturn {
   isAuthenticated: boolean;
   /** Highest-privilege role across all gyms. Defaults to 'climber'. */
   role: UserRole;
+  /**
+   * The gym ID where the user has their highest admin-level role.
+   * Derived from user_gym_roles — used by admin screens to scope queries
+   * to the gym the user administrates. Null for plain climbers.
+   */
+  adminGymId: string | null;
   /** Sign in with email + password. Returns { data, error } from Supabase. */
   signIn: (email: string, password: string) => Promise<{ error: unknown }>;
   /** Create a new account. Returns { data, error } from Supabase. */
@@ -103,7 +108,6 @@ function toUserProfile(row: {
   display_name: string | null;
   avatar_url: string | null;
   preferred_grade_system: string;
-  home_gym_id: string | null;
   onboarding_completed: boolean;
   tier: string;
   pinned_badge_ids: string[];
@@ -114,7 +118,6 @@ function toUserProfile(row: {
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
     preferredGradeSystem: row.preferred_grade_system,
-    homeGymId: row.home_gym_id,
     onboardingCompleted: row.onboarding_completed,
     tier: row.tier,
     pinnedBadgeIds: row.pinned_badge_ids,
@@ -125,32 +128,42 @@ function toUserProfile(row: {
 // ── Helper: Derive highest-privilege role ──────────────────────────
 
 /**
- * Given an array of role rows from user_gym_roles, returns the one with
- * the highest privilege. Privilege order is defined by index in the ROLES
- * constant: ['climber', 'setter', 'judge', 'gym_admin', 'super_admin'].
+ * Given an array of role rows from user_gym_roles, returns the highest
+ * privilege role and the gym_id where that role applies.
  *
- * If the user has no gym roles (empty array), they default to 'climber'.
- * This is the implicit role for all authenticated users — it's not stored
- * in user_gym_roles because it would be redundant.
+ * Privilege order is defined by index in the ROLES constant:
+ * ['climber', 'setter', 'judge', 'gym_admin', 'super_admin'].
+ *
+ * If the user has no gym roles (empty array), they default to 'climber'
+ * with no admin gym. This is the implicit role for all authenticated
+ * users — it's not stored in user_gym_roles because it would be redundant.
+ *
+ * The returned adminGymId is used by admin screens to scope queries to
+ * the gym the user administrates, replacing the old home_gym_id pattern.
  */
-function deriveHighestRole(roleRows: { role: string }[]): UserRole {
-  if (roleRows.length === 0) return "climber";
+function deriveHighestRole(roleRows: { role: string; gym_id: string }[]): {
+  role: UserRole;
+  adminGymId: string | null;
+} {
+  if (roleRows.length === 0) return { role: "climber", adminGymId: null };
 
   // Find the role with the highest index in the ROLES array.
   // Higher index = more privilege. Unknown roles are treated as index -1
   // (effectively ignored) to be safe against data inconsistencies.
   let highestIndex = -1;
   let highestRole: UserRole = "climber";
+  let adminGymId: string | null = null;
 
   for (const row of roleRows) {
     const index = ROLES.indexOf(row.role as UserRole);
     if (index > highestIndex) {
       highestIndex = index;
       highestRole = row.role as UserRole;
+      adminGymId = row.gym_id;
     }
   }
 
-  return highestRole;
+  return { role: highestRole, adminGymId };
 }
 
 // ── Hook ───────────────────────────────────────────────────────────
@@ -159,6 +172,7 @@ export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>("climber");
+  const [adminGymId, setAdminGymId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Ref to track whether the component is still mounted. This prevents
@@ -181,6 +195,7 @@ export function useAuth(): UseAuthReturn {
         setUser(null);
         setSession(null);
         setRole("climber");
+        setAdminGymId(null);
         setIsLoading(false);
       }
       return;
@@ -201,11 +216,12 @@ export function useAuth(): UseAuthReturn {
     const userProfile = profileResult.data
       ? toUserProfile(profileResult.data)
       : null;
-    const highestRole = deriveHighestRole(rolesResult.data ?? []);
+    const derived = deriveHighestRole(rolesResult.data ?? []);
 
     setUser(userProfile);
     setSession(newSession);
-    setRole(highestRole);
+    setRole(derived.role);
+    setAdminGymId(derived.adminGymId);
     setIsLoading(false);
   }, []);
 
@@ -293,6 +309,7 @@ export function useAuth(): UseAuthReturn {
     isLoading,
     isAuthenticated: session !== null,
     role,
+    adminGymId,
     signIn,
     signUp,
     signOut,

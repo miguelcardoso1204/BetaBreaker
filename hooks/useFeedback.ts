@@ -45,11 +45,15 @@ export function useRouteFeedback(routeId: string) {
   const userId = user?.id;
 
   const query = useQuery({
-    queryKey: ["feedback", routeId],
+    // Include userId in the key so the query refetches when auth state changes
+    queryKey: ["feedback", routeId, userId],
+    // Don't fire until we have an authenticated user — RLS blocks anon reads
+    enabled: !!userId,
     queryFn: async () => {
       // Fetch the feedback tips for this route
       const feedbackResult =
         await feedbackService.getRouteFeedback(routeId);
+
       if (feedbackResult.error) throw feedbackResult.error;
 
       const feedback = feedbackResult.data ?? [];
@@ -155,6 +159,7 @@ export function useDeleteFeedback(routeId: string) {
 export function useVoteFeedback(routeId: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const queryKey = ["feedback", routeId, user?.id];
 
   return useMutation({
     mutationFn: async ({
@@ -167,13 +172,56 @@ export function useVoteFeedback(routeId: string) {
       if (!user?.id) throw new Error("Must be logged in to vote");
 
       if (direction === null) {
-        // Unvote — remove the user's vote entirely
         await feedbackService.unvote(feedbackId, user.id);
       } else {
-        // Cast or change vote
         await feedbackService.vote(feedbackId, user.id, direction);
       }
     },
+    // Optimistic update — flip the heart instantly, fix on refetch.
+    onMutate: async ({ feedbackId, direction }) => {
+      // Cancel any in-flight refetch so it doesn't overwrite our optimistic data
+      await queryClient.cancelQueries({ queryKey });
+
+      const previous = queryClient.getQueryData<{
+        feedback: any[];
+        userVotes: Record<string, string>;
+      }>(queryKey);
+
+      if (previous) {
+        const oldVote = previous.userVotes[feedbackId] ?? null;
+
+        // Build new userVotes map
+        const newVotes = { ...previous.userVotes };
+        if (direction === null) {
+          delete newVotes[feedbackId];
+        } else {
+          newVotes[feedbackId] = direction;
+        }
+
+        // Adjust score: undo old vote, apply new vote
+        const scoreDelta =
+          (direction === "up" ? 1 : direction === "down" ? -1 : 0) -
+          (oldVote === "up" ? 1 : oldVote === "down" ? -1 : 0);
+
+        const newFeedback = previous.feedback.map((f: any) =>
+          f.id === feedbackId ? { ...f, score: f.score + scoreDelta } : f
+        );
+
+        queryClient.setQueryData(queryKey, {
+          feedback: newFeedback,
+          userVotes: newVotes,
+        });
+      }
+
+      return { previous };
+    },
+    // Roll back on error
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKey, context.previous);
+      }
+    },
+    // Always refetch to sync with server truth
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback", routeId] });
     },

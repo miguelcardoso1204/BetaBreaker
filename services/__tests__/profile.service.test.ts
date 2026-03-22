@@ -49,7 +49,6 @@ describe("profileService", () => {
         display_name: "TestClimber",
         avatar_url: null,
         preferred_grade_system: "v-scale",
-        home_gym_id: null,
         onboarding_completed: false,
         tier: "free",
         created_at: "2026-01-01T00:00:00Z",
@@ -86,9 +85,14 @@ describe("profileService", () => {
     it("fetches all gym roles for a user using .select().eq() (no .single())", async () => {
       // getRoles returns multiple rows (one per gym assignment), so it
       // does NOT use `.single()`. The chain is:
-      //   from('user_gym_roles') → select('role') → eq('user_id', userId)
+      //   from('user_gym_roles') → select('role, gym_id') → eq('user_id', userId)
       // `.eq()` is the terminal call here — PostgREST returns an array.
-      const mockRoles = [{ role: "setter" }, { role: "gym_admin" }];
+      // Both role and gym_id are needed: role for permission checks, gym_id
+      // so admin screens can scope queries to the user's administered gym.
+      const mockRoles = [
+        { role: "setter", gym_id: "gym-1" },
+        { role: "gym_admin", gym_id: "gym-2" },
+      ];
 
       // Unlike getById, there's no `.single()` at the end. The `.eq()`
       // call is terminal — it returns the Promise with { data, error }.
@@ -105,10 +109,10 @@ describe("profileService", () => {
 
       // Verify the correct table and columns are queried
       expect(supabase.from).toHaveBeenCalledWith("user_gym_roles");
-      // Only select the 'role' column — we don't need gym_id or timestamps here
-      expect(chainMock.select).toHaveBeenCalledWith("role");
+      // Select both role and gym_id — gym_id is needed for admin gym scoping
+      expect(chainMock.select).toHaveBeenCalledWith("role, gym_id");
       expect(chainMock.eq).toHaveBeenCalledWith("user_id", "user-123");
-      // Verify the array of roles is returned
+      // Verify the array of role + gym_id objects is returned
       expect(result.data).toEqual(mockRoles);
       expect(result.error).toBeNull();
     });

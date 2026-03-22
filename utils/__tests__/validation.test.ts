@@ -445,17 +445,6 @@ describe('profileUpdateSchema', () => {
   });
 
   /**
-   * homeGymId links the user to their primary gym for default leaderboards
-   * and route browsing. Must be a valid UUID referencing the gyms table.
-   */
-  it('accepts valid homeGymId', () => {
-    const result = profileUpdateSchema.safeParse({
-      homeGymId: TEST_UUID,
-    });
-    expect(result.success).toBe(true);
-  });
-
-  /**
    * preferredGradeSystem determines how grades display in the UI.
    * Must be one of our three supported systems from utils/grades.ts.
    */

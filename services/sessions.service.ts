@@ -29,12 +29,14 @@
 import { supabase } from "@/lib/supabase";
 import type { AscentStatus } from "@/lib/constants";
 
-// Cast supabase.from() calls to `any` for the route_ascents table because
-// database.types.ts hasn't been regenerated to include this table yet.
-// The table exists in migrations — once `supabase gen types typescript --local`
-// is run, these casts can be removed and the auto-generated types used instead.
+// Cast supabase.from() calls to `any` because database.types.ts may not
+// include the latest columns yet. The tables exist in migrations — once
+// `supabase gen types typescript --local` is run, these casts can be
+// tightened to use auto-generated types.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fromRouteAscents = () => (supabase as any).from("route_ascents");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const fromSessions = () => (supabase as any).from("sessions");
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -60,6 +62,11 @@ export interface AscentLog {
   notes?: string;
   /** User's perceived difficulty as a canonical grade integer (0–30). */
   perceivedGrade?: number;
+  /** Quality/enjoyment rating (1–5 stars). Null means not rated. */
+  rating?: number;
+  /** Optional session ID to link this ascent to a climbing session.
+   *  Null when logging outside a formal session (e.g., from route detail). */
+  sessionId?: string;
 }
 
 /**
@@ -76,7 +83,38 @@ export interface Ascent {
   attempts: number;
   notes: string | null;
   perceived_grade: number | null;
+  session_id: string | null;
   created_at: string;
+}
+
+/**
+ * A persisted session row from the sessions table.
+ * Represents a single visit to a gym with start/end times.
+ */
+export interface Session {
+  id: string;
+  user_id: string;
+  gym_id: string;
+  started_at: string;
+  ended_at: string | null;
+  duration_minutes: number | null;
+  created_at: string;
+}
+
+/**
+ * A session with gym info embedded via PostgREST resource embedding.
+ * The gym object comes from `sessions(*, gym:gyms(name, logo_url))`.
+ */
+export interface SessionWithGym extends Session {
+  gym: { name: string; logo_url: string | null } | null;
+}
+
+/**
+ * A session card for the profile screen — includes gym info and ascent count.
+ * The ascent count is computed via a separate batch query and merged in JS.
+ */
+export interface RecentSession extends SessionWithGym {
+  ascentCount: number;
 }
 
 /**
@@ -215,6 +253,10 @@ export const sessionsService = {
         // the DB default (null) is used when these are omitted.
         notes: log.notes,
         perceived_grade: log.perceivedGrade,
+        rating: log.rating,
+        // Link to the active session if one exists. Nullable because
+        // ascents can be logged outside of a formal session.
+        session_id: log.sessionId,
       })
       .select()
       .single();
@@ -420,6 +462,42 @@ export const sessionsService = {
   },
 
   /**
+   * Fetch ascents for a specific session by session ID, with route info.
+   *
+   * Unlike getSessionAscents (which filters by date), this queries by the
+   * session_id FK on route_ascents. This is precise — it returns only the
+   * ascents that belong to a specific session, not all ascents on that day.
+   *
+   * @param sessionId - The sessions.id UUID
+   * @returns Array of ascents with nested route info, ordered by creation time
+   */
+  async getAscentsForSession(sessionId: string): Promise<AscentWithRoute[]> {
+    const { data, error } = await fromRouteAscents()
+      .select("*, route:routes(name, canonical_grade, color)")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []) as AscentWithRoute[];
+  },
+
+  /**
+   * Fetch a single session row by ID with gym info.
+   *
+   * @param sessionId - The sessions.id UUID
+   */
+  async getSessionById(sessionId: string): Promise<SessionWithGym | null> {
+    const { data, error } = await fromSessions()
+      .select("*, gym:gyms(name, logo_url)")
+      .eq("id", sessionId)
+      .single();
+
+    if (error) throw error;
+    return data as SessionWithGym | null;
+  },
+
+  /**
    * Fetch send/flash ascents grouped by grade for the Grade Pyramid chart.
    *
    * Queries route_ascents with a route join for canonical_grade, filtering
@@ -602,5 +680,103 @@ export const sessionsService = {
     entries.sort((a, b) => b.count - a.count);
 
     return entries;
+  },
+
+  // ── Session Persistence ──────────────────────────────────────────
+
+  /**
+   * Create a new session row when the user starts climbing at a gym.
+   *
+   * The session is created with started_at = now() and no ended_at —
+   * that gets filled in by endSession() when the user finishes.
+   * Returns the created row so the caller can extract the UUID.
+   *
+   * @param userId - The authenticated user's ID
+   * @param gymId - The gym where the session is taking place
+   */
+  createSession(userId: string, gymId: string) {
+    return fromSessions()
+      .insert({
+        user_id: userId,
+        gym_id: gymId,
+      })
+      .select()
+      .single();
+  },
+
+  /**
+   * Mark a session as ended by setting ended_at and duration.
+   *
+   * Called when the user taps "End Session". The duration is computed
+   * client-side in the Zustand store (endSession action) and passed
+   * here — we don't recompute it server-side because the client's
+   * timer is the source of truth for the user's perceived duration.
+   *
+   * @param sessionId - The sessions.id UUID to update
+   * @param durationMinutes - Session length in whole minutes
+   */
+  endSession(sessionId: string, durationMinutes: number) {
+    return fromSessions()
+      .update({
+        ended_at: new Date().toISOString(),
+        duration_minutes: durationMinutes,
+      })
+      .eq("id", sessionId)
+      .select()
+      .single();
+  },
+
+  /**
+   * Fetch recent sessions for the profile screen with gym info and ascent counts.
+   *
+   * Two queries:
+   * 1. Fetch sessions with gym embedding (name, logo_url), ordered newest-first
+   * 2. Batch-count ascents grouped by session_id for the returned sessions
+   *
+   * The counts are merged into the session objects in JS. This avoids N+1
+   * queries (one per session) while keeping the PostgREST queries simple.
+   *
+   * @param userId - The user whose sessions to fetch
+   * @param limit - Max number of sessions to return (default 5)
+   */
+  async getRecentSessions(
+    userId: string,
+    limit = 5
+  ): Promise<RecentSession[]> {
+    // 1. Fetch sessions with gym info embedded via PostgREST resource embedding.
+    // The `gym:gyms(name, logo_url)` syntax translates to a LEFT JOIN.
+    const { data: sessions, error: sessionsError } = await fromSessions()
+      .select("*, gym:gyms(name, logo_url)")
+      .eq("user_id", userId)
+      .order("started_at", { ascending: false })
+      .limit(limit);
+
+    if (sessionsError) throw sessionsError;
+    if (!sessions || sessions.length === 0) return [];
+
+    // 2. Batch-fetch ascent counts for these sessions. We query route_ascents
+    // filtering to only the session_ids we just got, then count in JS.
+    const sessionIds = sessions.map((s: any) => s.id);
+    const { data: ascents, error: ascentsError } = await fromRouteAscents()
+      .select("session_id")
+      .in("session_id", sessionIds);
+
+    if (ascentsError) throw ascentsError;
+
+    // Build a session_id → count map. Each ascent row contributes 1 to its
+    // session's count. Sessions with no ascents default to 0.
+    const countMap = new Map<string, number>();
+    for (const row of ascents ?? []) {
+      const sid = row.session_id;
+      if (sid) {
+        countMap.set(sid, (countMap.get(sid) ?? 0) + 1);
+      }
+    }
+
+    // 3. Merge counts into session objects.
+    return sessions.map((s: any) => ({
+      ...s,
+      ascentCount: countMap.get(s.id) ?? 0,
+    }));
   },
 };

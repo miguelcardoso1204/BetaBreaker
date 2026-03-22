@@ -33,6 +33,7 @@ import { useQuery } from "@tanstack/react-query";
 import { routeService } from "@/services/routes.service";
 import type { RouteFilters } from "@/services/routes.service";
 import { cacheRoutes, getCachedRoutes } from "@/lib/routeCache";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Fetch a filtered list of routes for a gym.
@@ -107,4 +108,41 @@ export function useRouteDetail(routeId: string) {
       return result.data;
     },
   });
+}
+
+/**
+ * Fetch the average quality/enjoyment rating for a route.
+ *
+ * Queries all non-null `rating` values from route_ascents and computes
+ * the average client-side. Returns null when no ratings exist.
+ *
+ * @param routeId — the route to get the average rating for
+ */
+export function useRouteRating(routeId: string) {
+  const query = useQuery({
+    queryKey: ["route-rating", routeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("route_ascents")
+        .select("rating")
+        .eq("route_id", routeId)
+        .not("rating", "is", null);
+      if (error) throw error;
+
+      const ratings = (data ?? []).map((r: { rating: number }) => r.rating);
+      if (ratings.length === 0) return { average: null, count: 0 };
+
+      const sum = ratings.reduce((a: number, b: number) => a + b, 0);
+      return {
+        average: Number((sum / ratings.length).toFixed(1)),
+        count: ratings.length,
+      };
+    },
+  });
+
+  return {
+    averageRating: query.data?.average ?? null,
+    ratingCount: query.data?.count ?? 0,
+    isLoading: query.isLoading,
+  };
 }

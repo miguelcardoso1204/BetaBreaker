@@ -26,7 +26,7 @@ export const profileService = {
    * returns `{ data: null, error: { code: 'PGRST116' } }`.
    *
    * The `*` select returns all profile columns: display_name, avatar_url,
-   * preferred_grade_system, home_gym_id, tier, onboarding_completed, etc.
+   * preferred_grade_system, tier, onboarding_completed, etc.
    * The hook layer transforms these from snake_case to camelCase.
    */
   getById(userId: string) {
@@ -38,17 +38,16 @@ export const profileService = {
    *
    * A user can have roles at multiple gyms (e.g., "setter" at Gym A and
    * "gym_admin" at Gym B). This returns all of them so the hook can pick
-   * the highest-privilege role.
+   * the highest-privilege role and derive the admin's gym context.
    *
    * No `.single()` here — we expect zero or more rows. An empty array
    * means the user is a plain "climber" (the default role, not stored in DB).
    *
-   * Only selects the `role` column since that's all we need for permission
-   * checks. The full row also has gym_id and created_at, but those aren't
-   * needed at the auth layer.
+   * Selects both `role` and `gym_id`: role for permission checks, gym_id
+   * so admin screens can scope queries to the gym the user administrates.
    */
   getRoles(userId: string) {
-    return supabase.from("user_gym_roles").select("role").eq("user_id", userId);
+    return supabase.from("user_gym_roles").select("role, gym_id").eq("user_id", userId);
   },
 
   /**

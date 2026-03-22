@@ -47,7 +47,7 @@ export const feedbackService = {
   getRouteFeedback(routeId: string) {
     return supabase
       .from("route_feedback")
-      .select("*, profile:profiles(display_name, avatar_url)")
+      .select("*, profile:profiles!route_feedback_user_id_fkey(display_name, avatar_url)")
       .eq("route_id", routeId)
       .order("score", { ascending: false });
   },
@@ -130,46 +130,49 @@ export const feedbackService = {
       vote: direction,
     });
 
-    // Step 3: Recalculate score — net sum of up votes minus down votes.
-    // We compute the new score client-side by using a raw SQL expression
-    // isn't possible via PostgREST, so we use a simple increment approach.
-    // Actually, the simplest correct approach is to set score via a
-    // subquery, but PostgREST doesn't support subqueries in UPDATE.
-    // Instead, we'll rely on the caller to invalidate and refetch.
-    // For now, we set score to a placeholder — the real fix would be
-    // an RPC function. But since we invalidate the query after mutation,
-    // the score will be correct on next fetch.
-    //
-    // TODO: Consider adding a Postgres function for atomic score update.
-    // For now, we update with a computed value from the vote counts.
-    await supabase
-      .from("route_feedback")
-      .update({ score: 0 }) // Placeholder — actual score comes from refetch
-      .eq("id", feedbackId);
+    // Step 3: Count likes and update the denormalized score
+    await this._recalculateScore(feedbackId);
   },
 
   /**
    * Remove a vote from a beta tip (toggle off).
    *
-   * Two-step pattern:
-   *   1. Delete the user's vote
-   *   2. Recalculate the feedback's score
-   *
    * @param feedbackId - The feedback to unvote
    * @param userId - The authenticated user's ID
    */
   async unvote(feedbackId: string, userId: string) {
-    // Step 1: Remove the vote
     await supabase
       .from("route_feedback_votes")
       .delete()
       .eq("feedback_id", feedbackId)
       .eq("user_id", userId);
 
-    // Step 2: Update score (same caveat as vote() above)
+    await this._recalculateScore(feedbackId);
+  },
+
+  /**
+   * Recalculate and persist the denormalized score on a feedback row.
+   *
+   * Counts all 'up' votes and subtracts 'down' votes to produce the
+   * net score. This keeps route_feedback.score in sync with the actual
+   * votes in route_feedback_votes.
+   */
+  async _recalculateScore(feedbackId: string) {
+    const { count: upCount } = await supabase
+      .from("route_feedback_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("feedback_id", feedbackId)
+      .eq("vote", "up");
+
+    const { count: downCount } = await supabase
+      .from("route_feedback_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("feedback_id", feedbackId)
+      .eq("vote", "down");
+
     await supabase
       .from("route_feedback")
-      .update({ score: 0 })
+      .update({ score: (upCount ?? 0) - (downCount ?? 0) })
       .eq("id", feedbackId);
   },
 };

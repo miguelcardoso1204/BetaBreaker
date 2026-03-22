@@ -1,24 +1,17 @@
 /**
- * Media Service — Supabase Storage + route_media Table
+ * Media Service — Route Media Database Operations
  *
- * Handles the full lifecycle of beta video uploads:
- *   1. Upload: file → Supabase Storage (beta-videos bucket)
- *   2. Link: Storage URL → route_media DB row (ties video to route)
- *   3. Read: fetch all media for a route (with uploader profile)
- *   4. Delete: remove from Storage, then delete DB row
+ * Handles the database side of beta video management:
+ *   1. Link: Cloudinary URL → route_media DB row (ties video to route)
+ *   2. Read: fetch all media for a route (with uploader profile)
+ *   3. Delete: remove the DB row (Cloudinary cleanup via admin API later)
  *
- * The service separates Storage operations (file bytes) from DB operations
- * (metadata rows) because they use different Supabase APIs:
- *   - `supabase.storage.from('beta-videos')` — file upload/delete/URL
- *   - `supabase.from('route_media')` — PostgREST CRUD
- *
- * BUCKET PATH FORMAT: <user_id>/<route_id>/<timestamp>.<ext>
- * The user_id prefix is enforced by the Storage INSERT policy — users
- * can only upload to their own folder. This prevents impersonation.
+ * Video files are uploaded directly to Cloudinary from the client
+ * (see lib/cloudinary.ts). This service only manages the route_media
+ * table that links Cloudinary URLs to routes.
  */
 
 import { supabase } from '@/lib/supabase';
-import { VIDEO_STORAGE_BUCKET } from '@/utils/videoValidation';
 
 export const mediaService = {
   /**
@@ -32,48 +25,18 @@ export const mediaService = {
   getRouteMedia(routeId: string) {
     return supabase
       .from('route_media')
-      .select('*, profile:profiles(display_name, avatar_url)')
+      // Disambiguate the profiles join: route_media_likes created a second
+      // path (many-to-many) between route_media and profiles. The hint
+      // tells PostgREST to use the direct FK (uploader), not the likes path.
+      .select('*, profile:profiles!route_media_user_id_fkey(display_name, avatar_url)')
       .eq('route_id', routeId)
       .order('created_at', { ascending: false });
   },
 
   /**
-   * Upload a video file (as a Blob) to the beta-videos Storage bucket.
-   *
-   * The storagePath must start with the authenticated user's ID, or the
-   * Storage INSERT policy will reject it. The caller is responsible for
-   * building the path via `buildStoragePath()`.
-   *
-   * @param blob - The video file data
-   * @param storagePath - Path within the bucket (e.g., "user-1/route-1/123.mp4")
-   * @param mimeType - MIME type for the Content-Type header
-   */
-  uploadVideoFile(blob: Blob, storagePath: string, mimeType: string) {
-    return supabase.storage
-      .from(VIDEO_STORAGE_BUCKET)
-      .upload(storagePath, blob, { contentType: mimeType });
-  },
-
-  /**
-   * Get the public URL for an uploaded video.
-   *
-   * The beta-videos bucket is public, so the returned URL works without
-   * auth headers — anyone can load the video for playback.
-   *
-   * @param storagePath - Path within the bucket
-   * @returns The full public URL string
-   */
-  getPublicUrl(storagePath: string): string {
-    const { data } = supabase.storage
-      .from(VIDEO_STORAGE_BUCKET)
-      .getPublicUrl(storagePath);
-    return data.publicUrl;
-  },
-
-  /**
    * Insert a route_media row linking an uploaded video to a route.
    *
-   * Called after a successful Storage upload. The ownership_affirmed flag
+   * Called after a successful Cloudinary upload. The ownership_affirmed flag
    * is always true here because the OwnershipModal must be confirmed
    * before the upload flow reaches this point (FR-K1 compliance).
    *
@@ -120,50 +83,82 @@ export const mediaService = {
   },
 
   /**
-   * Delete a video — removes the file from Storage, then the DB row.
+   * Fetch which media IDs the given user has liked.
    *
-   * Order matters: we delete the file first because an orphaned file
-   * (no DB row) is worse than a DB row pointing to a missing file.
-   * If Storage deletion fails, we abort without touching the DB.
+   * Used by useRouteMedia to build a Set<string> of liked media IDs
+   * so the UI can show filled/outlined hearts. The `.in()` filter
+   * fetches likes for all media in one query (batch, not N+1).
+   *
+   * @param mediaIds - Array of route_media IDs to check
+   * @param userId - The current user's ID
+   */
+  getUserLikes(mediaIds: string[], userId: string) {
+    return supabase
+      .from('route_media_likes')
+      .select('media_id')
+      .eq('user_id', userId)
+      .in('media_id', mediaIds);
+  },
+
+  /**
+   * Like a video — insert a row into route_media_likes, then update
+   * the denormalized likes_count on route_media.
+   *
+   * The count is recalculated via a real COUNT query rather than
+   * incrementing, which avoids drift if concurrent likes happen.
+   *
+   * @param mediaId - The route_media row to like
+   * @param userId - The user doing the liking
+   */
+  async likeMedia(mediaId: string, userId: string) {
+    // Insert the like row (composite PK prevents duplicates).
+    // The likes_count on route_media is updated automatically by a
+    // Postgres trigger (SECURITY DEFINER), which bypasses RLS — the
+    // client can't update other users' route_media rows directly.
+    const { error } = await supabase
+      .from('route_media_likes')
+      .insert({ media_id: mediaId, user_id: userId });
+
+    return { data: null, error };
+  },
+
+  /**
+   * Unlike a video — delete the like row, then recalculate likes_count.
+   *
+   * Mirror of likeMedia: remove the row, recount, update. The recount
+   * approach is safer than decrementing because it handles edge cases
+   * (double-unlike, concurrent operations) without going negative.
+   *
+   * @param mediaId - The route_media row to unlike
+   * @param userId - The user removing their like
+   */
+  async unlikeMedia(mediaId: string, userId: string) {
+    // Delete the like row. The trigger on route_media_likes automatically
+    // decrements likes_count on route_media.
+    const { error } = await supabase
+      .from('route_media_likes')
+      .delete()
+      .eq('media_id', mediaId)
+      .eq('user_id', userId);
+
+    return { data: null, error };
+  },
+
+  /**
+   * Delete a video's DB row.
+   *
+   * Only removes the route_media metadata row. The actual video file
+   * lives on Cloudinary and can be cleaned up later via Cloudinary's
+   * admin API if needed (e.g., a scheduled cleanup job).
    *
    * @param mediaId - The route_media row ID
-   * @param storagePath - Path within the bucket for file removal
    */
-  async deleteMedia(mediaId: string, storagePath: string) {
-    // Step 1: Remove the physical file from Storage
-    const { error: storageError } = await supabase.storage
-      .from(VIDEO_STORAGE_BUCKET)
-      .remove([storagePath]);
-
-    if (storageError) {
-      return { data: null, error: storageError };
-    }
-
-    // Step 2: Delete the metadata row from route_media
-    const { error: dbError } = await supabase
+  async deleteMedia(mediaId: string) {
+    const { error } = await supabase
       .from('route_media')
       .delete()
       .eq('id', mediaId);
 
-    return { data: null, error: dbError };
-  },
-
-  /**
-   * Extract the storage path from a full public URL.
-   *
-   * When deleting, we have the URL from the DB row but need just the
-   * bucket-relative path for `supabase.storage.from().remove()`.
-   *
-   * URL format: https://<host>/storage/v1/object/public/beta-videos/<path>
-   * We split on the bucket name and take everything after it.
-   *
-   * @param url - Full public URL from the route_media row
-   * @returns The bucket-relative storage path
-   */
-  extractStoragePath(url: string): string {
-    const marker = `${VIDEO_STORAGE_BUCKET}/`;
-    const idx = url.indexOf(marker);
-    if (idx === -1) return url;
-    return url.slice(idx + marker.length);
+    return { data: null, error };
   },
 };

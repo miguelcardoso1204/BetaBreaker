@@ -6,45 +6,74 @@
  *
  * HOOK BREAKDOWN:
  *   - `useRouteMedia(routeId)` — QUERY: fetches all media for a route
- *   - `useUploadVideo(routeId)` — MUTATION: upload file → link to route
- *   - `useDeleteMedia(routeId)` — MUTATION: remove file + DB row
+ *   - `useUploadVideo(routeId)` — MUTATION: upload to Cloudinary → link to route
+ *   - `useDeleteMedia(routeId)` — MUTATION: remove DB row
  *
  * All mutations invalidate the ["routeMedia", routeId] query key on
  * completion, causing useRouteMedia to refetch fresh data. This keeps
  * the media list consistent after every upload or deletion.
  *
- * UPLOAD FLOW (three steps chained in one mutation):
- *   1. Upload blob to Supabase Storage (beta-videos bucket)
- *   2. Get the public URL for the uploaded file
- *   3. Insert a route_media row linking the URL to the route
- * If any step fails, the mutation throws and the UI shows the error.
+ * UPLOAD FLOW (two steps chained in one mutation):
+ *   1. Upload video to Cloudinary via unsigned preset (lib/cloudinary.ts)
+ *   2. Insert a route_media row linking the Cloudinary URL to the route
+ * If either step fails, the mutation throws and the UI shows the error.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { mediaService } from '@/services/media.service';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Fetch all media for a route (videos + images).
+ * Fetch all media for a route (videos + images), plus the current
+ * user's likes.
  *
- * Returns a reactive list of media items with uploader profile info.
- * The query auto-refetches when the cache is invalidated by upload
- * or delete mutations.
+ * Returns a reactive list of media items with uploader profile info,
+ * and a Set<string> of media IDs the current user has liked. The like
+ * set enables the UI to show filled/outlined hearts without a separate
+ * query per video.
  *
  * @param routeId - The route to fetch media for
  */
 export function useRouteMedia(routeId: string) {
+  const { user } = useAuth();
+
   const query = useQuery({
     queryKey: ['routeMedia', routeId],
     queryFn: async () => {
+      // Fetch media items with uploader profile info
       const result = await mediaService.getRouteMedia(routeId);
       if (result.error) throw result.error;
-      return result.data ?? [];
+      const media = result.data ?? [];
+
+      // Fetch which of these media the current user has liked.
+      // Skip if no media or no user (avoids an empty `.in()` call).
+      //
+      // WHY a plain array instead of a Set?
+      // TanStack Query's structuralSharing (enabled by default) uses
+      // replaceEqualDeep to compare old and new cache values. This works
+      // for plain objects and arrays but corrupts Set instances — it can't
+      // deep-compare them and may replace or mangle them. Storing liked IDs
+      // as string[] in the cache avoids this. We convert to Set in the
+      // return value for O(1) lookups in the UI.
+      let likedIds: string[] = [];
+      if (media.length > 0 && user?.id) {
+        const likesResult = await mediaService.getUserLikes(
+          media.map((m: any) => m.id),
+          user.id
+        );
+        if (likesResult.data) {
+          likedIds = likesResult.data.map((l: any) => l.media_id);
+        }
+      }
+
+      return { media, likedIds };
     },
   });
 
   return {
-    media: query.data ?? [],
+    media: query.data?.media ?? [],
+    userLikes: new Set(query.data?.likedIds ?? []),
     isLoading: query.isLoading,
     error: query.error,
   };
@@ -53,13 +82,12 @@ export function useRouteMedia(routeId: string) {
 /**
  * Mutation to upload a video and link it to a route.
  *
- * The mutation chains three service calls:
- *   1. uploadVideoFile — sends the blob to Storage
- *   2. getPublicUrl — resolves the public URL for playback
- *   3. createRouteMedia — inserts the DB row linking video to route
+ * The mutation chains two steps:
+ *   1. uploadToCloudinary — sends the file to Cloudinary's upload API
+ *   2. createRouteMedia — inserts the DB row linking video URL to route
  *
- * The caller provides { blob, storagePath, mimeType }. The userId
- * comes from the auth context automatically.
+ * The caller provides { uri, mimeType }. The userId comes from the
+ * auth context automatically.
  *
  * @param routeId - The route to associate the video with
  */
@@ -69,32 +97,22 @@ export function useUploadVideo(routeId: string) {
 
   return useMutation({
     mutationFn: async ({
-      blob,
-      storagePath,
+      uri,
       mimeType,
     }: {
-      blob: Blob;
-      storagePath: string;
+      uri: string;
       mimeType: string;
     }) => {
       if (!user?.id) throw new Error('Must be logged in to upload');
 
-      // Step 1: Upload the file to Supabase Storage
-      const uploadResult = await mediaService.uploadVideoFile(
-        blob,
-        storagePath,
-        mimeType
-      );
-      if (uploadResult.error) throw uploadResult.error;
+      // Step 1: Upload the video file to Cloudinary
+      const { url } = await uploadToCloudinary(uri, mimeType);
 
-      // Step 2: Get the public URL for the uploaded file
-      const publicUrl = mediaService.getPublicUrl(storagePath);
-
-      // Step 3: Create the route_media DB row
+      // Step 2: Create the route_media DB row with the Cloudinary URL
       const dbResult = await mediaService.createRouteMedia({
         routeId,
         userId: user.id,
-        url: publicUrl,
+        url,
         type: 'video',
       });
       if (dbResult.error) throw dbResult.error;
@@ -109,10 +127,10 @@ export function useUploadVideo(routeId: string) {
 }
 
 /**
- * Mutation to delete a video (Storage file + DB row).
+ * Mutation to delete a video (DB row only).
  *
- * The caller provides { mediaId, storagePath }. The service handles
- * the two-step deletion: remove file first, then delete DB row.
+ * The Cloudinary file is left in place — cleanup can be done later
+ * via Cloudinary's admin API if needed.
  *
  * @param routeId - Used for cache invalidation after deletion
  */
@@ -120,16 +138,69 @@ export function useDeleteMedia(routeId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      mediaId,
-      storagePath,
-    }: {
-      mediaId: string;
-      storagePath: string;
-    }) => {
-      const result = await mediaService.deleteMedia(mediaId, storagePath);
+    mutationFn: async ({ mediaId }: { mediaId: string }) => {
+      const result = await mediaService.deleteMedia(mediaId);
       if (result.error) throw result.error;
     },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['routeMedia', routeId] });
+    },
+  });
+}
+
+/**
+ * Mutation to like or unlike a video.
+ *
+ * Takes `{ mediaId, liked }` — if `liked` is true the video is already
+ * liked and this call will unlike it; if false, this call will like it.
+ * This toggle pattern matches the heart button behavior in the UI.
+ *
+ * Uses an optimistic update for instant heart feedback, then refetches
+ * on settle to reconcile with the server (picks up other users' likes
+ * and corrects any failed optimistic update).
+ *
+ * @param routeId - Used for cache invalidation after the mutation
+ */
+export function useLikeMedia(routeId: string) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ mediaId, liked }: { mediaId: string; liked: boolean }) => {
+      if (!user?.id) throw new Error('Must be logged in to like');
+
+      // Toggle: if already liked → unlike, otherwise → like
+      const result = liked
+        ? await mediaService.unlikeMedia(mediaId, user.id)
+        : await mediaService.likeMedia(mediaId, user.id);
+
+      if (result.error) throw result.error;
+    },
+
+    // Optimistic update: immediately flip the heart and adjust the count
+    // so the user sees instant feedback when they tap.
+    onMutate: async ({ mediaId, liked }) => {
+      // Cancel in-flight refetches so they don't overwrite our optimistic state
+      await queryClient.cancelQueries({ queryKey: ['routeMedia', routeId] });
+
+      queryClient.setQueryData(['routeMedia', routeId], (old: any) => {
+        if (!old) return old;
+        return {
+          media: old.media.map((m: any) =>
+            m.id === mediaId
+              ? { ...m, likes_count: liked ? Math.max(0, (m.likes_count ?? 0) - 1) : (m.likes_count ?? 0) + 1 }
+              : m
+          ),
+          likedIds: liked
+            ? (old.likedIds ?? []).filter((id: string) => id !== mediaId)
+            : [...(old.likedIds ?? []), mediaId],
+        };
+      });
+    },
+
+    // Refetch after the mutation (success or error) so the server's
+    // likes_count and liked state replace the optimistic values. This
+    // picks up other users' likes and corrects any failed optimistic update.
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['routeMedia', routeId] });
     },

@@ -1,68 +1,77 @@
 /**
  * Enrolled Leaderboards Hook — TanStack Query Wrapper for User Standings
  *
- * Fetches the current user's leaderboard standings across all gyms they've
- * competed at. Returns enriched data including gym names and total participant
- * counts by calling the get_enrolled_leaderboards() Postgres function via RPC.
+ * Fetches the current user's leaderboard standings across all gyms, filtered
+ * by active or retired status. Returns enriched data including gym names,
+ * leaderboard names, time windows, and participant counts.
  *
- * QUERY KEY: ["leaderboards", "enrolled", userId]
+ * QUERY KEY: ["leaderboards", "enrolled", userId, active]
  *
- * Why include userId in the key?
- * Different users see different leaderboard standings. Including userId ensures
- * TanStack Query maintains separate caches per user, which matters if the app
- * ever supports account switching.
+ * Why include both userId and active in the key?
+ * Different users see different standings, and active vs retired are separate
+ * datasets. Including both ensures TanStack Query maintains separate caches
+ * for each combination — switching tabs is instant if already loaded.
  *
- * The query is disabled when userId is undefined (user not logged in), which
- * prevents firing an RPC call with a null parameter.
+ * The query is disabled when userId is undefined (user not logged in).
  */
 
 import { useQuery } from "@tanstack/react-query";
 import { leaderboardService } from "@/services/leaderboard.service";
 
 /**
- * Shape of a single leaderboard entry displayed on the Leaderboards tab.
- * Each entry represents the user's standing at one gym for a given period
- * and scoring model.
+ * Shape of a single enrolled leaderboard entry on the Leaderboards tab.
+ * Each entry represents the user's standing in one leaderboard at one gym.
  *
- * This interface matches the return type of get_enrolled_leaderboards() —
- * the Postgres function that joins leaderboard_entries with gyms and computes
- * participant counts.
+ * Matches the return type of get_enrolled_leaderboards() — the Postgres
+ * function that joins leaderboard_entries → leaderboards → gyms and
+ * computes participant counts.
  */
 export interface EnrolledLeaderboard {
   /** Unique identifier for this leaderboard entry */
   id: string;
+  /** The leaderboard this entry belongs to */
+  leaderboard_id: string;
   /** The gym this leaderboard belongs to */
   gym_id: string;
   /** Display name of the gym (joined from gyms table) */
   gym_name: string;
-  /** ISO week period string, e.g. "2026-W06" */
-  period: string;
-  /** Which scoring model this entry uses */
-  scoring_model: string;
+  /** Name of the leaderboard (e.g., "March Madness") */
+  leaderboard_name: string;
+  /** When the leaderboard started accepting entries */
+  starts_at: string;
+  /** When the leaderboard stops accepting entries */
+  ends_at: string;
   /** User's rank position in this leaderboard (1 = first place) */
   rank: number;
-  /** User's total score for this period */
+  /** User's total score */
   score: number;
   /** How many climbers are in this leaderboard */
   total_participants: number;
+  /** Optional rules set by the gym admin */
+  rules: string | null;
+  /** Optional prizes set by the gym admin */
+  prizes: string | null;
 }
 
 /**
  * Fetch the current user's enrolled leaderboard standings.
  *
  * @param userId - The UUID of the current user, or undefined if not logged in
+ * @param active - true for active (ongoing) leaderboards, false for retired (ended)
  */
-export function useEnrolledLeaderboards(userId: string | undefined) {
+export function useEnrolledLeaderboards(
+  userId: string | undefined,
+  active: boolean = true,
+) {
   return useQuery({
-    queryKey: ["leaderboards", "enrolled", userId],
+    queryKey: ["leaderboards", "enrolled", userId, active],
     queryFn: async () => {
       // userId is guaranteed non-undefined here because enabled: !!userId
-      // prevents this from running when userId is falsy.
-      const result = await leaderboardService.getEnrolledLeaderboards(userId!);
+      const result = await leaderboardService.getEnrolledLeaderboards(userId!, active);
       if (result.error) throw result.error;
       return result.data as EnrolledLeaderboard[];
     },
-    // Don't fetch until we have a userId — prevents RPC call with null param
+    // Don't fetch until we have a userId
     enabled: !!userId,
   });
 }

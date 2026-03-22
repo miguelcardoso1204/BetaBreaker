@@ -62,7 +62,7 @@ export const eventsService = {
   /**
    * Fetch all events for a gym, newest first.
    *
-   * The admin event list shows all events at their home gym regardless of
+   * The admin event list shows all events at their gym regardless of
    * status (draft, ongoing, completed, etc.). Ordered by start_date DESC
    * so upcoming/recent events appear first.
    */

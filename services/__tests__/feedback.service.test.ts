@@ -67,7 +67,7 @@ describe("feedbackService", () => {
       expect(supabase.from).toHaveBeenCalledWith("route_feedback");
       // The select should include a profile join for display_name and avatar_url
       expect(chainMock.select).toHaveBeenCalledWith(
-        "*, profile:profiles(display_name, avatar_url)"
+        "*, profile:profiles!route_feedback_user_id_fkey(display_name, avatar_url)"
       );
       expect(chainMock.eq).toHaveBeenCalledWith("route_id", "route-1");
       // Results ordered by score descending so best tips float to top
@@ -200,70 +200,39 @@ describe("feedbackService", () => {
     });
   });
 
+  // ── Helper: mock the _recalculateScore chain ────────────────────
+  // _recalculateScore does 3 from() calls:
+  //   1. SELECT count from votes WHERE vote='up'
+  //   2. SELECT count from votes WHERE vote='down'
+  //   3. UPDATE route_feedback SET score=...
+
+  function mockRecalculateScore(upCount: number, downCount: number) {
+    // Count up votes chain: from().select().eq().eq()
+    const upEq2 = jest.fn().mockResolvedValueOnce({ count: upCount, error: null });
+    const upEq1 = jest.fn().mockReturnValueOnce({ eq: upEq2 });
+    supabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnValueOnce({ eq: upEq1 }),
+    });
+
+    // Count down votes chain
+    const downEq2 = jest.fn().mockResolvedValueOnce({ count: downCount, error: null });
+    const downEq1 = jest.fn().mockReturnValueOnce({ eq: downEq2 });
+    supabase.from.mockReturnValueOnce({
+      select: jest.fn().mockReturnValueOnce({ eq: downEq1 }),
+    });
+
+    // Update score chain
+    const updateEq = jest.fn().mockResolvedValueOnce({ data: null, error: null });
+    const updateMock = jest.fn().mockReturnValueOnce({ eq: updateEq });
+    supabase.from.mockReturnValueOnce({ update: updateMock });
+
+    return { updateMock, updateEq };
+  }
+
   // ── vote ────────────────────────────────────────────────────────
 
   describe("vote", () => {
-    it("deletes existing vote then inserts new vote", async () => {
-      // Voting is an upsert pattern: remove any existing vote first
-      // (the user might be switching from up to down), then insert the
-      // new vote. Two sequential calls to avoid complex ON CONFLICT logic.
-
-      // First call: delete existing vote
-      const deleteEq2 = jest
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: null });
-      const deleteEq1 = jest
-        .fn()
-        .mockReturnValueOnce({ eq: deleteEq2 });
-      const deleteChain = {
-        delete: jest.fn().mockReturnValueOnce({ eq: deleteEq1 }),
-      };
-
-      // Second call: insert new vote
-      const insertChain = {
-        insert: jest.fn().mockResolvedValueOnce({ data: null, error: null }),
-      };
-
-      // Third call: update score
-      const updateEq = jest
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: null });
-      const updateChain = {
-        update: jest.fn().mockReturnValueOnce({ eq: updateEq }),
-      };
-
-      supabase.from
-        .mockReturnValueOnce(deleteChain)
-        .mockReturnValueOnce(insertChain)
-        .mockReturnValueOnce(updateChain);
-
-      await feedbackService.vote("fb-1", "user-1", "up");
-
-      // Verify delete was called on route_feedback_votes
-      expect(supabase.from).toHaveBeenNthCalledWith(
-        1,
-        "route_feedback_votes"
-      );
-      expect(deleteEq1).toHaveBeenCalledWith("feedback_id", "fb-1");
-      expect(deleteEq2).toHaveBeenCalledWith("user_id", "user-1");
-
-      // Verify insert was called with the new vote
-      expect(supabase.from).toHaveBeenNthCalledWith(
-        2,
-        "route_feedback_votes"
-      );
-      expect(insertChain.insert).toHaveBeenCalledWith({
-        feedback_id: "fb-1",
-        user_id: "user-1",
-        vote: "up",
-      });
-    });
-
-    it("updates feedback score after voting", async () => {
-      // After inserting the vote, the service must recalculate and
-      // update the score on the route_feedback row. Score is the
-      // net sum: count(up) - count(down).
-
+    it("deletes existing vote, inserts new vote, and recalculates score", async () => {
       // Delete existing vote
       const deleteEq2 = jest
         .fn()
@@ -276,21 +245,29 @@ describe("feedbackService", () => {
       });
 
       // Insert new vote
-      supabase.from.mockReturnValueOnce({
+      const insertChain = {
         insert: jest.fn().mockResolvedValueOnce({ data: null, error: null }),
-      });
+      };
+      supabase.from.mockReturnValueOnce(insertChain);
 
-      // Update score — this is what we're testing
-      const updateEq = jest
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: null });
-      const updateMock = jest.fn().mockReturnValueOnce({ eq: updateEq });
-      supabase.from.mockReturnValueOnce({ update: updateMock });
+      // Recalculate: 3 up, 1 down → score 2
+      const { updateMock, updateEq } = mockRecalculateScore(3, 1);
 
       await feedbackService.vote("fb-1", "user-1", "up");
 
-      // The third from() call should target route_feedback to update score
-      expect(supabase.from).toHaveBeenNthCalledWith(3, "route_feedback");
+      // Verify delete
+      expect(deleteEq1).toHaveBeenCalledWith("feedback_id", "fb-1");
+      expect(deleteEq2).toHaveBeenCalledWith("user_id", "user-1");
+
+      // Verify insert
+      expect(insertChain.insert).toHaveBeenCalledWith({
+        feedback_id: "fb-1",
+        user_id: "user-1",
+        vote: "up",
+      });
+
+      // Verify score update: 3 - 1 = 2
+      expect(updateMock).toHaveBeenCalledWith({ score: 2 });
       expect(updateEq).toHaveBeenCalledWith("id", "fb-1");
     });
   });
@@ -298,10 +275,7 @@ describe("feedbackService", () => {
   // ── unvote ──────────────────────────────────────────────────────
 
   describe("unvote", () => {
-    it("deletes vote and updates score", async () => {
-      // Unvoting removes the user's vote entirely (toggling off).
-      // The score must be recalculated after removing the vote.
-
+    it("deletes vote and recalculates score", async () => {
       // Delete vote
       const deleteEq2 = jest
         .fn()
@@ -313,26 +287,17 @@ describe("feedbackService", () => {
         delete: jest.fn().mockReturnValueOnce({ eq: deleteEq1 }),
       });
 
-      // Update score
-      const updateEq = jest
-        .fn()
-        .mockResolvedValueOnce({ data: null, error: null });
-      supabase.from.mockReturnValueOnce({
-        update: jest.fn().mockReturnValueOnce({ eq: updateEq }),
-      });
+      // Recalculate: 0 up, 0 down → score 0
+      const { updateMock, updateEq } = mockRecalculateScore(0, 0);
 
       await feedbackService.unvote("fb-1", "user-1");
 
-      // Verify delete on votes table
-      expect(supabase.from).toHaveBeenNthCalledWith(
-        1,
-        "route_feedback_votes"
-      );
+      // Verify delete
       expect(deleteEq1).toHaveBeenCalledWith("feedback_id", "fb-1");
       expect(deleteEq2).toHaveBeenCalledWith("user_id", "user-1");
 
-      // Verify score update on feedback table
-      expect(supabase.from).toHaveBeenNthCalledWith(2, "route_feedback");
+      // Verify score update: 0 - 0 = 0
+      expect(updateMock).toHaveBeenCalledWith({ score: 0 });
       expect(updateEq).toHaveBeenCalledWith("id", "fb-1");
     });
   });

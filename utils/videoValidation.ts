@@ -16,14 +16,14 @@
 /** Maximum video duration in seconds (FR-K1). */
 export const VIDEO_MAX_DURATION_SECONDS = 60;
 
-/** Maximum file size in bytes — 50 MB (NFR-11). */
-export const VIDEO_MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+/** Maximum file size in bytes — 150 MB. */
+export const VIDEO_MAX_FILE_SIZE_BYTES = 150 * 1024 * 1024;
 
-/** Maximum video width in pixels (1080p landscape). */
-export const VIDEO_MAX_WIDTH = 1920;
+/** Maximum video width in pixels (1080p portrait). */
+export const VIDEO_MAX_WIDTH = 1080;
 
-/** Maximum video height in pixels (1080p landscape). */
-export const VIDEO_MAX_HEIGHT = 1080;
+/** Maximum video height in pixels (1080p portrait). */
+export const VIDEO_MAX_HEIGHT = 1920;
 
 /** MIME types accepted by the beta-videos storage bucket. */
 export const VIDEO_ALLOWED_MIME_TYPES = [
@@ -31,9 +31,6 @@ export const VIDEO_ALLOWED_MIME_TYPES = [
   'video/quicktime',
   'video/webm',
 ] as const;
-
-/** Supabase Storage bucket name for beta videos. */
-export const VIDEO_STORAGE_BUCKET = 'beta-videos';
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -97,10 +94,9 @@ export function validateVideoFileSize(bytes: number): ValidationResult {
 }
 
 /**
- * Checks that video resolution doesn't exceed 1920×1080.
+ * Checks that video resolution doesn't exceed 1080×1920 (portrait 1080p).
  * Width is checked against VIDEO_MAX_WIDTH, height against VIDEO_MAX_HEIGHT.
- * Portrait videos with height > 1080 will be flagged — phones should
- * record at 1080p or lower.
+ * Climbing videos are typically filmed in portrait orientation.
  */
 export function validateVideoResolution(width: number, height: number): ValidationResult {
   if (width > VIDEO_MAX_WIDTH || height > VIDEO_MAX_HEIGHT) {
@@ -125,18 +121,6 @@ export function validateVideoMimeType(mimeType: string): ValidationResult {
     };
   }
   return { valid: true };
-}
-
-/**
- * Builds the storage path for a video upload.
- * Format: <userId>/<routeId>/<timestamp>.<ext>
- *
- * The userId prefix is required by the storage INSERT policy
- * (path ownership check). The timestamp prevents filename collisions
- * when the same user uploads multiple videos for the same route.
- */
-export function buildStoragePath(userId: string, routeId: string, ext: string): string {
-  return `${userId}/${routeId}/${Date.now()}.${ext}`;
 }
 
 /**

@@ -25,14 +25,18 @@ export { useRoutes, useRouteDetail } from "./useRoutes";
 
 // useGyms — fetches gym directory via TanStack Query.
 // useGym — fetches a single gym's details.
-// useSetHomeGym — mutation to update the user's home gym.
-export { useGyms, useGym, useSetHomeGym } from "./useGyms";
+// useFavoriteGyms — fetches the user's favorited gym IDs.
+// useToggleFavoriteGym — mutation to add/remove a gym from favorites.
+export { useGyms, useGym, useFavoriteGyms, useToggleFavoriteGym } from "./useGyms";
 
 // useSession — coordinates sessionStore (Zustand) + sessionsService (TanStack mutations)
 // for tick-logging: timer, pending logs, optimistic ascent logging, cache invalidation.
 // LogAscentInput — the input shape for the logAscent mutation (omits userId).
 export { useSession } from "./useSession";
 export type { LogAscentInput } from "./useSession";
+
+// useRecentSessions — fetches recent session history for the profile screen.
+export { useRecentSessions } from "./useRecentSessions";
 
 // useBadges — fetches all badge definitions for the badge gallery.
 // useUserBadges — fetches badges earned by a specific user (profile/trophy case).
@@ -78,6 +82,10 @@ export {
 
 // useAuditLog — read-only audit log query for admin change history (Step 15.7).
 export { useAuditLog } from "./useAuditLog";
+
+// useRouteMedia — fetches media + user likes for a route.
+// useLikeMedia — mutation to toggle like/unlike on a beta video.
+export { useRouteMedia, useLikeMedia } from "./useMedia";
 
 // useProfile — profile management: stats, edit, export, delete (Step 16.1).
 export {

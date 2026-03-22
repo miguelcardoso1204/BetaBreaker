@@ -82,20 +82,6 @@ export const GRADE_SYSTEMS = ['v-scale', 'font', 'yds'] as const;
 /** Union type for grade display systems. */
 export type GradeSystem = typeof GRADE_SYSTEMS[number];
 
-/* ── Scoring Models ─────────────────────────────────────────────────────── */
-
-/**
- * Competition scoring models that determine how events rank participants.
- *
- * Each model rewards a different climbing strength:
- *   hardest_grade — highest single-route grade completed wins
- *   flash_rate    — rewards first-try completions (consistency)
- *   volume        — total number of routes completed (endurance)
- */
-export const SCORING_MODELS = ['hardest_grade', 'flash_rate', 'volume'] as const;
-
-/** Union type for competition scoring strategies. */
-export type ScoringModel = typeof SCORING_MODELS[number];
 
 /* ── Ascent Statuses ────────────────────────────────────────────────────── */
 
