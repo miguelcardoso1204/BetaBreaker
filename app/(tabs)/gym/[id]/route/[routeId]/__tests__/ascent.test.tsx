@@ -72,6 +72,7 @@ jest.mock("lucide-react-native", () => {
         {...props}
       />
     ),
+    ChevronLeft: (props: any) => <View testID="icon-chevron-left" {...props} />,
     Minus: (props: any) => <View testID="icon-minus" {...props} />,
     Plus: (props: any) => <View testID="icon-plus" {...props} />,
     Video: (props: any) => <View testID="icon-video" {...props} />,
@@ -79,6 +80,34 @@ jest.mock("lucide-react-native", () => {
     ShieldCheck: (props: any) => <View testID="icon-shield-check" {...props} />,
     Square: (props: any) => <View testID="icon-square" {...props} />,
     CheckSquare: (props: any) => <View testID="icon-check-square" {...props} />,
+  };
+});
+
+// Mock useFeedback — the ascent form posts comments as beta tips via
+// useCreateFeedback. We track the mutate calls to verify it's called.
+const mockCreateFeedback = jest.fn();
+jest.mock("@/hooks/useFeedback", () => ({
+  useCreateFeedback: () => ({
+    mutate: mockCreateFeedback,
+    isPending: false,
+  }),
+}));
+
+// Mock GradeSlider — renders a simplified slider that exposes value and
+// allows tests to simulate grade changes via onValueChange.
+jest.mock("@/components/ui/GradeSlider", () => {
+  const { View, Text, Pressable } = require("react-native");
+  return {
+    GradeSlider: (props: any) => (
+      <View testID="grade-slider">
+        <Text testID="grade-slider-value">{props.value}</Text>
+        {/* Pressable that simulates changing to grade 12 (V4) */}
+        <Pressable
+          testID="grade-slider-change"
+          onPress={() => props.onChange(12)}
+        />
+      </View>
+    ),
   };
 });
 
@@ -112,8 +141,8 @@ jest.mock("expo-image-picker", () => ({
 }));
 
 // Mock expo-file-system — used by VideoUploadButton for file size.
-jest.mock("expo-file-system", () => ({
-  getInfoAsync: jest.fn(),
+jest.mock("expo-file-system/next", () => ({
+  File: jest.fn().mockImplementation(() => ({ size: 10 * 1024 * 1024 })),
 }));
 
 import AscentFormScreen from "../ascent";
@@ -176,39 +205,24 @@ describe("AscentFormScreen", () => {
     expect(screen.getByTestId("route-header")).toBeOnTheScreen();
   });
 
-  // ── 2. Star rating renders ──────────────────────────────────────
+  // ── 2. Grade slider renders ────────────────────────────────────
 
-  it("renders the star rating section with 5 stars", () => {
+  it("renders the grade slider section", () => {
     render(<AscentFormScreen />);
 
-    // The "How would you rate this route?" label should be visible.
-    expect(screen.getByText("How would you rate this route?")).toBeOnTheScreen();
-
-    // All 5 star buttons should be present.
-    expect(screen.getByTestId("star-1")).toBeOnTheScreen();
-    expect(screen.getByTestId("star-2")).toBeOnTheScreen();
-    expect(screen.getByTestId("star-3")).toBeOnTheScreen();
-    expect(screen.getByTestId("star-4")).toBeOnTheScreen();
-    expect(screen.getByTestId("star-5")).toBeOnTheScreen();
+    expect(screen.getByText("What grade do you think this is?")).toBeOnTheScreen();
+    expect(screen.getByTestId("grade-slider")).toBeOnTheScreen();
   });
 
-  // ── 3. Star rating interactive ──────────────────────────────────
+  // ── 3. Grade slider defaults to route grade ──────────────────────
 
-  it("star rating changes when a star is tapped", () => {
-    // Tapping a star should update the visual state. We verify by
-    // checking the icon's fill color changes from gray to gold.
+  it("grade slider defaults to the route's canonical grade", () => {
     render(<AscentFormScreen />);
 
-    // Tap star 4
-    fireEvent.press(screen.getByTestId("star-4"));
-
-    // After tapping star 4, stars 1-4 should be gold (filled).
-    // The mock icon exposes color via accessibilityHint.
-    const icons = screen.getAllByTestId("mock-star-icon");
-    expect(icons[0].props.accessibilityHint).toContain("color:#F59E0B");
-    expect(icons[3].props.accessibilityHint).toContain("color:#F59E0B");
-    // Star 5 should remain gray.
-    expect(icons[4].props.accessibilityHint).toContain("color:#6B7280");
+    // The mock route has canonical_grade: 10. The slider value should
+    // show 10 by default (since perceivedGrade state starts as null,
+    // the component falls back to route.canonical_grade).
+    expect(screen.getByTestId("grade-slider-value")).toHaveTextContent("10");
   });
 
   // ── 4. Video upload button renders ──────────────────────────────
@@ -227,7 +241,7 @@ describe("AscentFormScreen", () => {
   it("renders the comment input with placeholder", () => {
     render(<AscentFormScreen />);
 
-    expect(screen.getByText("Comments")).toBeOnTheScreen();
+    expect(screen.getByText("Share")).toBeOnTheScreen();
     expect(screen.getByTestId("comment-input")).toBeOnTheScreen();
     expect(
       screen.getByPlaceholderText("Share your beta, conditions, or thoughts...")
@@ -296,7 +310,6 @@ describe("AscentFormScreen", () => {
     render(<AscentFormScreen />);
 
     expect(screen.getByTestId("submit-ascent-button")).toBeOnTheScreen();
-    expect(screen.getByText("Add Ascent")).toBeOnTheScreen();
   });
 
   // ── 10. Submit calls logAscent with correct args ────────────────
@@ -304,15 +317,15 @@ describe("AscentFormScreen", () => {
   it("calls logAscent.mutate with form data when submitted", () => {
     render(<AscentFormScreen />);
 
-    // Select "send" status
+    // Select "send" status — attempts auto-set to 2
     fireEvent.press(screen.getByTestId("status-send"));
 
-    // Increase attempts to 3
+    // Increase attempts: 2 → 3 → 4
     fireEvent.press(screen.getByTestId("attempts-increment"));
     fireEvent.press(screen.getByTestId("attempts-increment"));
 
-    // Rate 4 stars
-    fireEvent.press(screen.getByTestId("star-4"));
+    // Adjust perceived grade via slider (mock fires onChange(12))
+    fireEvent.press(screen.getByTestId("grade-slider-change"));
 
     // Type a comment
     fireEvent.changeText(screen.getByTestId("comment-input"), "Nice moves!");
@@ -323,9 +336,10 @@ describe("AscentFormScreen", () => {
     expect(mockMutate).toHaveBeenCalledWith({
       routeId: "route-1",
       status: "send",
-      attempts: 3,
+      attempts: 4,
       notes: "Nice moves!",
-      perceivedGrade: 4,
+      perceivedGrade: 12,
+      rating: undefined,
     });
   });
 
@@ -347,24 +361,48 @@ describe("AscentFormScreen", () => {
   // ── 12. Empty submit allowed with only status ───────────────────
 
   it("allows submit with only status set (all other fields optional)", () => {
-    // Star rating, comment, and style tags are all optional.
+    // Rating, comment, and style tags are all optional.
     // The minimum required input is selecting a status.
     render(<AscentFormScreen />);
 
-    // Select "attempt" status
-    fireEvent.press(screen.getByTestId("status-attempt"));
+    // Select "send" status — attempts auto-set to 2 (minimum for send)
+    fireEvent.press(screen.getByTestId("status-send"));
 
     // Submit without filling any optional fields
     fireEvent.press(screen.getByTestId("submit-ascent-button"));
 
-    // logAscent should be called with just status + defaults.
-    // notes and perceivedGrade should be undefined (not sent to DB).
     expect(mockMutate).toHaveBeenCalledWith({
       routeId: "route-1",
-      status: "attempt",
-      attempts: 1,
+      status: "send",
+      attempts: 2,
       notes: undefined,
       perceivedGrade: undefined,
+      rating: undefined,
     });
+  });
+
+  // ── 13. Comment posted as beta tip ──────────────────────────────
+
+  it("posts comment as beta tip when comment is non-empty", () => {
+    // When the user writes a comment in the ascent form, it should
+    // also be saved as a route_feedback row so it appears in the
+    // Beta Tips section on the route detail screen.
+    render(<AscentFormScreen />);
+
+    fireEvent.press(screen.getByTestId("status-send"));
+    fireEvent.changeText(screen.getByTestId("comment-input"), "Use the heel hook!");
+    fireEvent.press(screen.getByTestId("submit-ascent-button"));
+
+    expect(mockCreateFeedback).toHaveBeenCalledWith({ body: "Use the heel hook!" });
+  });
+
+  it("does not post beta tip when comment is empty", () => {
+    // An empty comment should NOT create a feedback row.
+    render(<AscentFormScreen />);
+
+    fireEvent.press(screen.getByTestId("status-flash"));
+    fireEvent.press(screen.getByTestId("submit-ascent-button"));
+
+    expect(mockCreateFeedback).not.toHaveBeenCalled();
   });
 });

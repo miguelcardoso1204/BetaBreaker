@@ -166,7 +166,7 @@ export default function EventDetailScreen() {
 
         {/* Scoreboard link — navigates to the live ranked scoreboard */}
         <Pressable
-          onPress={() => router.push(`/events/${event.id}/scoreboard` as any)}
+          onPress={() => router.push(`/(tabs)/events/${event.id}/scoreboard` as any)}
           className="flex-row items-center gap-2 mt-3 bg-accent/20 px-4 py-3 rounded-lg"
         >
           <BarChart3 size={18} color="#7C3AED" strokeWidth={2} />

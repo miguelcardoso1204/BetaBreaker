@@ -45,10 +45,13 @@ jest.mock("@/hooks/useRoutes", () => {
 });
 
 // Mock routeFilterStore — return default filters for any gym.
+// The screen reads `s.filters` (a map keyed by gymId) and individual setters.
 jest.mock("@/stores/routeFilterStore", () => ({
   useRouteFilterStore: (selector: (s: any) => any) => {
     const state = {
-      getFilters: () => ({ sortBy: "newest" as const }),
+      filters: {
+        "gym-1": { sortBy: "newest" as const },
+      },
       setGradeMin: jest.fn(),
       setGradeMax: jest.fn(),
       setSortBy: jest.fn(),
@@ -78,9 +81,23 @@ jest.mock("@/components/routes/FilterBar", () => {
   };
 });
 
+// Mock useGyms — the routes screen calls useGym(gymId) for the header title.
+jest.mock("@/hooks/useGyms", () => ({
+  useGym: () => ({
+    data: { id: "gym-1", name: "Summit Climbing" },
+    isLoading: false,
+    error: null,
+  }),
+}));
+
 // Mock lucide icons (FilterBar imports these, but since FilterBar is mocked
 // the import chain may still try to resolve it)
-jest.mock("lucide-react-native", () => ({}));
+jest.mock("lucide-react-native", () => {
+  const { View } = require("react-native");
+  return {
+    ChevronLeft: (props: any) => <View testID="icon-chevron-left" {...props} />,
+  };
+});
 
 import GymRoutesScreen from "../routes";
 const { __mockData } = jest.requireMock<{
@@ -197,6 +214,6 @@ describe("GymRoutesScreen", () => {
     fireEvent.press(screen.getByTestId("route-card-route-1"));
 
     // Should navigate to the route detail screen
-    expect(mockPush).toHaveBeenCalledWith("/gym/gym-1/route/route-1");
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/gym/gym-1/route/route-1");
   });
 });

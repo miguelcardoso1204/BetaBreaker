@@ -35,18 +35,23 @@ import {
   ScrollView,
   TextInput,
   Pressable,
+  Keyboard,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { Minus, Plus } from "lucide-react-native";
+import { ChevronLeft, Minus, Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import { useRouteDetail } from "@/hooks/useRoutes";
 import { useSession } from "@/hooks/useSession";
+import { useCreateFeedback } from "@/hooks/useFeedback";
 import { canonicalToDisplay } from "@/utils/grades";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { GradeSlider } from "@/components/ui/GradeSlider";
 import { StarRating } from "@/components/ui/StarRating";
 import { VideoUploadButton } from "@/components/routes/VideoUploadButton";
 import { ASCENT_STATUSES, STYLE_TAGS } from "@/lib/constants";
@@ -95,24 +100,39 @@ export default function AscentFormScreen() {
   // logAscent mutation from useSession — persists the ascent to Supabase.
   const { logAscent } = useSession();
 
+  // createFeedback mutation — if the user writes a comment, it also gets
+  // posted as a beta tip on the route so other climbers can see it.
+  const { mutate: createFeedback } = useCreateFeedback(routeId);
+
+  // Screen width for sizing the color swatch to match the profile avatar.
+  const { width: screenWidth } = useWindowDimensions();
+  const swatchSize = Math.min(160, Math.max(80, Math.round(screenWidth * 0.35)));
+
   // ── Local form state ────────────────────────────────────────────
   // All form values are ephemeral — they live in useState and don't
   // persist across screen unmounts. This is appropriate because the
   // form is a single-use action (log one ascent, then navigate back).
   const [status, setStatus] = useState<AscentStatus | null>(null);
   const [attempts, setAttempts] = useState(1);
-  const [starRating, setStarRating] = useState(0);
+  // Perceived grade defaults to the route's canonical grade — the user
+  // adjusts the slider if they think it should be harder or easier.
+  const [perceivedGrade, setPerceivedGrade] = useState<number | null>(null);
+  // Quality/enjoyment rating (1–5 stars). 0 means unset → submitted as undefined.
+  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [selectedTags, setSelectedTags] = useState<Set<StyleTagKey>>(
     new Set()
   );
 
   // ── Status handler ──────────────────────────────────────────────
-  // Same logic as QuickLog: selecting "flash" locks attempts to 1.
+  // Flash locks attempts to 1 (first-try by definition).
+  // Send starts at 2 (1 attempt = flash, not send).
   const handleStatusSelect = useCallback((selected: AscentStatus) => {
     setStatus(selected);
     if (selected === "flash") {
       setAttempts(1);
+    } else if (selected === "send") {
+      setAttempts((prev) => Math.max(2, prev));
     }
   }, []);
 
@@ -136,22 +156,32 @@ export default function AscentFormScreen() {
   const handleSubmit = useCallback(() => {
     if (!status) return;
 
+    const trimmedComment = comment.trim();
+
     logAscent.mutate({
       routeId,
       status,
       attempts,
       // Only include notes if the user typed something non-empty.
-      notes: comment.trim() || undefined,
-      // Star rating maps to perceivedGrade. 0 means "not rated".
-      perceivedGrade: starRating > 0 ? starRating : undefined,
+      notes: trimmedComment || undefined,
+      // Slider value is a canonical grade (0–30). null means untouched.
+      perceivedGrade: perceivedGrade ?? undefined,
+      // Star rating for quality/enjoyment. 0 means unset → don't submit.
+      rating: rating > 0 ? rating : undefined,
     });
+
+    // If the user wrote a comment, also post it as a beta tip so it
+    // appears in the route detail's Beta Tips section for other climbers.
+    if (trimmedComment) {
+      createFeedback({ body: trimmedComment });
+    }
 
     // Haptic feedback for a satisfying "logged!" confirmation.
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     // Navigate back to the Route Detail screen.
     router.back();
-  }, [status, routeId, attempts, comment, starRating, logAscent, router]);
+  }, [status, routeId, attempts, comment, perceivedGrade, rating, logAscent, createFeedback, router]);
 
   // ── Loading state ───────────────────────────────────────────────
   if (isLoading) {
@@ -171,61 +201,54 @@ export default function AscentFormScreen() {
     : "";
 
   return (
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]} onTouchStart={Keyboard.dismiss}>
+      {/* Header — back button + screen title, matching parent screens */}
+      <View className="flex-row items-center px-4 pt-2 pb-1">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={28} color="#ffffff" />
+        </Pressable>
+        <Text className="text-text-primary text-lg font-bold ml-2" numberOfLines={1}>
+          {t("route.addAscent")}
+        </Text>
+      </View>
+
     <ScrollView
-      className="flex-1 bg-background"
+      className="flex-1"
       testID="ascent-form-screen"
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      onScrollBeginDrag={Keyboard.dismiss}
     >
       {/* ── Route Header Card ──────────────────────────────────────── */}
-      {/* Compact version of the Route Detail header so the user knows
-          which route they're logging an ascent for. Shows color swatch,
-          name, grade, and status badge. */}
       {route && (
         <View className="flex-row p-4 gap-3 items-center" testID="route-header">
-          {/* Color swatch — smaller than Route Detail (56x56 vs 112x112) */}
           <View
-            className="w-14 h-14 rounded-lg"
-            style={{ backgroundColor: route.color || "#6366f1" }}
+            className="rounded-lg"
+            style={{ width: swatchSize, height: swatchSize, backgroundColor: route.color || "#6366f1" }}
           />
           <View className="flex-1">
-            <Text
-              className="text-lg font-bold text-text-primary"
-              numberOfLines={1}
-            >
+            <Text className="text-lg font-bold text-text-primary" numberOfLines={1}>
               {route.name}
             </Text>
-            <Text className="text-text-secondary text-sm">
-              {displayGrade}
-            </Text>
+            <Text className="text-text-secondary text-sm">{displayGrade}</Text>
           </View>
-          <Badge
-            label={
-              route.status
-                .split("_")
-                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(" ")
-            }
-            variant={
-              route.status === "active"
-                ? "success"
-                : route.status === "retiring_soon"
-                  ? "warning"
-                  : "default"
-            }
-          />
         </View>
       )}
 
-      {/* ── Status Selection ──────────────────────────────────────── */}
-      {/* Three buttons: Flash / Send / Attempt. Same visual pattern
-          as QuickLogSheet — selected button gets accent background,
-          unselected buttons get a subtle border. */}
-      <View className="px-4 mb-4">
-        <Text className="text-text-primary text-base font-medium mb-2">
-          {t("route.result")}
+      {/* ═══ GROUP 1: Your Climb ═══════════════════════════════════ */}
+      <View className="bg-surface rounded-xl p-4 mx-4 mb-4">
+        <Text className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-3">
+          {t("ascent.yourClimb")}
         </Text>
-        <View className="flex-row gap-3">
-          {ASCENT_STATUSES.map((s) => {
+
+        {/* Status: Flash / Send */}
+        <View className="flex-row gap-3 mb-4">
+          {ASCENT_STATUSES.filter((s) => s !== "attempt").map((s) => {
             const isSelected = status === s;
             return (
               <Pressable
@@ -236,95 +259,61 @@ export default function AscentFormScreen() {
                 accessibilityState={{ selected: isSelected }}
                 testID={`status-${s}`}
                 className={`flex-1 items-center py-3 rounded-xl ${
-                  isSelected
-                    ? "bg-accent"
-                    : "border border-border"
+                  isSelected ? "bg-accent" : "border border-border"
                 }`}
               >
-                <Text
-                  className={`font-semibold ${
-                    isSelected ? "text-white" : "text-text-secondary"
-                  }`}
-                >
+                <Text className={`font-semibold ${isSelected ? "text-white" : "text-text-secondary"}`}>
                   {t(STATUS_LABEL_KEYS[s])}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-      </View>
 
-      {/* ── Attempts Stepper ──────────────────────────────────────── */}
-      {/* +/- buttons with count. Locked to 1 when status is "flash"
-          (a flash is by definition a first-attempt completion). */}
-      <View className="flex-row items-center justify-between px-4 mb-4">
-        <Text className="text-text-primary text-base font-medium">
-          {t("session.attempts")}
-        </Text>
-        <View className="flex-row items-center gap-4">
-          <Pressable
-            testID="attempts-decrement"
-            onPress={() => setAttempts((prev) => Math.max(1, prev - 1))}
-            disabled={attempts <= 1 || status === "flash"}
-            accessibilityRole="button"
-            accessibilityLabel={t("session.decreaseAttempts")}
-            className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
-              attempts <= 1 || status === "flash" ? "opacity-30" : ""
-            }`}
-          >
-            <Minus size={18} color="#EAEAF0" />
-          </Pressable>
-
-          <Text
-            testID="attempts-count"
-            className="text-text-primary text-lg font-bold min-w-[24px] text-center"
-          >
-            {attempts}
+        {/* Attempts stepper */}
+        <View className="flex-row items-center justify-between">
+          <Text className="text-text-primary text-base font-medium">
+            {t("session.attempts")}
           </Text>
-
-          <Pressable
-            testID="attempts-increment"
-            onPress={() => setAttempts((prev) => Math.min(99, prev + 1))}
-            disabled={status === "flash"}
-            accessibilityRole="button"
-            accessibilityLabel={t("session.increaseAttempts")}
-            className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
-              status === "flash" ? "opacity-30" : ""
-            }`}
-          >
-            <Plus size={18} color="#EAEAF0" />
-          </Pressable>
+          <View className="flex-row items-center gap-4">
+            <Pressable
+              testID="attempts-decrement"
+              onPress={() => setAttempts((prev) => Math.max(status === "send" ? 2 : 1, prev - 1))}
+              disabled={attempts <= (status === "send" ? 2 : 1) || status === "flash"}
+              accessibilityRole="button"
+              accessibilityLabel={t("session.decreaseAttempts")}
+              className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
+                attempts <= (status === "send" ? 2 : 1) || status === "flash" ? "opacity-30" : ""
+              }`}
+            >
+              <Minus size={18} color="#EAEAF0" />
+            </Pressable>
+            <Text testID="attempts-count" className="text-text-primary text-lg font-bold min-w-[24px] text-center">
+              {attempts}
+            </Text>
+            <Pressable
+              testID="attempts-increment"
+              onPress={() => setAttempts((prev) => Math.min(99, prev + 1))}
+              disabled={status === "flash"}
+              accessibilityRole="button"
+              accessibilityLabel={t("session.increaseAttempts")}
+              className={`w-10 h-10 rounded-lg items-center justify-center border border-border ${
+                status === "flash" ? "opacity-30" : ""
+              }`}
+            >
+              <Plus size={18} color="#EAEAF0" />
+            </Pressable>
+          </View>
         </View>
       </View>
 
-      {/* ── Star Rating ───────────────────────────────────────────── */}
-      {/* 5-star input for perceived difficulty. The 1–5 value stores
-          directly in the `perceived_grade` column as a simplified
-          difficulty perception (1 = easy for the grade, 5 = very hard). */}
-      <View className="px-4 mb-4">
-        <Text className="text-text-primary text-base font-medium mb-2">
-          {t("route.howWouldYouRate")}
+      {/* ═══ GROUP 2: Share ════════════════════════════════════════ */}
+      <View className="bg-surface rounded-xl p-4 mx-4 mb-4">
+        <Text className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-3">
+          {t("ascent.share")}
         </Text>
-        <StarRating value={starRating} onChange={setStarRating} />
-      </View>
 
-      {/* ── Video Upload ───────────────────────────────────────────── */}
-      {/* VideoUploadButton handles the full flow: picker → validate →
-          ownership modal → upload to Storage → link to route_media.
-          It's self-contained — just pass the routeId and it manages
-          all internal state (picker, modal visibility, upload progress). */}
-      <View className="px-4 mb-4">
-        <VideoUploadButton routeId={routeId as string} />
-      </View>
-
-      {/* ── Comment Section ───────────────────────────────────────── */}
-      {/* Free-text area for beta tips, conditions, or personal notes.
-          Uses RN's TextInput directly (not AppTextInput) because we need
-          multiline support with a character counter. */}
-      <View className="px-4 mb-4">
-        <Text className="text-text-primary text-base font-medium mb-2">
-          {t("route.comments")}
-        </Text>
+        {/* Comment input */}
         <TextInput
           testID="comment-input"
           value={comment}
@@ -334,9 +323,6 @@ export default function AscentFormScreen() {
           multiline
           numberOfLines={4}
           maxLength={MAX_COMMENT_LENGTH}
-          // Dark theme styling to match the app's color palette.
-          // NativeWind doesn't fully support TextInput multiline styling
-          // on all platforms, so we use inline styles for reliability.
           style={{
             backgroundColor: "#1C1C28",
             color: "#EAEAF0",
@@ -349,19 +335,39 @@ export default function AscentFormScreen() {
             fontSize: 14,
           }}
         />
-        {/* Character counter — shows how many of 200 chars are used. */}
         <Text testID="char-counter" className="text-text-secondary text-xs mt-1 text-right">
           {comment.length}/{MAX_COMMENT_LENGTH}
         </Text>
+
+        {/* Video upload */}
+        <View className="mt-3">
+          <VideoUploadButton routeId={routeId as string} />
+        </View>
       </View>
 
-      {/* ── Style Tags ────────────────────────────────────────────── */}
-      {/* Multi-select grid of climbing style categories. Selected tags
-          get full-color Badge styling; unselected tags are dimmed.
-          Tags are tracked in local state only — not persisted to DB yet
-          (no style_tags column exists). Phase 9+ will add persistence. */}
-      <View className="px-4 mb-6">
-        <Text className="text-text-primary text-base font-medium mb-2">
+      {/* ═══ GROUP 3: Your Opinion ═════════════════════════════════ */}
+      <View className="bg-surface rounded-xl p-4 mx-4 mb-4">
+        <Text className="text-text-secondary text-xs font-semibold uppercase tracking-wider mb-3">
+          {t("ascent.yourOpinion")}
+        </Text>
+
+        {/* Perceived grade slider */}
+        <Text className="text-text-primary text-sm font-medium mb-2">
+          {t("route.whatGrade")}
+        </Text>
+        <GradeSlider
+          value={perceivedGrade ?? route.canonical_grade}
+          onChange={setPerceivedGrade}
+        />
+
+        {/* Quality star rating */}
+        <Text className="text-text-primary text-sm font-medium mt-4 mb-2">
+          {t("route.howWouldYouRate")}
+        </Text>
+        <StarRating value={rating} onChange={setRating} />
+
+        {/* Style tags */}
+        <Text className="text-text-primary text-sm font-medium mt-4 mb-2">
           {t("route.climbingStyle")}
         </Text>
         <View className="flex-row flex-wrap gap-2">
@@ -375,8 +381,6 @@ export default function AscentFormScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${tag.label} style tag`}
                 accessibilityState={{ selected: isSelected }}
-                // Dim unselected tags to 40% opacity so selected tags
-                // visually "pop" with their full color.
                 style={{ opacity: isSelected ? 1 : 0.4 }}
               >
                 <Badge label={tag.label} variant="tag" color={tag.color} />
@@ -387,8 +391,6 @@ export default function AscentFormScreen() {
       </View>
 
       {/* ── Submit Button ─────────────────────────────────────────── */}
-      {/* Primary CTA that logs the ascent. Disabled until a status is
-          selected (star rating, tags, and comment are all optional). */}
       <View className="px-4 pb-8">
         <Button
           label={t("route.addAscent")}
@@ -400,5 +402,6 @@ export default function AscentFormScreen() {
         />
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 }

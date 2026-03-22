@@ -29,9 +29,13 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { ChevronLeft } from "lucide-react-native";
+import { useGym } from "@/hooks/useGyms";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useRouteFilterStore } from "@/stores/routeFilterStore";
 import { RouteCard } from "@/components/routes/RouteCard";
@@ -47,14 +51,18 @@ export default function GymRoutesScreen() {
   const { id: gymId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
-  // Read filter state from Zustand. We read the full store and call
-  // getFilters inside the component so Zustand can track which state
-  // this component depends on for selective re-renders.
-  const getFilters = useRouteFilterStore((s) => s.getFilters);
+  // Fetch gym name to display in the header title.
+  const { data: gym } = useGym(gymId);
+
+  // Read filter state from Zustand. We subscribe to the raw `filters` map
+  // so the component re-renders when any filter value changes. Previously
+  // this subscribed to the `getFilters` function reference (which is stable
+  // and never changes), so filter updates were silently ignored.
+  const filtersMap = useRouteFilterStore((s) => s.filters);
   const setGradeMin = useRouteFilterStore((s) => s.setGradeMin);
   const setGradeMax = useRouteFilterStore((s) => s.setGradeMax);
   const setSortBy = useRouteFilterStore((s) => s.setSortBy);
-  const filters = getFilters(gymId);
+  const filters = filtersMap[gymId] ?? { sortBy: "newest" as const };
 
   // Fetch routes with current filters. TanStack Query caches the result
   // and automatically refetches when the query key (filters) changes.
@@ -73,7 +81,7 @@ export default function GymRoutesScreen() {
       // Cast to `any` because Expo Router's typed routes don't know about
       // this dynamic path yet (route detail screen isn't created). Once
       // app/gym/[id]/route/[routeId].tsx exists, the type will resolve.
-      router.push(`/gym/${gymId}/route/${routeId}` as any);
+      router.push(`/(tabs)/gym/${gymId}/route/${routeId}` as any);
     },
     [router, gymId]
   );
@@ -111,7 +119,23 @@ export default function GymRoutesScreen() {
   );
 
   return (
-    <View className="flex-1 bg-background" testID="gym-routes-screen">
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <View className="flex-1" testID="gym-routes-screen">
+      {/* Header — back button + gym name title */}
+      <View className="flex-row items-center px-4 pt-2 pb-1">
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <ChevronLeft size={28} color="#ffffff" />
+        </Pressable>
+        <Text className="text-text-primary text-lg font-bold ml-2" numberOfLines={1}>
+          {gym?.name ? `${gym.name} Routes` : t("gym.routes")}
+        </Text>
+      </View>
+
       {/* Filter bar — always visible above the list */}
       <FilterBar
         gradeMin={filters.gradeMin}
@@ -164,5 +188,6 @@ export default function GymRoutesScreen() {
         />
       )}
     </View>
+    </SafeAreaView>
   );
 }

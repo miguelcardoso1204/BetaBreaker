@@ -26,7 +26,7 @@ jest.mock("expo-router", () => ({
 // ── Mock useAuth ────────────────────────────────────────────────────
 jest.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
-    user: { id: "athlete-1", homeGymId: "gym-1" },
+    user: { id: "athlete-1" },
     role: "climber",
   }),
 }));
@@ -244,6 +244,6 @@ describe("EventDetailScreen (Athlete)", () => {
 
     fireEvent.press(screen.getByText("Scoreboard"));
 
-    expect(mockPush).toHaveBeenCalledWith("/events/event-1/scoreboard");
+    expect(mockPush).toHaveBeenCalledWith("/(tabs)/events/event-1/scoreboard");
   });
 });

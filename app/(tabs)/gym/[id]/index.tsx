@@ -9,14 +9,13 @@
  * 1. `useLocalSearchParams()` extracts the gymId from the URL (/gym/[id])
  * 2. `useGym(gymId)` fetches the gym's details via TanStack Query →
  *    gymService.getGymById → PostgREST → Postgres (RLS)
- * 3. `useAuth()` provides the current user's profile (homeGymId for the
- *    favorite star state)
- * 4. `useSetHomeGym()` provides the mutation to set/unset home gym
+ * 3. `useAuth()` provides the current user's profile
+ * 4. `useFavoriteGyms()` provides the user's favorited gym IDs for star state
+ * 5. `useToggleFavoriteGym()` provides the mutation to add/remove favorites
  *
  * DATA GAPS:
  * - **Operating hours**: no column in gyms table → shows "Hours not available"
  * - **Gym logo**: no logo_url column → uses Avatar initials fallback
- * - **Gym favoriting**: no saved_gyms table → reuses home_gym_id from profiles
  * These can be addressed in future migrations without changing screen structure.
  *
  * STATES:
@@ -46,7 +45,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Star, MapPin, Clock, ChevronRight, ChevronLeft } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useGym, useSetHomeGym } from "@/hooks/useGyms";
+import { useGym, useFavoriteGyms, useToggleFavoriteGym } from "@/hooks/useGyms";
 import { useAuth } from "@/hooks/useAuth";
 import { useSession } from "@/hooks/useSession";
 import { Avatar } from "@/components/ui/Avatar";
@@ -91,13 +90,15 @@ export default function GymMainScreen() {
   // so navigating back to this gym from child screens is instant.
   const { data: gym, isLoading } = useGym(gymId);
 
-  // Get the current user's profile to check if this gym is their home gym
-  // (drives the star icon color: gold = home gym, white = not).
-  const { user, refreshProfile } = useAuth();
+  // Get the current user's profile for the star icon state.
+  const { user } = useAuth();
 
-  // Mutation to set/unset the user's home gym. After success, the "auth"
-  // query cache is invalidated so useAuth().user.homeGymId updates.
-  const { mutate: setHomeGym } = useSetHomeGym();
+  // Fetch the user's favorite gym IDs to check if this gym is favorited.
+  const { data: favData } = useFavoriteGyms(user?.id);
+
+  // Mutation to toggle a gym's favorite status. After success, the
+  // ["favorite_gyms"] cache is invalidated so useFavoriteGyms updates.
+  const { mutate: toggleFavorite } = useToggleFavoriteGym();
 
   // Inline overlay instead of native Modal — avoids the slow native window
   // creation on iOS while keeping a smooth fade animation.
@@ -127,11 +128,12 @@ export default function GymMainScreen() {
 
   // Local favorite state for instant toggle feedback. Syncs with the
   // server value via useEffect, but updates immediately on press.
-  const [localIsHome, setLocalIsHome] = useState(user?.homeGymId === gymId);
+  const serverIsFav = favData?.ids.has(gymId) ?? false;
+  const [localIsFav, setLocalIsFav] = useState(serverIsFav);
   useEffect(() => {
-    setLocalIsHome(user?.homeGymId === gymId);
-  }, [user?.homeGymId, gymId]);
-  const isHomeGym = localIsHome;
+    setLocalIsFav(serverIsFav);
+  }, [serverIsFav]);
+  const isFavorited = localIsFav;
 
   // Extract Instagram handle from the social_links JSONB column.
   // social_links is stored as a JSON object in Postgres (e.g., { instagram: "@handle" }).
@@ -191,22 +193,21 @@ export default function GymMainScreen() {
             >
               {gym.name}
             </Text>
-            {/* Star IconButton toggles the home gym setting.
-                Gold (#F59E0B) when this is the user's home gym, white otherwise.
-                Pressing calls useSetHomeGym mutation with userId + gymId. */}
+            {/* Star IconButton toggles the favorite status.
+                Gold (#F59E0B) when this gym is favorited, white otherwise.
+                Pressing calls useToggleFavoriteGym to add/remove from favorites. */}
             <IconButton
               icon={Star}
-              label={isHomeGym ? t("gym.removeHomeGym") : t("gym.setAsHomeGym")}
+              label={isFavorited ? t("gym.unfavorite") : t("gym.favorite")}
               onPress={() => {
-                const newValue = !isHomeGym;
-                setLocalIsHome(newValue);
-                setHomeGym(
-                  { userId: user!.id, gymId: newValue ? gymId : null },
-                  { onSuccess: () => refreshProfile() }
+                const wasFav = isFavorited;
+                setLocalIsFav(!wasFav);
+                toggleFavorite(
+                  { userId: user!.id, gymId, isFavorited: wasFav },
                 );
               }}
-              color={isHomeGym ? "#F59E0B" : "#FFFFFF"}
-              fill={isHomeGym ? "#F59E0B" : "none"}
+              color={isFavorited ? "#F59E0B" : "#FFFFFF"}
+              fill={isFavorited ? "#F59E0B" : "none"}
               testID="favorite-button"
             />
           </View>
@@ -266,7 +267,7 @@ export default function GymMainScreen() {
             if (!isActive) {
               startSession(gymId);
             }
-            router.push(`/gym/${gymId}/routes` as any);
+            router.push(`/(tabs)/gym/${gymId}/routes` as any);
           }}
           testID="start-session-button"
         />
@@ -280,7 +281,7 @@ export default function GymMainScreen() {
         {/* Routes card — navigates to the route browsing screen where
             users can filter and view all routes at this gym. */}
         <Card
-          onPress={() => router.push(`/gym/${gymId}/routes` as any)}
+          onPress={() => router.push(`/(tabs)/gym/${gymId}/routes` as any)}
           testID="routes-card"
         >
           <View className="flex-row items-center justify-between">
@@ -294,7 +295,7 @@ export default function GymMainScreen() {
         {/* Leaderboards card — navigates to the gym leaderboard screen
             where users can see weekly rankings by different scoring models. */}
         <Card
-          onPress={() => router.push(`/gym/${gymId}/leaderboard` as any)}
+          onPress={() => router.push(`/(tabs)/gym/${gymId}/leaderboard` as any)}
           testID="leaderboards-card"
         >
           <View className="flex-row items-center justify-between">
