@@ -201,5 +201,5 @@ Authorization is enforced at two levels: database RLS (hard security boundary) a
 | [System Architecture](Documentation/SystemArchitecture.md) | Tech stack, data flows, architecture decisions |
 | [Development Plan](Documentation/DevelopmentPlan.md) | TDD phases, steps, and acceptance criteria |
 | [Navigation Flow](Documentation/NavigationFlow.md) | Screen navigation map |
-| [Design System](Documentation/DesignSystem.md) | Colors, typography, and component patterns |
+| [Design System](Documentation/DesignSystem.md) | Colors, typography, and component patterns. |
 | [Wireframes](Documentation/Wireframes.md) | Screen layout references. |
