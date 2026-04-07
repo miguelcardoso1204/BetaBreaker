@@ -118,7 +118,7 @@
 
 {\scshape\Large Licenciatura em Engenharia Inform\'{a}tica\par}
 \vspace{0.5cm}
-{\scshape\Large Project I\par}
+{\scshape\Large Project II\par}
 
 \vfill
 
@@ -131,6 +131,8 @@
 \vspace{0.8cm}
 
 {\Large\bfseries \studentname\par}
+\vspace{0.2cm}
+{\large\texttt{\studentnumber}\par}
 \vspace{0.4cm}
 {\large\texttt{miguelcardoso499@proton.me}\par}
 
@@ -254,61 +256,33 @@ Indoor climbing gyms rely on frequent route rotation and community engagement to
 % ═════════════════════════════════════════════════════════════════════════════
 \chapter{Introduction}
 
-\section{Project Overview}
+\section{Context}
 
 The project consists of developing a mobile application to support the digitalization and gamification of indoor climbing gyms. The application will allow climbers to view information about each climbing route, such as grade, wall location, and skills emphasized (e.g., finger strength, technique, dynamic movement, footwork, endurance). Users will also be able to submit beta videos, leave comments, and review routes to help others progress.
 
-To enhance motivation, the app will include gamification features such as achievements (badges for completing challenges, milestone ascents, or gym-specific objectives) and leaderboards (ranking climbers based on performance, number of routes completed, or difficulty level). Leaderboards will be complemented with prizes to reward top performers and stimulate continuous participation.
+To enhance motivation, the app will include gamification \cite{DeDi11} features such as achievements (badges for completing challenges, milestone ascents, or gym-specific objectives) and leaderboards (ranking climbers based on performance, number of routes completed, or difficulty level). Leaderboards will be complemented with prizes to reward top performers and stimulate continuous participation.
 
 Additionally, the app will allow climbers to provide structured feedback to route setters, enabling gyms to collect insights about route quality, difficulty perception, and overall user experience.
 
 The main goal is to create a community-driven platform that increases engagement with climbing gyms, motivates climbers through interactive features, and provides a structured way to analyze training and route styles.
 
-\section{Problem Statement}
-
 Indoor climbers often lack a unified way to access up-to-date route information, beta videos, and meaningful progression tracking inside their gyms. Gyms also need a simple method to manage their routes and receive feedback from the climbers. Beta Breaker addresses these issues by providing climbers with clear route information, shared beta, achievements, and leaderboards that encourage consistent participation, while giving gyms a modern digital layer to manage their setting and community.
 
-\section{High-Level Narrative}
-
 Beta Breaker is a platform that connects climbers and gyms around shared climbing experiences. It helps gyms publish and manage their indoor routes and community, while giving climbers a simple way to discover, log, and learn from their climbs. The product emphasizes fairness, meaningful feedback, and clear insight into progression, supporting both everyday sessions and gym-led initiatives such as seasons and events.
-
-\section{Vision}
 
 \textbf{Product name:} Beta Breaker
 
 \paragraph{Vision statement.} Create the go-to mobile platform that connects climbers and gyms through route discovery, beta sharing, and light-weight gamification. Beta Breaker motivates climbers to progress, helps gyms understand their community, and gives route setters actionable feedback to improve route quality.
 
-\paragraph{Problem.} Indoor climbing is highly social, but knowledge about routes (beta, perceived difficulty, style) is fragmented across word-of-mouth and social media. Gyms lack structured, privacy-respectful ways to engage customers and collect feedback; climbers lack a single place to log, learn, and stay motivated.
-
 \paragraph{Solution.} A mobile app (iOS/Android) where climbers can browse routes, watch/upload beta videos, leave comments and ratings, and participate in challenges, achievements, and leaderboards. Gyms and route setters receive summarized feedback and simple analytics on route reception and difficulty perception.
 
 \paragraph{Primary users.} (1)~Climbers who want to progress and engage with the community; (2)~Route setters / gyms who want structured feedback and engagement tools.
 
-\section{Objectives}
+\section{Motivation}
 
-\subsection*{Business Objectives (Project Charter)}
+Indoor climbing is highly social, but knowledge about routes (beta, perceived difficulty, style) is fragmented across word-of-mouth and social media. Gyms lack structured, privacy-respectful ways to engage customers and collect feedback; climbers lack a single place to log, learn, and stay motivated.
 
-The business objectives of this project are:
-
-\begin{itemize}[noitemsep]
-    \item Support climbing gyms in offering a modern digital service that complements their physical routes.
-    \item Increase customer engagement and retention by gamifying the climbing experience.
-    \item Provide climbers with tools to track progress, exchange knowledge, and connect with the community.
-    \item Motivate climbers through gamification features such as achievements, challenges, leaderboards, and prizes.
-    \item Strengthen the visibility of climbing gyms through digital integration and user-generated content.
-    \item Provide route setters with valuable feedback from climbers, helping them adjust and improve future routes.
-\end{itemize}
-
-\subsection*{Business Goals (SRS)}
-
-\begin{itemize}[noitemsep]
-    \item Increase climber engagement and retention through scan-to-log flows and rich feedback.
-    \item Provide gyms with verifiable leaderboards, operational visibility, and simple billing.
-    \item Enable fair progression by crowd-sourced tags and optional video verification.
-    \item Monetize via Pro subscriptions (consumers) and per-active-user billing (gyms).
-\end{itemize}
-
-\section{Decomposition into Sub-Problems}
+The problem can be decomposed into the following sub-problems:
 
 \begin{itemize}[noitemsep]
     \item \textbf{Identity \& Accounts:} registration, profile, privacy and safety.
@@ -322,10 +296,33 @@ The business objectives of this project are:
     \item \textbf{Monetization:} Pro subscriptions and gym billing console.
 \end{itemize}
 
-\section{Project Scope}
+\section{Objectives}
 
-\subsection{In Scope (MVP)}
+\subsection{Business Objectives (Project Charter)}
 
+The business objectives of this project are:
+
+\begin{itemize}[noitemsep]
+    \item Support climbing gyms in offering a modern digital service that complements their physical routes.
+    \item Increase customer engagement and retention by gamifying the climbing experience.
+    \item Provide climbers with tools to track progress, exchange knowledge, and connect with the community.
+    \item Motivate climbers through gamification features such as achievements, challenges, leaderboards, and prizes.
+    \item Strengthen the visibility of climbing gyms through digital integration and user-generated content.
+    \item Provide route setters with valuable feedback from climbers, helping them adjust and improve future routes.
+\end{itemize}
+
+\subsection{Business Goals (SRS)}
+
+\begin{itemize}[noitemsep]
+    \item Increase climber engagement and retention through scan-to-log flows and rich feedback.
+    \item Provide gyms with verifiable leaderboards, operational visibility, and simple billing.
+    \item Enable fair progression by crowd-sourced tags and optional video verification.
+    \item Monetize via Pro subscriptions (consumers) and per-active-user billing (gyms).
+\end{itemize}
+
+\subsection{Project Scope}
+
+\paragraph{In Scope (MVP).}
 \begin{itemize}[noitemsep]
     \item \textbf{Route catalog:} Browse/search routes by grade, wall/sector, style/tags (e.g., finger strength, dynamic movement, footwork, endurance).
     \item \textbf{Beta and reviews:} View, upload, and report beta videos (basic moderation tools); leave comments and 1--5 rating plus perceived grade.
@@ -335,12 +332,7 @@ The business objectives of this project are:
     \item \textbf{Admin (lightweight):} Gym/route management and review moderation (web or mobile admin views).
 \end{itemize}
 
-\subsection{Out of Scope (for now)}
-
-\begin{itemize}[noitemsep]
-    \item Advanced training plans, wearables integration, or Elo-like rank systems.
-    \item Outdoor crag support.
-\end{itemize}
+\paragraph{Out of Scope.} Advanced training plans, wearables integration, Elo-like rank systems, and outdoor crag support.
 
 \subsection{Key Deliverables}
 
@@ -360,7 +352,7 @@ The business objectives of this project are:
     \item \textbf{Maintainability:} Modular architecture; documented APIs and data models.
 \end{itemize}
 
-\section{Glossary of Terms}
+\subsection{Glossary of Terms}
 
 \begin{description}[leftmargin=2cm, style=nextline]
     \item[Route/Problem] A climb in the gym (boulder, top-rope, lead).
@@ -533,7 +525,7 @@ All four competitors offer core route browsing and ascent logging, and three of 
 
 \section{Innovation Proposal and Added Value}
 
-The main innovation lies in merging the climber experience and gym operations into one connected platform. Each ascent can generate value for both sides: climbers receive a richer, more motivating experience (history, progress, community beta, and gamification), while gyms and setters receive structured feedback, difficulty perception signals, and usage trends.
+The main innovation lies in merging the climber experience and gym operations into one connected platform. Research suggests that gamification can positively influence engagement and motivation in digital services \cite{HaKo14}. Each ascent can generate value for both sides: climbers receive a richer, more motivating experience (history, progress, community beta, and gamification), while gyms and setters receive structured feedback, difficulty perception signals, and usage trends.
 
 Key added-value points include: (i)~an in-gym, scan-to-route flow that reduces friction; (ii)~a controlled style taxonomy and crowd-based style characterization that can be aggregated into route and gym profiles; (iii)~lightweight gamification (badges, seasons, leaderboards, prizes) to improve retention; and (iv)~a data model built to support aggregated statistics without constant expensive recomputation.
 
@@ -596,7 +588,7 @@ The following risks could affect delivery or adoption of the MVP. Each item incl
 % ═════════════════════════════════════════════════════════════════════════════
 \chapter{Specification and Modeling}
 
-\section{Requirements Analysis}
+\section{Requirements Analysis \cite{Somm15}}
 
 \subsection{User Stories (Illustrative)}
 
@@ -605,6 +597,94 @@ The following risks could affect delivery or adoption of the MVP. Each item incl
     \item As a gym admin, I want to require verification videos for high-grade sends to keep leaderboards fair.
     \item As a routesetter, I want to view a route's shared feedback, so I can tweak anything needed.
 \end{itemize}
+
+\subsection{Use Cases}
+
+Figure~\ref{fig:use-cases} presents the UML Use Case diagram for the system, showing the three primary actors and their interactions with the platform.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    actor/.style={font=\small},
+    usecase/.style={draw, ellipse, align=center, font=\small,
+                    minimum width=2.8cm, minimum height=0.9cm, inner sep=1pt},
+    arrow/.style={->, >=stealth},
+    line/.style={-},
+]
+
+% ── System boundary ──
+\draw[rounded corners, thick] (-1.8, -7.8) rectangle (8.2, 1.2);
+\node[font=\bfseries, anchor=north west] at (-1.6, 1.1) {Beta Breaker};
+
+% ── Actors ──
+% Climber (left)
+\node[actor] (climber-label) at (-3.8, -2.0) {\textbf{Climber}};
+\draw (-3.8, -1.6) circle (0.3);
+\draw (-3.8, -1.9) -- (-3.8, -2.6);
+\draw (-4.2, -2.2) -- (-3.4, -2.2);
+\draw (-3.8, -2.6) -- (-4.1, -3.1);
+\draw (-3.8, -2.6) -- (-3.5, -3.1);
+
+% Gym Admin (right)
+\node[actor] (admin-label) at (10.2, -1.5) {\textbf{Gym Admin}};
+\draw (10.2, -1.1) circle (0.3);
+\draw (10.2, -1.4) -- (10.2, -2.1);
+\draw (9.8, -1.7) -- (10.6, -1.7);
+\draw (10.2, -2.1) -- (9.9, -2.6);
+\draw (10.2, -2.1) -- (10.5, -2.6);
+
+% Route Setter (right, below admin)
+\node[actor] (setter-label) at (10.2, -5.5) {\textbf{Route Setter}};
+\draw (10.2, -5.1) circle (0.3);
+\draw (10.2, -5.4) -- (10.2, -6.1);
+\draw (9.8, -5.7) -- (10.6, -5.7);
+\draw (10.2, -6.1) -- (9.9, -6.6);
+\draw (10.2, -6.1) -- (10.5, -6.6);
+
+% ── Climber use cases ──
+\node[usecase] (uc1) at (3.2, 0.5) {Browse Routes};
+\node[usecase] (uc2) at (3.2, -0.7) {Scan QR Code};
+\node[usecase] (uc3) at (3.2, -1.9) {Log Ascent};
+\node[usecase] (uc4) at (3.2, -3.1) {Watch Beta Video};
+\node[usecase] (uc5) at (3.2, -4.3) {View Leaderboard};
+\node[usecase] (uc6) at (3.2, -5.5) {Earn Badges};
+
+% ── Admin use cases ──
+\node[usecase] (uc7) at (3.2, -6.7) {Manage Routes};
+\node[usecase] (uc8) at (6.6, 0.5) {Create Event};
+\node[usecase] (uc9) at (6.6, -0.7) {View Dashboard};
+\node[usecase] (uc10) at (6.6, -1.9) {Moderate Content};
+\node[usecase] (uc11) at (6.6, -3.1) {Manage Leaderboard};
+
+% ── Setter use cases ──
+\node[usecase] (uc12) at (6.6, -4.8) {View Feedback};
+\node[usecase] (uc13) at (6.6, -6.0) {Log Setting Session};
+\node[usecase] (uc14) at (6.6, -7.2) {View Grade\\Consensus};
+
+% ── Climber connections ──
+\draw[line] (-3.8, -2.2) -- (uc1.west);
+\draw[line] (-3.8, -2.2) -- (uc2.west);
+\draw[line] (-3.8, -2.2) -- (uc3.west);
+\draw[line] (-3.8, -2.2) -- (uc4.west);
+\draw[line] (-3.8, -2.2) -- (uc5.west);
+\draw[line] (-3.8, -2.2) -- (uc6.west);
+
+% ── Admin connections ──
+\draw[line] (10.2, -1.7) -- (uc7.east);
+\draw[line] (10.2, -1.7) -- (uc8.east);
+\draw[line] (10.2, -1.7) -- (uc9.east);
+\draw[line] (10.2, -1.7) -- (uc10.east);
+\draw[line] (10.2, -1.7) -- (uc11.east);
+
+% ── Setter connections ──
+\draw[line] (10.2, -5.7) -- (uc12.east);
+\draw[line] (10.2, -5.7) -- (uc13.east);
+\draw[line] (10.2, -5.7) -- (uc14.east);
+
+\end{tikzpicture}
+\caption{UML Use Case diagram showing the three primary actors and their interactions with the system.}
+\label{fig:use-cases}
+\end{figure}
 
 \subsection{Functional Requirements}
 
@@ -899,13 +979,13 @@ This section presents the full set of interface mockups produced for the MVP flo
 
 The Beta Breaker application has been implemented as a cross-platform mobile application using React Native \cite{RNDo25} and Expo \cite{ExDo25}, backed entirely by Supabase \cite{SuDo25} for database, authentication, storage, and real-time capabilities. As of March 2026, the project has completed 83 development steps across 20 phases (19 fully completed, Phase~8 missing only the low-priority Elo rank stretch goal), covering all planned platform features: authentication, route catalog, session logging, offline support, QR scanning, gamification, social features, notifications, competitions, beta video sharing, monetization, progression analytics, full admin portal, profile management, onboarding, internationalization (EN + PT-PT), accessibility, and Sentry error monitoring.
 
-The implementation follows a strict Test-Driven Development (TDD) methodology, resulting in 1\,480 unit tests and 495 integration tests (1\,975 total) across 188 test suites.
+The implementation follows a strict Test-Driven Development (TDD) \cite{Beck03} methodology, resulting in 1\,480 unit tests and 495 integration tests (1\,975 total) across 188 test suites.
 
 \section{Architecture}
 
 The system is organized into two main tiers: a React Native \cite{RNDo25} client built with Expo \cite{ExDo25}, and a Supabase \cite{SuDo25} backend that provides the full server-side infrastructure --- PostgreSQL database, authentication (GoTrue), object storage, real-time change streams, and serverless Edge Functions.
 
-This architecture pushes authorization down to the database level: every table is protected by Row Level Security (RLS) \cite{PgDo25} policies that enforce access control based on the authenticated user's identity and role. Because RLS is evaluated by PostgreSQL itself, the security boundary cannot be bypassed by client-side code or misconfigured API routes --- a stronger guarantee than middleware-based authorization in a traditional API server. The client communicates with the database through PostgREST (auto-generated REST endpoints) and with auxiliary services through five Deno-based Edge Functions: QR code signing, push notification dispatch, in-app purchase verification, billing webhooks, and promo code redemption.
+This architecture pushes authorization down to the database level \cite{SiKo19}: every table is protected by Row Level Security (RLS) \cite{PgDo25} policies that enforce access control based on the authenticated user's identity and role. Because RLS is evaluated by PostgreSQL itself, the security boundary cannot be bypassed by client-side code or misconfigured API routes --- a stronger guarantee than middleware-based authorization in a traditional API server. The client communicates with the database through PostgREST (auto-generated REST endpoints) and with auxiliary services through five Deno-based Edge Functions: QR code signing, push notification dispatch, in-app purchase verification, billing webhooks, and promo code redemption.
 
 State management is organized into three layers:
 
@@ -1280,7 +1360,7 @@ The following validation activities are scheduled for the second semester:
 
 \section{Development Methodology}
 
-The project follows an incremental, test-driven approach organized into 21 sequential phases. Each phase is broken into numbered steps, and each step follows the TDD cycle:
+The project follows an incremental, test-driven approach \cite{Beck03, Somm15} organized into 21 sequential phases. Each phase is broken into numbered steps, and each step follows the TDD cycle:
 
 \begin{enumerate}[noitemsep]
     \item \textbf{Red:} Write failing tests that define the expected behavior.
@@ -1656,49 +1736,64 @@ Completing these phases will result in a production-ready platform deployable to
 
 \begin{thebibliography}{99}
 
+\bibitem{Beck03}
+  K. Beck, \textit{Test-Driven Development: By Example}, Addison-Wesley, 2003. (livro)
+
+\bibitem{DeDi11}
+  S. Deterding, D. Dixon, R. Khaled, and L. Nacke, ``From Game Design Elements to Gamefulness: Defining Gamification,'' in \textit{Proc. 15th International Academic MindTrek Conference}, pp.~9--15, 2011. (artigo confer\^{e}ncia)
+
 \bibitem{ExDo25}
   Expo Documentation, \textit{Expo SDK 54 Reference}, 2025.
-  \url{https://docs.expo.dev/}
+  \url{https://docs.expo.dev/} (website)
 
-\bibitem{SuDo25}
-  Supabase Documentation, \textit{Supabase Platform Guide}, 2025.
-  \url{https://supabase.com/docs}
-
-\bibitem{TaDo25}
-  TanStack, \textit{TanStack Query v5 Documentation}, 2025.
-  \url{https://tanstack.com/query/latest}
-
-\bibitem{RNDo25}
-  Meta, \textit{React Native Documentation}, 2025.
-  \url{https://reactnative.dev/docs/getting-started}
-
-\bibitem{ZuDo25}
-  Zustand Contributors, \textit{Zustand State Management Documentation}, 2025.
-  \url{https://zustand.docs.pmnd.rs/}
-
-\bibitem{NWDo25}
-  NativeWind Contributors, \textit{NativeWind v4 Documentation}, 2025.
-  \url{https://www.nativewind.dev/}
-
-\bibitem{PgDo25}
-  PostgreSQL Global Development Group, \textit{PostgreSQL 15 Documentation --- Row Security Policies}, 2025.
-  \url{https://www.postgresql.org/docs/15/ddl-rowsecurity.html}
-
-\bibitem{JeDo25}
-  Jest Contributors, \textit{Jest Testing Framework Documentation}, 2025.
-  \url{https://jestjs.io/docs/getting-started}
-
-\bibitem{IaDo25}
-  react-native-iap Contributors, \textit{react-native-iap v15+ Documentation}, 2025.
-  \url{https://react-native-iap.dooboolab.com/}
-
-\bibitem{SeDo25}
-  Sentry Contributors, \textit{Sentry for React Native Documentation}, 2025.
-  \url{https://docs.sentry.io/platforms/react-native/}
+\bibitem{HaKo14}
+  J. Hamari, J. Koivisto, and H. Sarsa, ``Does Gamification Work? --- A Literature Review of Empirical Studies on Gamification,'' in \textit{Proc. 47th Hawaii International Conference on System Sciences (HICSS)}, pp.~3025--3034, 2014. (artigo confer\^{e}ncia)
 
 \bibitem{I18Do25}
   i18next Contributors, \textit{i18next Internationalization Framework Documentation}, 2025.
-  \url{https://www.i18next.com/}
+  \url{https://www.i18next.com/} (website)
+
+\bibitem{IaDo25}
+  react-native-iap Contributors, \textit{react-native-iap v15+ Documentation}, 2025.
+  \url{https://react-native-iap.dooboolab.com/} (website)
+
+\bibitem{JeDo25}
+  Jest Contributors, \textit{Jest Testing Framework Documentation}, 2025.
+  \url{https://jestjs.io/docs/getting-started} (website)
+
+\bibitem{NWDo25}
+  NativeWind Contributors, \textit{NativeWind v4 Documentation}, 2025.
+  \url{https://www.nativewind.dev/} (website)
+
+\bibitem{PgDo25}
+  PostgreSQL Global Development Group, \textit{PostgreSQL 15 Documentation --- Row Security Policies}, 2025.
+  \url{https://www.postgresql.org/docs/15/ddl-rowsecurity.html} (website)
+
+\bibitem{RNDo25}
+  Meta, \textit{React Native Documentation}, 2025.
+  \url{https://reactnative.dev/docs/getting-started} (website)
+
+\bibitem{SeDo25}
+  Sentry Contributors, \textit{Sentry for React Native Documentation}, 2025.
+  \url{https://docs.sentry.io/platforms/react-native/} (website)
+
+\bibitem{SiKo19}
+  A. Silberschatz, H. Korth, and S. Sudarshan, \textit{Database System Concepts}, 7th ed., McGraw-Hill, 2019. (livro)
+
+\bibitem{Somm15}
+  I. Sommerville, \textit{Software Engineering}, 10th ed., Pearson, 2015. (livro)
+
+\bibitem{SuDo25}
+  Supabase Documentation, \textit{Supabase Platform Guide}, 2025.
+  \url{https://supabase.com/docs} (website)
+
+\bibitem{TaDo25}
+  TanStack, \textit{TanStack Query v5 Documentation}, 2025.
+  \url{https://tanstack.com/query/latest} (website)
+
+\bibitem{ZuDo25}
+  Zustand Contributors, \textit{Zustand State Management Documentation}, 2025.
+  \url{https://zustand.docs.pmnd.rs/} (website)
 
 \end{thebibliography}
 
