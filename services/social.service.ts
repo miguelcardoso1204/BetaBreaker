@@ -100,6 +100,45 @@ export const socialService = {
   },
 
   /**
+   * Get list of users that follow userId, with profile data.
+   * Mirror of getFollowing — same join trick but joining via the
+   * follower_id FK (since we want each follower's profile).
+   *
+   * Used by the followers list screen. Each row exposes the
+   * follower's id (so the row tap can navigate to /profile/<id>)
+   * and their display_name + avatar_url for rendering.
+   */
+  getFollowers(userId: string) {
+    return supabase
+      .from("follows")
+      .select(
+        "follower_id, profile:profiles!follows_follower_id_fkey(display_name, avatar_url)"
+      )
+      .eq("following_id", userId);
+  },
+
+  /**
+   * Search profiles by display_name (case-insensitive substring match).
+   *
+   * Mirrors the .ilike() pattern used by routes.service.ts for route-name
+   * search. The current user is excluded so people don't see themselves
+   * as a search result. Capped at 50 results — pagination is out of scope
+   * for the first pass.
+   *
+   * Empty / whitespace-only queries short-circuit to an empty list at the
+   * hook layer (useSearchClimbers); this method assumes a non-empty query.
+   */
+  searchClimbers(query: string, currentUserId: string) {
+    return supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .ilike("display_name", `%${query}%`)
+      .neq("id", currentUserId)
+      .order("display_name", { ascending: true })
+      .limit(50);
+  },
+
+  /**
    * Fetch recent ascents from a list of followed user IDs.
    * Joins routes for route metadata and profiles for display info.
    * Ordered newest-first, capped at 50 to keep the feed snappy.

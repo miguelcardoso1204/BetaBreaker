@@ -246,9 +246,9 @@ export default function AscentFormScreen() {
           {t("ascent.yourClimb")}
         </Text>
 
-        {/* Status: Flash / Send */}
+        {/* Status: Flash / Send / Attempt */}
         <View className="flex-row gap-3 mb-4">
-          {ASCENT_STATUSES.filter((s) => s !== "attempt").map((s) => {
+          {ASCENT_STATUSES.map((s) => {
             const isSelected = status === s;
             return (
               <Pressable

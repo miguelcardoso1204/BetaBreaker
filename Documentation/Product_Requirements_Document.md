@@ -97,6 +97,8 @@ This document captures the functional and non-functional requirements for Beta B
 | FR-G5 | 3 | Follow / friend system: follow other climbers to see their activity in a feed |
 | FR-G6 | 4 | Activity feed (Home tab): aggregated event stream showing friend activity, gym route resets, leaderboard updates, and competition events |
 | FR-G7 | 2 | Leaderboard rules and prizes display: gym-configured text shown in modals on leaderboard detail screen |
+| FR-G8 | 3 | Climber search: case-insensitive substring search over profiles by display name, accessed from the Profile tab header. Self is excluded from results. Each result row links to that climber's profile and exposes an inline Follow / Following toggle. |
+| FR-G9 | 3 | Tappable follower / following counts on profiles: counts always render (including 0) and tap to dedicated list screens (`/profile/[userId]/followers`, `/profile/[userId]/following`). Empty lists show a plain "No followers yet" / "Not following anyone yet" message. Each row navigates to that climber's profile. |
 
 ### H. Competitions & Events
 

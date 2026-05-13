@@ -82,10 +82,19 @@ export function useToggleFollow(targetUserId: string) {
       queryClient.invalidateQueries({
         queryKey: ["follows", "counts", targetUserId],
       });
-      // Also invalidate current user's counts (their "following" count changed)
+      // The target's followers list changed — they gained / lost the
+      // current user as a follower.
+      queryClient.invalidateQueries({
+        queryKey: ["follows", "followers", targetUserId],
+      });
+      // Also invalidate current user's counts + their following list
+      // (their "following" count just changed).
       if (user?.id) {
         queryClient.invalidateQueries({
           queryKey: ["follows", "counts", user.id],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["follows", "following-list", user.id],
         });
       }
       queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
@@ -145,6 +154,90 @@ export function useUserRecentAscents(userId: string | undefined | null) {
     },
     enabled: !!userId,
   });
+}
+
+/**
+ * List of users that follow userId, with profile data.
+ * Backs the followers list screen at /profile/[userId]/followers.
+ *
+ * Returns an empty array (not undefined) when nobody follows the user,
+ * so the consumer doesn't have to handle the loading-vs-empty distinction
+ * separately from the standard isLoading flag.
+ */
+export function useFollowers(userId: string) {
+  const query = useQuery({
+    queryKey: ["follows", "followers", userId],
+    queryFn: async () => {
+      const result = await socialService.getFollowers(userId);
+      if (result.error) throw result.error;
+      return result.data ?? [];
+    },
+    enabled: !!userId,
+  });
+
+  return {
+    followers: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+
+/**
+ * List of users that userId follows, with profile data.
+ * Backs the following list screen at /profile/[userId]/following.
+ *
+ * Reuses socialService.getFollowing — useActivityFeed already calls
+ * that under the hood, but this hook surfaces the raw list directly
+ * (rather than as a step in the activity-feed pipeline).
+ */
+export function useFollowingList(userId: string) {
+  const query = useQuery({
+    queryKey: ["follows", "following-list", userId],
+    queryFn: async () => {
+      const result = await socialService.getFollowing(userId);
+      if (result.error) throw result.error;
+      return result.data ?? [];
+    },
+    enabled: !!userId,
+  });
+
+  return {
+    following: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error,
+  };
+}
+
+/**
+ * Search climbers by display name. The query is the debounced text the
+ * user typed into the search screen.
+ *
+ * Disabled when the trimmed query is empty so an empty input doesn't
+ * spam the network. The current user's id is part of the query key so
+ * cached results don't bleed across accounts (we exclude self in the
+ * service layer).
+ */
+export function useSearchClimbers(query: string) {
+  const { user } = useAuth();
+  const userId = user?.id;
+  const trimmed = query.trim();
+
+  const result = useQuery({
+    queryKey: ["search-climbers", userId, trimmed],
+    queryFn: async () => {
+      if (!userId) return [];
+      const res = await socialService.searchClimbers(trimmed, userId);
+      if (res.error) throw res.error;
+      return res.data ?? [];
+    },
+    enabled: !!userId && trimmed.length > 0,
+  });
+
+  return {
+    results: result.data ?? [],
+    isLoading: result.isLoading && trimmed.length > 0,
+    error: result.error,
+  };
 }
 
 export function useActivityFeed() {

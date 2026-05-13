@@ -41,7 +41,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trophy, ChevronRight, Clock } from "lucide-react-native";
+import { Settings, Trophy, ChevronRight, Clock, Search } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useUserBadges,
@@ -258,8 +258,18 @@ export default function ProfileScreen() {
   // ── Authenticated profile ──────────────────────────────────────────
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      {/* Top bar: Settings gear pinned to top-right */}
-      <View className="flex-row justify-end px-4 pt-2">
+      {/* Top bar: Search + Settings icons pinned to top-right.
+          Search opens the climber search screen (/search); the gear
+          opens the user's settings. */}
+      <View className="flex-row justify-end items-center gap-2 px-4 pt-2">
+        <IconButton
+          icon={Search}
+          label={t("search.title")}
+          onPress={() => router.push("/search" as any)}
+          size={22}
+          color="#9CA3AF"
+          testID="search-button"
+        />
         <IconButton
           icon={Settings}
           label={t("settings.title")}

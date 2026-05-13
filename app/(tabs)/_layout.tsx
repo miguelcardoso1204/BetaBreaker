@@ -30,6 +30,12 @@ export default function TabLayout() {
       // function with BottomTabBarProps (state, navigation, insets, etc.)
       // and renders the returned component instead of the default bar.
       tabBar={(props) => <CustomTabBar {...props} />}
+      // When the active tab's stack pops to empty, return to the previously
+      // visited tab instead of always falling back to the first tab. Without
+      // this, navigating into a hidden tab (gym/events/notifications) from
+      // any non-home tab and pressing back lands on Home, since the default
+      // backBehavior is "firstRoute".
+      backBehavior="history"
       screenOptions={{
         // Disable the built-in header — screens handle their own headers.
         headerShown: false,

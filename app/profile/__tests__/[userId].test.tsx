@@ -186,7 +186,7 @@ jest.mock("expo-image", () => {
   };
 });
 
-import UserProfileScreen from "../[userId]";
+import UserProfileScreen from "../[userId]/index";
 
 const { __mockProfileData } = jest.requireMock<{
   __mockProfileData: {

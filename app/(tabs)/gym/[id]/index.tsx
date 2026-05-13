@@ -41,7 +41,8 @@ import {
   Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation, useFocusEffect } from "expo-router";
+import { CommonActions } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { Star, MapPin, Clock, ChevronRight, ChevronLeft } from "lucide-react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -85,6 +86,44 @@ export default function GymMainScreen() {
   // maps /gym/[id] to this component with params.id = gymId.
   const { id: gymId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
+
+  // Reset the gym Stack to just this entry whenever this screen is focused.
+  //
+  // WHY: The gym route lives inside (tabs) as a hidden tab (href: null),
+  // so each time we router.push("/(tabs)/gym/[id]") from outside (map,
+  // profile, etc.), Expo Router pushes onto whatever the gym tab's Stack
+  // already contained. React Navigation persists tab state across tab
+  // switches, so previously-visited gyms accumulate underneath. Without
+  // this reset, pressing back on a fresh gym page would pop to a stale
+  // gym from a prior visit instead of leaving the gym section.
+  //
+  // We only dispatch a reset when the stack actually has more than one
+  // route — otherwise the dispatch would re-trigger the focus effect and
+  // loop. After reset, the stack contains exactly this gym; pressing back
+  // pops to empty, and the parent Tabs navigator (with backBehavior="history")
+  // returns the user to the tab they came from.
+  useFocusEffect(
+    useCallback(() => {
+      const state = navigation.getState();
+      if (state && state.routes.length > 1) {
+        // Pass the current route object back into reset rather than
+        // hardcoding the screen name. Expo Router registers nested
+        // file-based routes with paths like "[id]/index", which differ
+        // by layout depth — using the live route preserves whatever
+        // name the navigator actually assigned.
+        const currentRoute = state.routes[state.index];
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              { name: currentRoute.name, params: currentRoute.params },
+            ],
+          })
+        );
+      }
+    }, [navigation])
+  );
 
   // Fetch gym data via TanStack Query. The result is cached per gymId,
   // so navigating back to this gym from child screens is instant.

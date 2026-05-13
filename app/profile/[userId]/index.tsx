@@ -158,14 +158,35 @@ export default function UserProfileScreen() {
         </View>
       </View>
 
-      {/* Follow counts */}
-      <View className="flex-row justify-center px-4 pb-6">
-        <Text className="text-text-secondary text-sm">
-          <Text className="text-text-primary font-bold">{followers}</Text>
-          {" "}{t("profile.followers")}{" · "}
-          <Text className="text-text-primary font-bold">{following}</Text>
-          {" "}{t("profile.following")}
-        </Text>
+      {/* Follow counts — each segment is its own Pressable that pushes
+          to the corresponding list screen. Counts always render (including
+          0) and stay tappable so an empty list is reachable. */}
+      <View className="flex-row justify-center items-center px-4 pb-6">
+        <Pressable
+          testID="followers-count"
+          onPress={() => router.push(`/profile/${userId}/followers` as any)}
+          accessibilityRole="button"
+          accessibilityLabel={`${followers} ${t("profile.followers")}`}
+          hitSlop={6}
+        >
+          <Text className="text-text-secondary text-sm">
+            <Text className="text-text-primary font-bold">{followers}</Text>
+            {" "}{t("profile.followers")}
+          </Text>
+        </Pressable>
+        <Text className="text-text-secondary text-sm"> · </Text>
+        <Pressable
+          testID="following-count"
+          onPress={() => router.push(`/profile/${userId}/following` as any)}
+          accessibilityRole="button"
+          accessibilityLabel={`${following} ${t("profile.following")}`}
+          hitSlop={6}
+        >
+          <Text className="text-text-secondary text-sm">
+            <Text className="text-text-primary font-bold">{following}</Text>
+            {" "}{t("profile.following")}
+          </Text>
+        </Pressable>
       </View>
 
       {/* Stats section — total sends + max grade */}

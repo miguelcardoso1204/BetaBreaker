@@ -208,6 +208,83 @@ describe("socialService", () => {
     });
   });
 
+  // ── getFollowers ──────────────────────────────────────────────────
+
+  describe("getFollowers", () => {
+    it("fetches followers list with profile join via the follower_id FK", async () => {
+      const mockFollowers = [
+        {
+          follower_id: "user-7",
+          profile: { display_name: "Riley", avatar_url: null },
+        },
+        {
+          follower_id: "user-8",
+          profile: { display_name: "Jules", avatar_url: "https://img.com/jules" },
+        },
+      ];
+
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockResolvedValueOnce({
+          data: mockFollowers,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await socialService.getFollowers("user-1");
+
+      expect(supabase.from).toHaveBeenCalledWith("follows");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "follower_id, profile:profiles!follows_follower_id_fkey(display_name, avatar_url)"
+      );
+      expect(chainMock.eq).toHaveBeenCalledWith("following_id", "user-1");
+      expect(result.data).toEqual(mockFollowers);
+    });
+  });
+
+  // ── searchClimbers ────────────────────────────────────────────────
+
+  describe("searchClimbers", () => {
+    it("matches profiles by display_name (case-insensitive) and excludes the current user", async () => {
+      const mockResults = [
+        { id: "user-2", display_name: "Alex", avatar_url: null },
+        { id: "user-3", display_name: "Alexandra", avatar_url: null },
+      ];
+
+      // The service chains .ilike → .neq → .order → .limit. Each link
+      // returns the same chain; the final .limit resolves with data.
+      const chainMock = {
+        select: jest.fn().mockReturnThis(),
+        ilike: jest.fn().mockReturnThis(),
+        neq: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockResolvedValueOnce({
+          data: mockResults,
+          error: null,
+        }),
+      };
+      supabase.from.mockReturnValueOnce(chainMock);
+
+      const result = await socialService.searchClimbers("alex", "user-1");
+
+      expect(supabase.from).toHaveBeenCalledWith("profiles");
+      expect(chainMock.select).toHaveBeenCalledWith(
+        "id, display_name, avatar_url"
+      );
+      expect(chainMock.ilike).toHaveBeenCalledWith(
+        "display_name",
+        "%alex%"
+      );
+      expect(chainMock.neq).toHaveBeenCalledWith("id", "user-1");
+      expect(chainMock.order).toHaveBeenCalledWith("display_name", {
+        ascending: true,
+      });
+      expect(chainMock.limit).toHaveBeenCalledWith(50);
+      expect(result.data).toEqual(mockResults);
+    });
+  });
+
   // ── getActivityFeed ───────────────────────────────────────────────
 
   describe("getActivityFeed", () => {

@@ -120,6 +120,10 @@
     "failedToLoad": "Falha ao carregar perfil",
     "followers": "seguidores",
     "following": "a seguir",
+    "followersTitle": "Seguidores",
+    "followingTitle": "A Seguir",
+    "noFollowers": "Ainda sem seguidores",
+    "notFollowingAnyone": "Ainda não segues ninguém",
     "enrolledLeaderboards": "Rankings",
     "noEnrolledLeaderboards": "Ainda não inscrito em nenhum ranking",
     "viewAll": "Ver Todos",
@@ -245,7 +249,9 @@
       "noRetired": "Sem rankings retirados neste ginásio",
       "participants": "{{count}} participantes",
       "rules": "Regras",
-      "prizes": "Prémios"
+      "prizes": "Prémios",
+      "noRules": "Não foram definidas regras para este ranking.",
+      "noPrizes": "Não foram definidos prémios para este ranking."
     }
   },
 
@@ -716,6 +722,13 @@
     "consensusCard": "Consenso de grau para {{name}}",
     "expandHint": "Toque duas vezes para expandir ou recolher",
     "rateStar": "Avaliar {{number}} de {{total}} estrelas"
+  },
+
+  "search": {
+    "title": "Procurar",
+    "placeholder": "Procurar escaladores",
+    "hint": "Escreve um nome para encontrar escaladores.",
+    "noResults": "Nenhum escalador corresponde a \"{{query}}\""
   },
 
   "colors": {

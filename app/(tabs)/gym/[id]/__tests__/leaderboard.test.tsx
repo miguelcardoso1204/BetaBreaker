@@ -22,7 +22,16 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 // Mock expo-router — provides gymId and optional lb query param
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "gym-1" }),
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  // The screen calls useNavigation + useFocusEffect to reset the hidden
+  // gym tab's Stack on deep-link focus. We stub them as no-ops because
+  // the test environment has no real navigator and we're not exercising
+  // back-navigation behavior here.
+  useNavigation: () => ({
+    getState: () => ({ routes: [{ name: "[id]/leaderboard" }], index: 0 }),
+    dispatch: jest.fn(),
+  }),
+  useFocusEffect: jest.fn(),
 }));
 
 // Mock useGymLeaderboards — __mockData pattern for the list view

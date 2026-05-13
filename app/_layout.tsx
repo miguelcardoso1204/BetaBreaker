@@ -242,6 +242,8 @@ export function AuthGate() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="search" />
+      <Stack.Screen name="profile/[userId]" />
       <Stack.Screen
         name="start-session"
         options={{ presentation: "modal" }}

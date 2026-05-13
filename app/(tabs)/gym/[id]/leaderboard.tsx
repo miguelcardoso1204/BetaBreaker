@@ -22,7 +22,7 @@
  *   useLeaderboard(leaderboardId)     → ranked entries for detail view
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,8 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, useNavigation, useFocusEffect } from "expo-router";
+import { CommonActions } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, Users, ScrollText, Trophy, X } from "lucide-react-native";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
@@ -76,9 +77,11 @@ export default function LeaderboardScreen() {
   // When null, we show the list of leaderboards.
   const [selectedId, setSelectedId] = useState<string | null>(lb ?? null);
 
-  // Track whether the user arrived via deep link (lb param) so the
-  // detail back button knows to router.back() instead of showing the
-  // gym leaderboard list — a screen they never navigated through.
+  // Track whether the user arrived via the `?lb=` deep link (Leaderboards
+  // tab card / Profile enrolled card) vs. picking a leaderboard from the
+  // gym's in-screen list. Back behavior differs: deep-link users never saw
+  // the gym leaderboard list, so back should leave the screen entirely
+  // (router.back) rather than dropping them onto a list they didn't ask for.
   const [arrivedViaDeepLink, setArrivedViaDeepLink] = useState(!!lb);
 
   // If lb param changes (e.g., deep link), sync it
@@ -88,6 +91,33 @@ export default function LeaderboardScreen() {
       setArrivedViaDeepLink(true);
     }
   }, [lb]);
+
+  // When the user arrived via a `?lb=` deep link, ensure this leaderboard
+  // is the only entry in the gym tab's Stack on focus. The gym tab is
+  // hidden, so React Navigation persists its Stack across tab switches —
+  // a previously-visited leaderboard would still be sitting underneath,
+  // and router.back() from this detail view would pop into it instead of
+  // leaving the gym section. Path A users (gym list → tap leaderboard)
+  // skip this reset because they legitimately want the gym main page /
+  // gym leaderboard list to be popped back to.
+  const navigation = useNavigation();
+  useFocusEffect(
+    useCallback(() => {
+      if (!arrivedViaDeepLink) return;
+      const state = navigation.getState();
+      if (state && state.routes.length > 1) {
+        const currentRoute = state.routes[state.index];
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [
+              { name: currentRoute.name, params: currentRoute.params },
+            ],
+          })
+        );
+      }
+    }, [navigation, arrivedViaDeepLink])
+  );
 
   // ── Data fetching ──────────────────────────────────────────────
   // Fetch BOTH active and retired lists simultaneously so switching
@@ -99,9 +129,32 @@ export default function LeaderboardScreen() {
   // Ranked entries for the selected leaderboard (used in detail mode)
   const { data: entries, isLoading: detailLoading } = useLeaderboard(selectedId ?? "");
 
-  // Find the selected leaderboard's metadata from the list, or construct
-  // a minimal version if we jumped straight to detail via lb param
-  const selectedLeaderboard = leaderboards?.find((l) => l.id === selectedId);
+  // Look up the selected leaderboard's metadata across BOTH segments.
+  // A deep-link can target a retired leaderboard while the user is on
+  // the active segment (or vice versa); searching both ensures the
+  // detail header / dates / rules / prizes always render with full
+  // metadata regardless of which segment is currently shown.
+  const selectedLeaderboard =
+    activeListQuery.data?.find((l) => l.id === selectedId) ??
+    retiredListQuery.data?.find((l) => l.id === selectedId);
+
+  // When the user deep-links to a retired leaderboard, flip the segment
+  // toggle so that pressing back to the list lands on the segment that
+  // actually contains the leaderboard they came from. We only run this
+  // once per matched id, so the user can still toggle segments freely.
+  const [autoSegmentedFor, setAutoSegmentedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedId || autoSegmentedFor === selectedId) return;
+    const inActive = activeListQuery.data?.some((l) => l.id === selectedId);
+    const inRetired = retiredListQuery.data?.some((l) => l.id === selectedId);
+    if (inActive) {
+      setShowActive(true);
+      setAutoSegmentedFor(selectedId);
+    } else if (inRetired) {
+      setShowActive(false);
+      setAutoSegmentedFor(selectedId);
+    }
+  }, [selectedId, activeListQuery.data, retiredListQuery.data, autoSegmentedFor]);
 
   // Modal state for rules/prizes popups
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
@@ -127,8 +180,10 @@ export default function LeaderboardScreen() {
           <Pressable
             testID="back-to-list"
             onPress={() => {
-              // If the user deep-linked here from the enrolled leaderboards tab,
-              // go back to that tab. Otherwise show the gym's leaderboard list.
+              // Deep-link users (Leaderboards tab / Profile cards) never
+              // saw the gym list, so back should leave this screen entirely.
+              // Users who picked from the gym's in-screen list go back to
+              // that list instead of all the way out.
               if (arrivedViaDeepLink) {
                 router.back();
               } else {
@@ -152,41 +207,38 @@ export default function LeaderboardScreen() {
                 {formatDateRange(selectedLeaderboard.starts_at, selectedLeaderboard.ends_at)}
               </Text>
 
-              {/* Rules & Prizes buttons — only shown when the admin has set them */}
-              {(selectedLeaderboard.rules || selectedLeaderboard.prizes) && (
-                <View className="flex-row mt-3 gap-2">
-                  {selectedLeaderboard.rules && (
-                    <Pressable
-                      testID="rules-button"
-                      onPress={() => setModalContent({
-                        title: t("gym.leaderboard.rules"),
-                        body: selectedLeaderboard.rules!,
-                      })}
-                      className="flex-row items-center bg-card rounded-lg px-3 py-2"
-                    >
-                      <ScrollText size={16} color="#8B5CF6" />
-                      <Text className="text-accent text-sm font-medium ml-1.5">
-                        {t("gym.leaderboard.rules")}
-                      </Text>
-                    </Pressable>
-                  )}
-                  {selectedLeaderboard.prizes && (
-                    <Pressable
-                      testID="prizes-button"
-                      onPress={() => setModalContent({
-                        title: t("gym.leaderboard.prizes"),
-                        body: selectedLeaderboard.prizes!,
-                      })}
-                      className="flex-row items-center bg-card rounded-lg px-3 py-2"
-                    >
-                      <Trophy size={16} color="#8B5CF6" />
-                      <Text className="text-accent text-sm font-medium ml-1.5">
-                        {t("gym.leaderboard.prizes")}
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
-              )}
+              {/* Rules & Prizes buttons — always rendered. When the admin
+                  hasn't set a value, the modal shows a "no rules / no prizes"
+                  message so users get a consistent affordance regardless of
+                  which leaderboard they're viewing. */}
+              <View className="flex-row mt-3 gap-2">
+                <Pressable
+                  testID="rules-button"
+                  onPress={() => setModalContent({
+                    title: t("gym.leaderboard.rules"),
+                    body: selectedLeaderboard.rules ?? t("gym.leaderboard.noRules"),
+                  })}
+                  className="flex-row items-center bg-card rounded-lg px-3 py-2"
+                >
+                  <ScrollText size={16} color="#8B5CF6" />
+                  <Text className="text-accent text-sm font-medium ml-1.5">
+                    {t("gym.leaderboard.rules")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  testID="prizes-button"
+                  onPress={() => setModalContent({
+                    title: t("gym.leaderboard.prizes"),
+                    body: selectedLeaderboard.prizes ?? t("gym.leaderboard.noPrizes"),
+                  })}
+                  className="flex-row items-center bg-card rounded-lg px-3 py-2"
+                >
+                  <Trophy size={16} color="#8B5CF6" />
+                  <Text className="text-accent text-sm font-medium ml-1.5">
+                    {t("gym.leaderboard.prizes")}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           )}
 
@@ -360,7 +412,8 @@ export default function LeaderboardScreen() {
                 testID={`leaderboard-card-${lb.id}`}
                 onPress={() => {
                   setSelectedId(lb.id);
-                  // User navigated from the list, so back should return here
+                  // User picked from the gym's list, so back should
+                  // return to that list instead of leaving the screen.
                   setArrivedViaDeepLink(false);
                 }}
                 className="bg-card rounded-xl p-4 mb-3"

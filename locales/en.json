@@ -120,6 +120,10 @@
     "failedToLoad": "Failed to load profile",
     "followers": "followers",
     "following": "following",
+    "followersTitle": "Followers",
+    "followingTitle": "Following",
+    "noFollowers": "No followers yet",
+    "notFollowingAnyone": "Not following anyone yet",
     "enrolledLeaderboards": "Leaderboards",
     "noEnrolledLeaderboards": "Not enrolled in any leaderboards yet",
     "viewAll": "View All",
@@ -246,7 +250,9 @@
       "noRetired": "No retired leaderboards at this gym",
       "participants": "{{count}} participants",
       "rules": "Rules",
-      "prizes": "Prizes"
+      "prizes": "Prizes",
+      "noRules": "No rules have been set for this leaderboard.",
+      "noPrizes": "No prizes have been set for this leaderboard."
     }
   },
 
@@ -717,6 +723,13 @@
     "consensusCard": "Grade consensus for {{name}}",
     "expandHint": "Double tap to expand or collapse",
     "rateStar": "Rate {{number}} of {{total}} stars"
+  },
+
+  "search": {
+    "title": "Search",
+    "placeholder": "Search climbers",
+    "hint": "Type a name to find climbers.",
+    "noResults": "No climbers match \"{{query}}\""
   },
 
   "colors": {

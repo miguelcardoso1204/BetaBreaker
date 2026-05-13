@@ -21,7 +21,7 @@
 //      signOut() from useAuth.
 
 import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, Alert, Modal, Switch } from "react-native";
+import { View, Text, ScrollView, Pressable, Alert, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -34,15 +34,13 @@ import {
   Globe,
   LogOut,
   Check,
-  Download,
   Trash2,
 } from "lucide-react-native";
 import { useAuth } from "@/hooks/useAuth";
-import { useUpdateProfile, useExportData, useDeleteAccount } from "@/hooks/useProfile";
+import { useUpdateProfile, useDeleteAccount } from "@/hooks/useProfile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
 import { changeLanguage, SUPPORTED_LANGUAGES } from "@/lib/i18n";
-import { useAccessibilityStore } from "@/stores";
 import type { GradeSystem } from "@/utils/grades";
 
 // The three grade systems users can choose from — same set as the profile
@@ -75,11 +73,6 @@ export default function SettingsScreen() {
   // Language picker modal visibility state
   const [languagePickerVisible, setLanguagePickerVisible] = useState(false);
 
-  // Color-aware mode toggle — shows color names next to hold swatches
-  // for users who have difficulty distinguishing colors.
-  const colorAwareMode = useAccessibilityStore((s) => s.colorAwareMode);
-  const setColorAwareMode = useAccessibilityStore((s) => s.setColorAwareMode);
-
   /** Persist grade system change immediately (no save button needed). */
   function handleGradeChange(gs: GradeSystem) {
     if (!user || gs === currentGradeSystem) return;
@@ -89,27 +82,8 @@ export default function SettingsScreen() {
     });
   }
 
-  // Account action mutations — export data and delete account
-  const exportData = useExportData();
+  // Account action mutation — delete account
   const deleteAccount = useDeleteAccount(signOut);
-
-  /** Export user data — confirm first, then trigger the mutation. */
-  function handleExportData() {
-    Alert.alert(
-      t("profile.exportConfirmTitle"),
-      t("profile.exportConfirmBody"),
-      [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("common.export"),
-          onPress: async () => {
-            await exportData.mutateAsync();
-            Alert.alert(t("profile.exportCompleteTitle"), t("profile.exportCompleteBody"));
-          },
-        },
-      ]
-    );
-  }
 
   /** Delete account — double-confirm before triggering the mutation. */
   function handleDeleteAccount() {
@@ -244,31 +218,6 @@ export default function SettingsScreen() {
           <ChevronRight size={20} color="#6B7280" />
         </Pressable>
 
-        {/* Color-aware mode — shows color names next to hold color swatches
-            for users who have difficulty distinguishing colors (FR-Q2). */}
-        <Pressable
-          testID="color-aware-toggle"
-          onPress={() => setColorAwareMode(!colorAwareMode)}
-          accessibilityRole="switch"
-          accessibilityLabel={t("settings.colorAwareMode")}
-          accessibilityState={{ checked: colorAwareMode }}
-          className="flex-row items-center px-4 py-4 border-b border-surface"
-        >
-          <View className="flex-1">
-            <Text className="text-text-primary text-base">
-              {t("settings.colorAwareMode")}
-            </Text>
-            <Text className="text-text-secondary text-sm">
-              {t("settings.colorAwareModeDesc")}
-            </Text>
-          </View>
-          <Switch
-            value={colorAwareMode}
-            onValueChange={setColorAwareMode}
-            trackColor={{ true: "#7C3AED" }}
-          />
-        </Pressable>
-
         {/* Language — interactive picker that opens a modal */}
         <Pressable
           testID="language-row"
@@ -324,20 +273,6 @@ export default function SettingsScreen() {
         <Text className="text-text-secondary text-sm font-semibold uppercase tracking-wide px-4 mb-2">
           {t("profile.account")}
         </Text>
-
-        {/* Export data */}
-        <Pressable
-          onPress={handleExportData}
-          testID="export-data-button"
-          accessibilityRole="button"
-          accessibilityLabel={t("profile.exportData")}
-          className="flex-row items-center px-4 py-4 border-b border-surface"
-        >
-          <Download size={20} color="#9CA3AF" />
-          <Text className="text-text-primary text-base flex-1 ml-3">
-            {t("profile.exportData")}
-          </Text>
-        </Pressable>
 
         {/* Delete account */}
         <Pressable

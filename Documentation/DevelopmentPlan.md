@@ -2100,6 +2100,17 @@ Run `supabase db push`, then run test suite against local DB.
 - +31 unit tests (8 service + 7 hooks + 4 FollowButton + 3 FeedItem + 5 profile + 4 home tab) = 685 total unit tests
 - No new migration needed — `follows` table already exists from migration `20260206050000_social_community.sql`
 
+**Follow-up — climber search & follower lists (FR-G8 / FR-G9):**
+- Extended: `services/social.service.ts` with `getFollowers(userId)` and `searchClimbers(query, currentUserId)`. searchClimbers uses `.ilike("display_name", "%query%")` with `.neq("id", currentUserId)` to exclude self, ordered alphabetically, capped at 50.
+- Extended: `hooks/useSocial.ts` with `useFollowers`, `useFollowingList`, `useSearchClimbers`. The search hook is disabled until the trimmed query is non-empty so empty input never fires a network call. `useToggleFollow` invalidates the new `["follows", "followers", target]` and `["follows", "following-list", currentUser]` keys so list screens stay in sync after follow/unfollow.
+- Restructured: `app/profile/[userId].tsx` → `app/profile/[userId]/index.tsx` (Expo Router needs a folder for sibling sub-routes). Counts on the profile are now Pressables that push to the new list screens; both render even at 0.
+- Created: `app/profile/[userId]/followers.tsx` and `following.tsx` — FlatList of avatar + name rows with empty-state messaging. Each row taps through to that climber's profile.
+- Created: `app/search.tsx` — climber search with 300 ms debounced input, FollowButton inline on each result row, hint / no-results states.
+- Updated: `app/(tabs)/profile.tsx` adds a `Search` icon next to the gear (`testID="search-button"`) that pushes `/search`.
+- Registered: `<Stack.Screen name="search" />` and `<Stack.Screen name="profile/[userId]" />` in `app/_layout.tsx`.
+- i18n: added `profile.followersTitle / followingTitle / noFollowers / notFollowingAnyone` and a new `search.*` namespace in en + pt-PT locales.
+- +6 unit tests (2 service: getFollowers, searchClimbers; 4 hooks: useFollowers, useFollowingList, useSearchClimbers (×2 cases)). Total unit tests now 1532 (was 1526 before this change).
+
 ---
 
 ### Step 9.5 — Content Reporting & Moderation ✅

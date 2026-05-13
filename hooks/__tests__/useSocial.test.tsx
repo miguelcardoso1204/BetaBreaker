@@ -23,6 +23,8 @@ jest.mock("@/services/social.service", () => ({
     isFollowing: jest.fn(),
     getFollowCounts: jest.fn(),
     getFollowing: jest.fn(),
+    getFollowers: jest.fn(),
+    searchClimbers: jest.fn(),
     getActivityFeed: jest.fn(),
     getUserRecentAscents: jest.fn(),
   },
@@ -41,6 +43,9 @@ import {
   useIsFollowing,
   useToggleFollow,
   useFollowCounts,
+  useFollowers,
+  useFollowingList,
+  useSearchClimbers,
   useActivityFeed,
   useUserRecentAscents,
 } from "../useSocial";
@@ -52,6 +57,8 @@ const { socialService } = jest.requireMock<{
     isFollowing: jest.Mock;
     getFollowCounts: jest.Mock;
     getFollowing: jest.Mock;
+    getFollowers: jest.Mock;
+    searchClimbers: jest.Mock;
     getActivityFeed: jest.Mock;
     getUserRecentAscents: jest.Mock;
   };
@@ -213,6 +220,108 @@ describe("useFollowCounts", () => {
     expect(result.current.followers).toBe(42);
     expect(result.current.following).toBe(18);
     expect(socialService.getFollowCounts).toHaveBeenCalledWith("user-2");
+  });
+});
+
+// ── useFollowers tests ────────────────────────────────────────────
+
+describe("useFollowers", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns the followers list with profile data", async () => {
+    socialService.getFollowers.mockResolvedValueOnce({
+      data: [
+        {
+          follower_id: "user-7",
+          profile: { display_name: "Riley", avatar_url: null },
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useFollowers("user-2"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.followers).toHaveLength(1);
+    expect(socialService.getFollowers).toHaveBeenCalledWith("user-2");
+  });
+});
+
+// ── useFollowingList tests ────────────────────────────────────────
+
+describe("useFollowingList", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("returns the list of users the target follows", async () => {
+    socialService.getFollowing.mockResolvedValueOnce({
+      data: [
+        {
+          following_id: "user-3",
+          profile: { display_name: "Sam", avatar_url: null },
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useFollowingList("user-2"), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.following).toHaveLength(1);
+    expect(socialService.getFollowing).toHaveBeenCalledWith("user-2");
+  });
+});
+
+// ── useSearchClimbers tests ───────────────────────────────────────
+
+describe("useSearchClimbers", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("does not call the service when the query is empty", async () => {
+    const { result } = renderHook(() => useSearchClimbers("   "), {
+      wrapper: createWrapper(),
+    });
+
+    // Hook is disabled — no fetch, isLoading should be false.
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.results).toEqual([]);
+    expect(socialService.searchClimbers).not.toHaveBeenCalled();
+  });
+
+  it("calls the service with the trimmed query and the current user id", async () => {
+    socialService.searchClimbers.mockResolvedValueOnce({
+      data: [{ id: "user-2", display_name: "Alex", avatar_url: null }],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useSearchClimbers("  alex  "), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(socialService.searchClimbers).toHaveBeenCalledWith(
+      "alex",
+      "user-1"
+    );
+    expect(result.current.results).toHaveLength(1);
   });
 });
 

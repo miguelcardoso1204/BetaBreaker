@@ -18,7 +18,11 @@
 
 import React from "react";
 import { ScrollView, View, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { ArrowLeft } from "lucide-react-native";
+import { IconButton } from "@/components/ui/IconButton";
 
 /**
  * A single guideline section with a bold heading and body paragraph.
@@ -45,35 +49,49 @@ function Section({
 
 export default function GuidelinesScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{ padding: 16 }}
-    >
-      <Text className="text-2xl font-bold text-text-primary mb-6">
-        {t("guidelines.title")}
-      </Text>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      {/* Header: back button + title. The settings stack hides its own
+          header (settings/_layout.tsx), so each screen renders its own. */}
+      <View className="px-4 pt-2 pb-2 flex-row items-center">
+        <IconButton
+          icon={ArrowLeft}
+          label={t("common.goBack")}
+          onPress={() => router.back()}
+          size={24}
+          color="#FFFFFF"
+        />
+        <Text className="text-text-primary text-xl font-bold ml-3">
+          {t("guidelines.title")}
+        </Text>
+      </View>
 
-      <Text className="text-text-secondary text-base mb-6 leading-6">
-        {t("guidelines.intro")}
-      </Text>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ padding: 16 }}
+      >
+        <Text className="text-text-secondary text-base mb-6 leading-6">
+          {t("guidelines.intro")}
+        </Text>
 
-      <Section title={t("guidelines.respectTitle")}>
-        {t("guidelines.respectBody")}
-      </Section>
+        <Section title={t("guidelines.respectTitle")}>
+          {t("guidelines.respectBody")}
+        </Section>
 
-      <Section title={t("guidelines.spamTitle")}>
-        {t("guidelines.spamBody")}
-      </Section>
+        <Section title={t("guidelines.spamTitle")}>
+          {t("guidelines.spamBody")}
+        </Section>
 
-      <Section title={t("guidelines.safetyTitle")}>
-        {t("guidelines.safetyBody")}
-      </Section>
+        <Section title={t("guidelines.safetyTitle")}>
+          {t("guidelines.safetyBody")}
+        </Section>
 
-      <Section title={t("guidelines.reportTitle")}>
-        {t("guidelines.reportBody")}
-      </Section>
-    </ScrollView>
+        <Section title={t("guidelines.reportTitle")}>
+          {t("guidelines.reportBody")}
+        </Section>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

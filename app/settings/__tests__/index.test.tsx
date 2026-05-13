@@ -41,17 +41,13 @@ jest.mock("@/hooks/useAuth", () => ({
   }),
 }));
 
-// Mock useProfile hooks — useUpdateProfile captures grade system mutation calls,
-// useExportData and useDeleteAccount are used for account actions on this screen.
+// Mock useProfile hooks — useUpdateProfile captures grade system mutation
+// calls, useDeleteAccount is used for the delete-account action.
 const mockMutate = jest.fn();
 
 jest.mock("@/hooks/useProfile", () => ({
   useUpdateProfile: () => ({
     mutate: mockMutate,
-    isPending: false,
-  }),
-  useExportData: () => ({
-    mutateAsync: jest.fn().mockResolvedValue({ profile: {} }),
     isPending: false,
   }),
   useDeleteAccount: () => ({
@@ -323,24 +319,6 @@ describe("SettingsScreen", () => {
     alertSpy.mockRestore();
   });
 
-  // ── Color-Aware Mode Toggle ──────────────────────────────────────
-
-  it("renders color-aware mode toggle", () => {
-    render(<SettingsScreen />);
-
-    expect(screen.getByText("Color-Aware Mode")).toBeOnTheScreen();
-    expect(
-      screen.getByText("Show color names next to hold color swatches")
-    ).toBeOnTheScreen();
-  });
-
-  it("tapping color-aware toggle calls setColorAwareMode", () => {
-    render(<SettingsScreen />);
-
-    fireEvent.press(screen.getByTestId("color-aware-toggle"));
-    expect(mockAccessibilityState.setColorAwareMode).toHaveBeenCalledWith(true);
-  });
-
   // ── Accessibility Props ──────────────────────────────────────────
 
   it("grade system options have radio role with selected state", () => {
@@ -365,13 +343,4 @@ describe("SettingsScreen", () => {
     expect(signOut.props.accessibilityRole).toBe("button");
   });
 
-  it("color-aware toggle has switch role with checked state", () => {
-    render(<SettingsScreen />);
-
-    const toggle = screen.getByTestId("color-aware-toggle");
-    expect(toggle.props.accessibilityRole).toBe("switch");
-    expect(toggle.props.accessibilityState).toEqual(
-      expect.objectContaining({ checked: false })
-    );
-  });
 });

@@ -33,6 +33,15 @@ const mockPush = jest.fn();
 jest.mock("expo-router", () => ({
   useLocalSearchParams: () => ({ id: "gym-1" }),
   useRouter: () => ({ push: mockPush }),
+  // useNavigation + useFocusEffect are used by the gym main screen to
+  // reset the hidden gym tab's Stack on focus (see "WHY" comment in
+  // GymMainScreen). We stub them with no-ops since the test environment
+  // doesn't have a real navigator and we're not exercising back behavior.
+  useNavigation: () => ({
+    getState: () => ({ routes: [{ name: "[id]" }] }),
+    dispatch: jest.fn(),
+  }),
+  useFocusEffect: jest.fn(),
 }));
 
 // Mock useGyms — control gym data returned to the screen.
