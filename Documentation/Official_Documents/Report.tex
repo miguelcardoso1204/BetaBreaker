@@ -43,6 +43,8 @@
 \usepackage{pifont}
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\qmark}{?}
+\newcommand{\planned}{\textit{Planned}}
+\newcommand{\notoffered}{---}
 
 % ── Spacing ──────────────────────────────────────────────────────────────────
 \onehalfspacing
@@ -193,7 +195,7 @@ I would like to thank Professor Hugo Barbosa for his guidance and availability t
 \section*{Resumo}
 \addcontentsline{toc}{section}{Resumo}
 
-Os gin\'{a}sios de escalada indoor dependem da rota\c{c}\~{a}o frequente de vias e do envolvimento da comunidade para reter os seus membros, mas a informa\c{c}\~{a}o sobre vias, o conhecimento de beta e o acompanhamento da progress\~{a}o permanecem, em grande parte, informais. Este projeto apresenta o Beta Breaker, uma aplica\c{c}\~{a}o m\'{o}vel multiplataforma que liga escaladores e gin\'{a}sios atrav\'{e}s da descoberta de vias, registo de ascens\~{o}es, partilha de v\'{i}deos de beta e gamifica\c{c}\~{a}o. Constru\'{i}do com React Native e Expo sobre um backend Supabase, o sistema utiliza Row Level Security do PostgreSQL como fronteira de autoriza\c{c}\~{a}o, eliminando a necessidade de um servidor API dedicado. A aplica\c{c}\~{a}o suporta fluxos de leitura de c\'{o}digo QR para aceder a vias, funcionamento offline atrav\'{e}s de uma fila de a\c{c}\~{o}es em SQLite, quadros de competi\c{c}\~{a}o em tempo real e uma subscri\c{c}\~{a}o Pro gerida por compras in-app nativas. Foi seguida uma metodologia rigorosa de Test-Driven Development ao longo de toda a implementa\c{c}\~{a}o, produzindo 1\,975 testes automatizados (1\,480 unit\'{a}rios e 495 de integra\c{c}\~{a}o) em 83 passos de desenvolvimento conclu\'{i}dos. Em mar\c{c}o de 2026, 19 das 21 fases planeadas est\~{a}o totalmente implementadas, cobrindo todos os requisitos funcionais e fornecendo uma aplica\c{c}\~{a}o completa pronta para testes end-to-end e submiss\~{a}o nas lojas.
+Os gin\'{a}sios de escalada indoor dependem da rota\c{c}\~{a}o frequente de vias e do envolvimento da comunidade para reter os seus membros, mas a informa\c{c}\~{a}o sobre vias, o conhecimento de beta e o acompanhamento da progress\~{a}o permanecem, em grande parte, informais. Este projeto apresenta o Beta Breaker, uma aplica\c{c}\~{a}o m\'{o}vel multiplataforma que liga escaladores e gin\'{a}sios atrav\'{e}s da descoberta de vias, registo de ascens\~{o}es, partilha de v\'{i}deos de beta e gamifica\c{c}\~{a}o. Constru\'{i}do com React Native e Expo sobre um backend Supabase, o sistema utiliza Row Level Security do PostgreSQL como fronteira de autoriza\c{c}\~{a}o, eliminando a necessidade de um servidor API dedicado. A aplica\c{c}\~{a}o suporta fluxos de leitura de c\'{o}digo QR para aceder a vias. Funcionalidades como suporte offline, competi\c{c}\~{o}es em tempo real, verifica\c{c}\~{a}o por v\'{i}deo, taxonomia de estilos, monetiza\c{c}\~{a}o, portal de administra\c{c}\~{a}o e ferramentas de configura\c{c}\~{a}o de vias est\~{a}o planeadas para fases futuras. Foi seguida uma metodologia rigorosa de Test-Driven Development ao longo de toda a implementa\c{c}\~{a}o, produzindo 909 testes automatizados ao longo do desenvolvimento. Em maio de 2026, 13 das 21 fases planeadas est\~{a}o totalmente implementadas, com as restantes fases em desenvolvimento.
 
 \vspace{1.5cm}
 \noindent\textbf{Palavras-chave:} escalar; gin\'{a}sio; gamifica\c{c}\~{a}o; beta; mobile
@@ -204,7 +206,7 @@ Os gin\'{a}sios de escalada indoor dependem da rota\c{c}\~{a}o frequente de vias
 \section*{Abstract}
 \addcontentsline{toc}{section}{Abstract}
 
-Indoor climbing gyms rely on frequent route rotation and community engagement to retain members, yet route information, beta knowledge, and progression tracking remain largely informal. This project presents Beta Breaker, a cross-platform mobile application that connects climbers and gyms through route discovery, ascent logging, beta video sharing, and gamification. Built with React Native and Expo on a Supabase backend, the system uses PostgreSQL Row Level Security as its authorization boundary, eliminating the need for a custom API server. The application supports QR-based scan-to-route flows, offline operation via an SQLite action queue, real-time competition scoreboards, and a Pro subscription tier managed through native in-app purchases. A strict Test-Driven Development methodology was followed throughout the implementation, producing 1\,975 automated tests (1\,480 unit and 495 integration) across 83 completed development steps. As of March 2026, 19 of 21 planned phases are fully implemented, covering all functional requirements and providing a feature-complete application ready for end-to-end testing and store submission.
+Indoor climbing gyms rely on frequent route rotation and community engagement to retain members, yet route information, beta knowledge, and progression tracking remain largely informal. This project presents Beta Breaker, a cross-platform mobile application that connects climbers and gyms through route discovery, ascent logging, beta video sharing, and gamification. Built with React Native and Expo on a Supabase backend, the system uses PostgreSQL Row Level Security as its authorization boundary, eliminating the need for a custom API server. The application supports QR-based scan-to-route flows. Features such as offline support, real-time competition scoreboards, video verification, style taxonomy, monetization, admin portal, and route-setting tools are planned for future phases. A strict Test-Driven Development methodology was followed throughout the implementation, producing 909 automated tests across the implemented phases. As of May 2026, 13 of 21 planned phases are fully implemented, with the remaining phases under development.
 
 \vspace{1.5cm}
 \noindent\textbf{Keywords:} climbing; gym; gamification; beta; mobile
@@ -359,15 +361,12 @@ The business objectives of this project are:
     \item \textbf{Maintainability:} Modular architecture; documented APIs and data models.
 \end{itemize}
 
-\subsection{Glossary of Terms}
+\section{Project Resources}
 
-\begin{description}[leftmargin=2cm, style=nextline]
-    \item[Route/Problem] A climb in the gym (boulder, top-rope, lead).
-    \item[QR/NFC Tag] Physical tag to open the route page in-app.
-    \item[Beta] Strategy or movement sequence to complete a route.
-    \item[Verification Video] Video evidence attached to a send for leaderboard validity.
-    \item[Pro Tier] Paid consumer plan with analytics, unlimited beta views, and 3 profile badges.
-\end{description}
+\begin{itemize}[noitemsep]
+    \item \textbf{Source code:} \url{https://github.com/miguelcardoso1204/BetaBreaker}
+    \item \textbf{Demo video:} \url{https://miguelcardoso1204.github.io/BetaBreaker/demo}
+\end{itemize}
 
 \section{Document Structure}
 
@@ -434,16 +433,19 @@ The project relies on managed cloud services with generous free tiers, keeping t
 \textbf{Service} & \textbf{Free Tier Limit} & \textbf{Dev} & \textbf{Pilot} & \textbf{Growth} \\
 \hline
 Supabase (DB, Auth, Storage) & 500\,MB DB, 1\,GB storage, 50K MAU & \texteuro0 & \texteuro0 & \texteuro25\textsuperscript{a} \\
-Cloudinary (video hosting) & 25\,GB storage, 25\,GB bandwidth/mo & \texteuro0 & \texteuro0 & \texteuro0\textsuperscript{b} \\
-EAS Build (Expo) & 30 builds/mo & \texteuro0 & \texteuro0 & \texteuro0 \\
-Sentry (error tracking) & 5K errors/mo & \texteuro0 & \texteuro0 & \texteuro0 \\
-Apple Developer Program & --- & \texteuro99/yr & \texteuro99/yr & \texteuro99/yr \\
+Cloudinary (video hosting) & 25\,GB storage, 25\,GB bandwidth/mo & \texteuro0 & \texteuro0 & \texteuro82\textsuperscript{b} \\
+EAS (Expo) & 30 builds/mo\textsuperscript{d}, 1K MAU updates & \texteuro0\textsuperscript{d} & \texteuro17\textsuperscript{d} & \texteuro17\textsuperscript{d} \\
+Sentry (error tracking) & Developer: 1 user, 5K errors & \texteuro0 & \texteuro26\textsuperscript{c} & \texteuro26\textsuperscript{c} \\
+Apple Developer Program & --- & --- & \texteuro99/yr & \texteuro99/yr \\
 Google Play Developer & --- & \texteuro25 once & --- & --- \\
 \hline
-\textbf{Total (monthly)} & & \textbf{\texteuro0} & \textbf{$\sim$\texteuro8} & \textbf{$\sim$\texteuro33} \\
+\textbf{Total (monthly)} & & \textbf{$\sim$\texteuro0} & \textbf{$\sim$\texteuro51} & \textbf{$\sim$\texteuro158} \\
 \hline
 \multicolumn{5}{l}{\footnotesize \textsuperscript{a} Pro plan (\$25/mo) required when DB exceeds 500\,MB or concurrent connections exceed 200.} \\
-\multicolumn{5}{l}{\footnotesize \textsuperscript{b} At 1\,000 users with $\sim$50 video uploads/month ($\sim$150\,MB each), storage stays within free tier for $\sim$12 months.} \\
+\multicolumn{5}{l}{\footnotesize \textsuperscript{b} At 1\,000 users, video storage likely exceeds 25\,GB free tier; Plus plan (\$89/mo) required.} \\
+\multicolumn{5}{l}{\footnotesize \textsuperscript{c} Team plan (\$26/mo) required for production use (multiple users, 50K errors/mo, 90-day retention).} \\
+\multicolumn{5}{l}{\footnotesize \textsuperscript{d} Free plan: 30 low-priority builds/mo (max 15 iOS) and 1K MAU updates; exceeding either requires} \\
+\multicolumn{5}{l}{\footnotesize \phantom{\textsuperscript{d}} the Starter plan (\$19/mo), which adds priority builds and 3\,000 MAU updates.} \\
 \end{tabular}
 \end{table}
 
@@ -467,14 +469,16 @@ Monthly Pro revenue (10 $\times$ \texteuro4.99) & \texteuro49.90 \\
 Gym B2B revenue (200 $\times$ \texteuro0.50) & \texteuro100.00 \\
 \hline
 \textbf{Monthly revenue} & \textbf{\texteuro149.90} \\
-Monthly infrastructure cost (pilot) & \texteuro8 \\
+Monthly infrastructure cost (pilot) & \texteuro51 \\
+Apple/Google IAP commission (15--30\%)\textsuperscript{*} & $-$\texteuro15 \\
 \hline
-\textbf{Monthly margin} & \textbf{\texteuro141.90} \\
+\textbf{Monthly margin} & \textbf{$\sim$\texteuro84} \\
 \hline
+\multicolumn{2}{l}{\footnotesize \textsuperscript{*} Estimated at 30\% (conservative); Apple/Google Small Business Program reduces to 15\% below \$1M/yr.} \\
 \end{tabular}
 \end{table}
 
-At pilot scale (1~gym, 200~users), the platform becomes profitable from the first month of monetization, since infrastructure costs remain within or near free-tier limits. The low operational cost is a direct consequence of the Supabase-first architecture: no custom servers to maintain, no DevOps overhead, and pay-as-you-grow pricing from all service providers. At the growth stage (5~gyms, 1\,000~users, 50~Pro subscribers), monthly revenue rises to approximately \texteuro750 against \texteuro33 in costs, yielding a healthy margin even before accounting for Apple/Google's 15--30\% commission on in-app purchases.
+At pilot scale (1~gym, 200~users), the platform becomes profitable from the first month of monetization. The low operational cost is a direct consequence of the Supabase-first architecture: no custom servers to maintain, no DevOps overhead, and pay-as-you-grow pricing from all service providers. At the growth stage (5~gyms, 1\,000~users, 50~Pro subscribers), monthly revenue rises to approximately \texteuro750 against \texteuro158 in infrastructure costs; after deducting Apple/Google's 15--30\% commission on IAP revenue (\textsuperscript{*}applied only to Pro subscriptions, not B2B invoicing), the net margin remains healthy at approximately \texteuro517/month.
 
 The main financial risk is slow gym adoption, which would delay B2B revenue. This is mitigated by the near-zero cost base: the platform can operate indefinitely on free tiers during the acquisition phase without generating losses.
 
@@ -484,7 +488,7 @@ The main financial risk is slow gym adoption, which would delay B2B revenue. Thi
 
 A preliminary market scan shows tools that address only parts of the problem: (i)~generic training/logbook applications, usually centered on the user and not tied to a gym's live route set; (ii)~internal or informal gym route management approaches (e.g., boards/spreadsheets) that lack structured community feedback; and (iii)~social platforms that enable sharing, but without a direct connection to routes, setters, seasons, and aggregated gym analytics.
 
-Overall, no direct competitor was identified that offers an end-to-end product combining: gym route management, in-gym route discovery, ascent logging, structured feedback, optional video verification for fair leaderboards, and aggregated style/statistics at both route and gym level.
+Overall, no direct competitor was identified that offers an end-to-end product combining: gym route management, in-gym route discovery, ascent logging, and structured feedback. Beta Breaker further plans to add optional video verification for fair leaderboards and aggregated style/statistics at both route and gym level.
 
 \subsection{Benchmarking Analysis}
 
@@ -504,19 +508,19 @@ Table~\ref{tab:benchmarking} compares Beta Breaker with four established climbin
 \endhead
 
 Route catalog            & \cmark & \cmark & \cmark & \cmark & \cmark \\
-QR scan-to-route         & \cmark & \cmark & \cmark & \cmark & \qmark \\
+QR scan-to-route         & \cmark & \cmark & \cmark & \cmark & \cmark \\
 Ascent logging           & \cmark & \cmark & \cmark & \cmark & \cmark \\
-Beta video sharing       & \cmark & \cmark & \cmark & \cmark & \qmark \\
-Gamification (badges)    & \cmark & \cmark & \cmark & \cmark & \qmark \\
-Leaderboards             & \cmark & \cmark & \cmark & \cmark & \cmark \\
-Setter feedback          & \cmark & \cmark & \cmark & \cmark & Partial \\
-Offline support          & \cmark & Pro    & \qmark & Premium & \qmark \\
-Competitions / events    & \cmark & \cmark & \cmark & \cmark & \cmark \\
-Video verification       & \cmark & ---    & ---    & ---    & ---    \\
-Style taxonomy           & \cmark & ---    & ---    & ---    & Partial \\
+Beta video sharing       & \cmark & \cmark & \notoffered & \notoffered & ---    \\
+Gamification (badges)    & \cmark & \cmark & \cmark & \cmark & ---    \\
+Leaderboards             & \cmark & \notoffered & \cmark & \cmark & \cmark \\
+Setter feedback          & \cmark & \notoffered & \cmark & \notoffered & Partial \\
+Offline support          & \planned & Pro    & \notoffered & Premium & \notoffered \\
+Competitions / events    & \planned & \notoffered & \cmark & \cmark & \cmark \\
+Video verification       & \planned & ---    & ---    & ---    & ---    \\
+Style taxonomy           & \planned & ---    & ---    & ---    & Partial \\
 \hline
 Climber price            & Freemium & \$59.99/yr & Free & \texteuro59.88/yr & Free \\
-Gym price                & \texteuro0.50/user/mo & \textasciitilde\$100/mo & 15\% comp fee & \$1\,080/yr & \$89.95/mo\textsuperscript{a} \\
+Gym price                & \texteuro0.50/user/mo & Quote-based & 15\% comp fee & Quote-based & \$89.95/mo\textsuperscript{a} \\
 \hline
 \end{longtable}
 
@@ -528,13 +532,13 @@ Gym price                & \texteuro0.50/user/mo & \textasciitilde\$100/mo & 15\
 
 \vspace{0.3cm}
 
-All four competitors offer core route browsing and ascent logging, and three of the four support QR scanning and beta videos. However, none of the surveyed solutions offers video verification for leaderboard sends or a controlled style taxonomy with crowd-sourced consensus. Beta Breaker's offline support is included in the free tier, whereas KAYA and Vertical-Life reserve it for paying users. The gym pricing model (\texteuro\,0.50 per active user per month) is designed to scale linearly and remain competitive with the fixed-fee models of KAYA and Vertical-Life.
+All four competitors offer route browsing, ascent logging, and QR-based scan-to-route. However, beta video sharing is only confirmed for KAYA; Pebble and Vertical-Life mention media features but without clear beta video support, and TopLogger does not offer it. Gamification varies: KAYA and Vertical-Life offer badges, Pebble has a grade pyramid system, while TopLogger relies on rankings without explicit badge mechanics. None of the surveyed solutions offers video verification for leaderboard sends or a controlled style taxonomy with crowd-sourced consensus. Beta Breaker plans to include offline support in the free tier, whereas KAYA and Vertical-Life reserve it for paying subscribers. KAYA and Vertical-Life do not publish gym pricing publicly (quote-based), making direct cost comparison difficult. Beta Breaker's per-user model (\texteuro\,0.50/user/month) offers predictable, linear scaling compared to the fixed-fee or opaque pricing of competitors.
 
 \section{Innovation Proposal and Added Value}
 
 The main innovation lies in merging the climber experience and gym operations into one connected platform. Research suggests that gamification can positively influence engagement and motivation in digital services \cite{HaKo14}. Each ascent can generate value for both sides: climbers receive a richer, more motivating experience (history, progress, community beta, and gamification), while gyms and setters receive structured feedback, difficulty perception signals, and usage trends.
 
-Key added-value points include: (i)~an in-gym, scan-to-route flow that reduces friction; (ii)~a controlled style taxonomy and crowd-based style characterization that can be aggregated into route and gym profiles; (iii)~lightweight gamification (badges, seasons, leaderboards, prizes) to improve retention; and (iv)~a data model built to support aggregated statistics without constant expensive recomputation.
+Key added-value points include: (i)~an in-gym, scan-to-route flow that reduces friction; (ii)~a planned controlled style taxonomy and crowd-based style characterization that can be aggregated into route and gym profiles; (iii)~lightweight gamification (badges, seasons, leaderboards, prizes) to improve retention; and (iv)~a data model built to support aggregated statistics without constant expensive recomputation.
 
 \section{Business Opportunity}
 
@@ -716,6 +720,8 @@ The following multi-page table lists functional requirements by category. Each e
 FR-A1 & 5 & Email/password sign-up, login, logout, and password reset. \\
 FR-A2 & 4 & Profile with editable fields; user can pin up to 3 badges (Free tier limited to 1). \\
 FR-A3 & 5 & Account deletion and data export on request. \\
+FR-A4 & 3 & Social authentication (Google, Apple Sign-In) as alternative to email/password. \\
+FR-A5 & 2 & Optional onboarding wizard guiding new users through gym selection, grade system preference, and feature highlights. \\
 
 \hline
 \multicolumn{3}{l}{\textbf{B. Gyms \& Areas}} \\
@@ -770,6 +776,8 @@ FR-G1 & 4 & Leaderboards by hardest grade, flash rate, volume, and rank (if enab
 FR-G2 & 4 & Route feedback: beta tips (text), optional beta video, user-supplied tags. \\
 FR-G3 & 4 & Report abuse/spam on users, videos, tags, comments (moderation queue). \\
 FR-G4 & 4 & Gym-configurable video requirement: for selected grade thresholds, a verification video is required for a send to count toward leaderboards; supports admin/judge review or peer threshold; missing video excludes the send from leaderboards until verified. \\
+FR-G5 & 3 & Follow system: follow/unfollow other climbers to track their public activity. \\
+FR-G6 & 3 & Activity feed showing followed users' recent sends, badges earned, and achievements. \\
 FR-G7 & 2 & Leaderboard rules and prizes display: gym-configured text shown in modals on the leaderboard detail screen. \\
 
 \hline
@@ -793,6 +801,11 @@ FR-I4 & 3 & Season reset: archive/rotate sets; close leaderboards per season. \\
 \multicolumn{3}{l}{\textbf{J. Notifications}} \\
 \hline
 FR-J1 & 4 & Push notifications (topics configurable): friends' sends, route retirements, comp updates, rank changes. \\
+
+\hline
+\multicolumn{3}{l}{\textbf{K. Media \& Video}} \\
+\hline
+FR-K1 & 4 & Beta video upload flow: client-side validation (60s max, 1080p, 150\,MB limit), ownership affirmation modal, compression, and progress feedback. \\
 
 \hline
 \multicolumn{3}{l}{\textbf{L. Monetization \& Access Control}} \\
@@ -866,6 +879,15 @@ The following nonfunctional requirements define the expected quality attributes 
 
     \item \textbf{NFR-11 -- Video and Media.}
     Beta videos shall have a maximum duration of 60 seconds and a maximum resolution of 1080p. Uploaded files must not exceed 150\,MB after client-side compression. Videos are hosted on Cloudinary via unsigned upload presets. Lists use lazy-loaded thumbnails; playback uses adaptive streaming.
+
+    \item \textbf{NFR-12 -- Rate Limiting.}
+    API endpoints and Edge Functions shall enforce rate limits to prevent abuse (e.g., max 60 requests per minute per authenticated user). Repeated violations result in temporary lockout.
+
+    \item \textbf{NFR-13 -- Error Recovery.}
+    The application shall display user-friendly error messages and provide retry options for transient failures. Critical errors shall be captured by the error tracking service with PII scrubbed.
+
+    \item \textbf{NFR-14 -- Continuous Integration.}
+    Every push to the main branch shall trigger an automated pipeline: lint $\rightarrow$ type-check $\rightarrow$ test suite. Merges are blocked if any stage fails.
 
 \end{itemize}
 
@@ -984,9 +1006,9 @@ This section presents the full set of interface mockups produced for the MVP flo
 
 \section{Introduction}
 
-The Beta Breaker application has been implemented as a cross-platform mobile application using React Native \cite{RNDo25} and Expo \cite{ExDo25}, backed entirely by Supabase \cite{SuDo25} for database, authentication, storage, and real-time capabilities. As of March 2026, the project has completed 83 development steps across 20 phases (19 fully completed, Phase~8 missing only the low-priority Elo rank stretch goal), covering all planned platform features: authentication, route catalog, session logging, offline support, QR scanning, gamification, social features, notifications, competitions, beta video sharing, monetization, progression analytics, full admin portal, profile management, onboarding, internationalization (EN + PT-PT), accessibility, and Sentry error monitoring.
+The Beta Breaker application has been implemented as a cross-platform mobile application using React Native \cite{RNDo25} and Expo \cite{ExDo25}, backed entirely by Supabase \cite{SuDo25} for database, authentication, storage, and real-time capabilities. As of May 2026, the project has completed 13 of 21 planned phases, covering the core platform features: authentication, route catalog, session logging, QR scanning, gamification, social features, notifications, beta video sharing, progression analytics, profile management, onboarding, internationalization (EN + PT-PT), accessibility, and Sentry error monitoring. Features such as offline support, competitions/events, video verification, style taxonomy, monetization, route-setting tools, and admin portal are planned for future phases.
 
-The implementation follows a strict Test-Driven Development (TDD) \cite{Beck03} methodology, resulting in 1\,480 unit tests and 495 integration tests (1\,975 total) across 188 test suites.
+The implementation follows a strict Test-Driven Development (TDD) \cite{Beck03} methodology, resulting in 909 automated tests across the implemented phases.
 
 \section{Architecture}
 
@@ -999,7 +1021,7 @@ State management is organized into three layers:
 \begin{enumerate}[noitemsep]
     \item \textbf{Server state (TanStack Query v5 \cite{TaDo25}):} All data from Supabase (routes, ascents, leaderboards, badges). The database is the source of truth; the client caches and auto-refetches.
     \item \textbf{Client state (Zustand 5.x \cite{ZuDo25}):} Ephemeral UI state such as session timer, pending logs, active filters, and bottom sheet visibility. Minimal boilerplate, no providers required.
-    \item \textbf{Local persistence (expo-sqlite):} Offline route cache with 24-hour TTL and an offline action queue. On reconnect, actions are replayed with exponential backoff (1s, 4s, 16s).
+    \item \textbf{Local persistence (expo-sqlite, planned):} Offline route cache with 24-hour TTL and an offline action queue. On reconnect, actions will be replayed with exponential backoff (1s, 4s, 16s).
 \end{enumerate}
 
 The data flow follows four patterns:
@@ -1007,7 +1029,7 @@ The data flow follows four patterns:
 \begin{itemize}[noitemsep]
     \item \textbf{Reads:} Screen $\rightarrow$ TanStack Query hook $\rightarrow$ service layer $\rightarrow$ PostgREST $\rightarrow$ Postgres (RLS-filtered).
     \item \textbf{Writes:} User action $\rightarrow$ Zustand optimistic update $\rightarrow$ useMutation $\rightarrow$ service $\rightarrow$ Postgres triggers (streak/badge/leaderboard) $\rightarrow$ cache invalidation.
-    \item \textbf{Offline:} Action $\rightarrow$ offlineStore queue (SQLite) $\rightarrow$ [reconnect] $\rightarrow$ drain queue $\rightarrow$ service layer $\rightarrow$ invalidate caches.
+    \item \textbf{Offline (planned):} Action $\rightarrow$ offlineStore queue (SQLite) $\rightarrow$ [reconnect] $\rightarrow$ drain queue $\rightarrow$ service layer $\rightarrow$ invalidate caches.
     \item \textbf{Realtime:} Supabase Realtime subscription $\rightarrow$ Postgres emits changes $\rightarrow$ TanStack Query cache updated.
 \end{itemize}
 
@@ -1015,60 +1037,118 @@ Figure~\ref{fig:architecture} illustrates the high-level architecture and the re
 
 \begin{figure}[H]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-    node distance=0.6cm and 1.2cm,
-    box/.style={draw, rounded corners, minimum width=2.6cm, minimum height=0.85cm,
-                align=center, font=\small},
-    client/.style={box, fill=blue!10},
-    supa/.style={box, fill=green!10},
-    db/.style={box, fill=orange!12, line width=0.8pt},
-    edge/.style={box, fill=purple!8},
-    tier/.style={draw, rounded corners, line width=1.2pt},
-    arrow/.style={->, >=stealth, thick},
-    tierlabel/.style={font=\small\bfseries, anchor=south west},
+    % ── Base styles ──
+    every node/.style={font=\sffamily},
+    block/.style={draw, rounded corners=3pt, minimum height=1.1cm,
+                  align=center, font=\sffamily\small, line width=0.5pt},
+    planned/.style={dashed, opacity=0.6},
+    % ── Layer-specific ──
+    ui/.style={block, fill=white, draw=gray!50, minimum width=11cm},
+    state/.style={block, minimum width=3.2cm},
+    srv/.style={block, fill=white, draw=gray!50, minimum width=11cm},
+    api/.style={block, minimum width=2.4cm, minimum height=0.9cm},
+    dbnode/.style={block, fill=orange!6, draw=orange!40, minimum width=11cm,
+                   minimum height=0.9cm, line width=0.8pt},
+    % ── Arrows ──
+    flow/.style={->, >=stealth, color=gray!55, line width=0.7pt},
+    netflow/.style={<->, >=stealth, color=blue!30!gray, line width=1.2pt},
+    % ── Regions ──
+    region/.style={draw, rounded corners=8pt, line width=0.8pt},
+    rlabel/.style={font=\sffamily\small\bfseries, anchor=north west, inner sep=6pt},
 ]
 
-% ── Client Tier ──
-\node[tierlabel] at (-5.2, 5.0) {React Native / Expo (Client)};
-\draw[tier, blue!50] (-5.3, -0.3) rectangle (5.3, 4.8);
+% ════════════════════════════════════════════════════════
+%  CLIENT
+% ════════════════════════════════════════════════════════
 
-\node[client] (screens) at (0, 4.0) {Screens (Expo Router)};
-\node[client] (hooks) at (-3.0, 2.7) {Hooks\\(TanStack Query)};
-\node[client] (zustand) at (0, 2.7) {Stores\\(Zustand)};
-\node[client] (sqlite) at (3.0, 2.7) {Offline Queue\\(expo-sqlite)};
-\node[client, minimum width=5.2cm] (services) at (0, 1.2) {Service Layer (26 modules)};
+% Background
+\fill[blue!3, rounded corners=8pt] (-6.2, -0.3) rectangle (6.2, 8.2);
+\draw[region, draw=blue!25] (-6.2, -0.3) rectangle (6.2, 8.2);
+\node[rlabel, text=blue!45!black] at (-6.0, 8.1) {Mobile Client};
 
-\draw[arrow] (screens) -- (hooks);
-\draw[arrow] (screens) -- (zustand);
-\draw[arrow] (screens) -- (sqlite);
-\draw[arrow] (hooks) -- (services);
-\draw[arrow] (sqlite) -- (services);
+% UI layer
+\node[ui] (screens) at (0, 7.0) {\textbf{Screens} {\footnotesize--- Expo Router file-based navigation}};
 
-% ── Connection ──
-\draw[arrow, line width=1.6pt, blue!40!green!60] (services) -- ++(0, -0.9)
-    node[midway, right, font=\footnotesize] {HTTPS};
+% State layer — three columns
+\node[state, fill=blue!6, draw=blue!30] (hooks) at (-3.8, 5.2)
+    {\textbf{Hooks}\\[1pt]{\footnotesize TanStack Query v5}\\[-1pt]{\footnotesize (server state)}};
+\node[state, fill=teal!6, draw=teal!30] (stores) at (0, 5.2)
+    {\textbf{Stores}\\[1pt]{\footnotesize Zustand 5.x}\\[-1pt]{\footnotesize (UI state)}};
+\node[state, fill=gray!6, draw=gray!30, planned] (offline) at (3.8, 5.2)
+    {\textbf{Offline Queue}\\[1pt]{\footnotesize expo-sqlite}\\[-1pt]{\footnotesize (planned)}};
 
-% ── Supabase Tier ──
-\node[tierlabel] at (-5.2, -1.6) {Supabase (Backend)};
-\draw[tier, green!60!black!40] (-5.3, -5.7) rectangle (5.3, -1.4);
+% Service layer
+\node[srv] (services) at (0, 3.2)
+    {\textbf{Service Layer} {\footnotesize--- 26 modules (thin Supabase query wrappers)}};
 
-\node[supa] (postgrest) at (-3.0, -2.3) {PostgREST\\(REST API)};
-\node[supa] (auth) at (0, -2.3) {Auth\\(GoTrue)};
-\node[supa] (storage) at (3.0, -2.3) {Storage\\(S3)};
-\node[supa] (realtime) at (-3.0, -3.7) {Realtime\\(WebSocket)};
-\node[edge] (edge) at (3.0, -3.7) {Edge Functions\\(Deno $\times$ 5)};
+% Client arrows
+\draw[flow] (screens.south) ++(-3.8,0) -- (hooks.north);
+\draw[flow] (screens.south) -- (stores.north);
+\draw[flow, planned] (screens.south) ++(3.8,0) -- (offline.north);
+\draw[flow] (hooks.south) -- ++(0,-0.5) -| (services.north -| hooks);
+\draw[flow] (stores.south) -- (services.north);
+\draw[flow, planned] (offline.south) -- ++(0,-0.5) -| (services.north -| offline);
 
-\node[db, minimum width=7cm, minimum height=1.0cm, line width=1.2pt]
-    (postgres) at (0, -5.0) {\textbf{PostgreSQL} --- 30+ tables, 126+ RLS policies, 15+ functions, 5 triggers};
+% Client layer labels (right side)
+\node[font=\sffamily\tiny, text=gray!50, rotate=90, anchor=south] at (5.8, 6.8) {UI};
+\node[font=\sffamily\tiny, text=gray!50, rotate=90, anchor=south] at (5.8, 5.2) {STATE};
+\node[font=\sffamily\tiny, text=gray!50, rotate=90, anchor=south] at (5.8, 3.2) {DATA};
 
-\draw[arrow] (postgrest) -- (postgres);
-\draw[arrow] (auth) -- (postgres);
-\draw[arrow] (storage.south) -- ++(0,-0.5) -| (postgres);
-\draw[arrow] (realtime) -- (postgres);
-\draw[arrow] (edge) -- (postgres);
+% ════════════════════════════════════════════════════════
+%  NETWORK BOUNDARY
+% ════════════════════════════════════════════════════════
 
-\end{tikzpicture}
-\caption{High-level system architecture. The client tier (React Native / Expo) communicates with the Supabase backend over HTTPS. Authorization is enforced at the database level by PostgreSQL Row Level Security policies.}
+\draw[netflow] (services.south) -- ++(0, -1.4);
+\node[font=\sffamily\footnotesize, text=blue!30!gray, fill=white, inner sep=2pt]
+    at (1.6, 1.3) {HTTPS / WSS};
+
+% ════════════════════════════════════════════════════════
+%  SUPABASE
+% ════════════════════════════════════════════════════════
+
+% Background
+\fill[green!2, rounded corners=8pt] (-6.2, -5.8) rectangle (6.2, 0.8);
+\draw[region, draw=green!30!black!20] (-6.2, -5.8) rectangle (6.2, 0.8);
+\node[rlabel, text=green!45!black] at (-6.0, 0.7) {Supabase Backend};
+
+% API services — top row
+\node[api, fill=green!6, draw=green!30] (postgrest) at (-4.0, -0.5)
+    {\textbf{\footnotesize PostgREST}\\[-1pt]{\tiny REST API}};
+\node[api, fill=green!6, draw=green!30] (auth) at (-1.4, -0.5)
+    {\textbf{\footnotesize Auth}\\[-1pt]{\tiny GoTrue}};
+\node[api, fill=green!6, draw=green!30] (storage) at (1.2, -0.5)
+    {\textbf{\footnotesize Storage}\\[-1pt]{\tiny S3}};
+\node[api, fill=green!6, draw=green!30] (realtime) at (3.8, -0.5)
+    {\textbf{\footnotesize Realtime}\\[-1pt]{\tiny WebSocket}};
+
+% Edge functions — separate
+\node[api, fill=violet!6, draw=violet!25, minimum width=3.6cm] (edge) at (0, -2.4)
+    {\textbf{\footnotesize Edge Functions} {\tiny(Deno $\times$ 5)}\\[-1pt]
+     {\tiny sign-qr \textbullet{} push \textbullet{} verify-iap \textbullet{} billing \textbullet{} redeem-promo}};
+
+% Database
+\node[dbnode] (pg) at (0, -4.0)
+    {\textbf{PostgreSQL}};
+\node[font=\sffamily\tiny, text=gray!60, anchor=north] at (0, -4.5)
+    {30+ tables \enspace\textbullet\enspace 126+ RLS policies \enspace\textbullet\enspace 15+ trigger functions};
+
+% RLS shield icon (text-based)
+\node[font=\sffamily\tiny\bfseries, text=orange!60!black, fill=orange!8,
+      draw=orange!30, rounded corners=2pt, inner sep=3pt, anchor=west]
+    at (4.0, -4.0) {RLS};
+
+% Backend arrows
+\draw[flow] (postgrest.south) -- (postgrest |- pg.north);
+\draw[flow] (auth.south) -- (auth |- pg.north);
+\draw[flow] (storage.south) -- (storage |- pg.north);
+\draw[flow] (realtime.south) -- (realtime |- pg.north);
+\draw[flow] (edge.south) -- (edge |- pg.north);
+
+\end{tikzpicture}%
+}
+\caption{High-level system architecture. The mobile client communicates with the Supabase backend over HTTPS and WebSocket. Authorization is enforced at the database level through PostgreSQL Row Level Security (RLS) policies. Dashed elements indicate planned features.}
 \label{fig:architecture}
 \end{figure}
 
@@ -1127,7 +1207,7 @@ Supabase CLI & 2.75 & Local Postgres instance for integration tests against real
 The following course subjects are directly applied in the implementation:
 
 \begin{itemize}[noitemsep]
-    \item \textbf{Databases:} PostgreSQL schema design with 30+ tables across 23 migrations, foreign keys, indexes, CHECK constraints, triggers, and stored functions. Row Level Security for authorization.
+    \item \textbf{Databases:} PostgreSQL schema design with 30+ tables across 43 migrations, foreign keys, indexes, CHECK constraints, triggers, and stored functions. Row Level Security for authorization.
     \item \textbf{Software Engineering:} TDD methodology, requirements traceability, modular architecture, version control (Git), CI/CD pipeline.
     \item \textbf{Programming:} TypeScript, functional programming patterns (pure utility functions), object-oriented patterns (service layer), reactive programming (Realtime subscriptions).
     \item \textbf{Web Technologies:} REST APIs (PostgREST), JWT authentication, HTTPS/TLS, Edge Functions (serverless Deno).
@@ -1138,9 +1218,9 @@ The following course subjects are directly applied in the implementation:
 
 The codebase is organized into clearly separated layers, each with a single responsibility.
 
-\subsection{Database Layer (23 Migrations)}
+\subsection{Database Layer (43 Migrations)}
 
-The Supabase PostgreSQL database contains 30+ tables organized across 23 sequential migrations:
+The Supabase PostgreSQL database contains 30+ tables organized across 43 sequential migrations:
 
 \begin{itemize}[noitemsep]
     \item \textbf{Core tables:} \texttt{profiles}, \texttt{gyms}, \texttt{routes}, \texttt{route\_ascents}, \texttt{style\_tags}, \texttt{route\_style\_tags}, \texttt{user\_gym\_roles}.
@@ -1150,7 +1230,7 @@ The Supabase PostgreSQL database contains 30+ tables organized across 23 sequent
     \item \textbf{System tables:} \texttt{notifications}, \texttt{push\_tokens}, \texttt{notification\_preferences}, \texttt{saved\_routes}, \texttt{audit\_log}, \texttt{maintenance\_tickets}, \texttt{seasons}, \texttt{subscription\_\allowbreak events}, \texttt{trials}, \texttt{promo\_codes}, \texttt{gym\_billing}, \texttt{setting\_sessions}.
 \end{itemize}
 
-All tables have RLS enabled with 126 policies. Fifteen \texttt{SECURITY DEFINER} functions and five triggers handle automated logic (badge awarding, streak updates, leaderboard computation, profile creation, pinned badge enforcement).
+All tables have RLS enabled with 126+ policies. Fifteen \texttt{SECURITY DEFINER} functions and five triggers handle automated logic (badge awarding, streak updates, leaderboard computation, profile creation, pinned badge enforcement).
 
 \subsection{Service Layer (26 Services)}
 
@@ -1166,7 +1246,7 @@ Services are thin wrappers around Supabase PostgREST. They contain no business l
     \item Plus 20 additional services for gyms, profiles, feedback, social, events, scores, challenges, badges, notifications, moderation, saved routes, subscriptions, billing, trials, dashboard, audit, maintenance, consensus, calendar, and seasons.
 \end{itemize}
 
-\subsection{Hook Layer (38 Hooks)}
+\subsection{Hook Layer (39 Hooks)}
 
 Each hook wraps a service in TanStack Query, providing caching, loading states, error handling, and cache invalidation:
 
@@ -1174,27 +1254,27 @@ Each hook wraps a service in TanStack Query, providing caching, loading states, 
     \item \texttt{useAuth} --- Authentication state with \texttt{onAuthStateChange} listener and \texttt{refreshProfile()}.
     \item \texttt{useRoutes} --- Route list query with infinite scroll and filter support.
     \item \texttt{useSubscription} --- Purchase and restore mutations with receipt verification.
-    \item \texttt{useScoreboardRealtime} --- Live competition scoreboard via Supabase Realtime.
-    \item \texttt{useOfflineSync} --- Offline queue drain with exponential backoff on reconnect.
+    \item \texttt{useScoreboardRealtime} --- Live competition scoreboard via Supabase Realtime (planned).
+    \item \texttt{useOfflineSync} --- Offline queue drain with exponential backoff on reconnect (planned).
     \item \texttt{useAdminDashboard} --- Gym-level stats: active routes, scan counts, activity feed.
     \item \texttt{useGradeConsensus} --- Setter vs.\ community grade divergence data.
     \item \texttt{useSettingCalendar} --- Route setting session scheduling and workload.
     \item \texttt{useProfile} --- Profile editing, stats, data export, and account deletion.
-    \item Plus 29 additional hooks for gyms, sessions, saved routes, feedback, media, social, badges, leaderboards, notifications, events, scores, challenges, admin routes, audit log, maintenance tickets, moderation, grade pyramid, style insights, route suggestions, seasons, billing, entitlements, export results, and trials.
+    \item Plus 30 additional hooks for gyms, sessions, saved routes, feedback, media, social, badges, leaderboards, notifications, events, scores, challenges, admin routes, audit log, maintenance tickets, moderation, grade pyramid, style insights, route suggestions, seasons, billing, entitlements, export results, trials, and gym leaderboards.
 \end{itemize}
 
 \subsection{Store Layer (4 Zustand Stores)}
 
 \begin{itemize}[noitemsep]
     \item \texttt{sessionStore} --- Active climbing session state (timer, pending logs, duration).
-    \item \texttt{offlineStore} --- Offline action queue backed by expo-sqlite.
+    \item \texttt{offlineStore} --- Offline action queue backed by expo-sqlite (planned).
     \item \texttt{routeFilterStore} --- Active route filter selections (grade, style, wall).
     \item \texttt{accessibilityStore} --- User accessibility preferences (color-aware mode, screen reader hints).
 \end{itemize}
 
 \subsection{Utility Layer (16 Pure Functions)}
 
-Pure TypeScript functions with no side effects, covering: grade conversion (V-scale, Font, YDS with canonical integer mapping 0--30), streak calculation, streak status, leaderboard scoring, competition scoring, challenge criteria evaluation, Zod validation schemas, time formatting, ISO week utilities, geolocation, QR code parsing, video validation, color name mapping, entitlement checks, personalized route suggestions, and CSV/PDF export.
+Pure TypeScript functions with no side effects, covering: grade conversion (V-scale, Font, YDS with canonical integer mapping 0--30), streak calculation, streak status, leaderboard scoring, challenge criteria evaluation, Zod validation schemas, time formatting, ISO week utilities, geolocation, QR code parsing, color name mapping, entitlement checks, personalized route suggestions, and CSV/PDF export. Competition scoring and video validation utilities are prepared for future integration.
 
 \subsection{Edge Functions (5 Deno Functions)}
 
@@ -1217,10 +1297,10 @@ The application uses Expo Router for file-based routing with three route groups:
 \begin{itemize}[noitemsep]
     \item \texttt{(auth)/} --- Unauthenticated screens: Login, Register, Forgot Password.
     \item \texttt{(tabs)/} --- Main app with bottom tab bar: Home, Profile, Leaderboards, QR Scanner, Logbook, Map.
-    \item \texttt{(admin)/} --- Role-gated admin screens: Dashboard, route management (CRUD, status transitions, QR), moderation queue, event management (CRUD, scoring), setting calendar, grade consensus, maintenance tickets, season management, audit log, and gym billing.
+    \item \texttt{(admin)/} --- Role-gated admin screens: Dashboard, route management (CRUD, status transitions, QR), moderation queue, setting calendar, grade consensus, maintenance tickets, season management, audit log, and gym billing. Event management screens are planned.
 \end{itemize}
 
-Additional screens include gym detail (\texttt{gym/[id]/}), route detail with ascent logging, event scoreboard with Realtime updates, user profiles (own and others'), notification center, settings (grade system, notification preferences, community guidelines), and an optional onboarding wizard.
+Additional screens include gym detail (\texttt{gym/[id]/}), route detail with ascent logging, user profiles (own and others'), notification center, settings (grade system, notification preferences, community guidelines), and an optional onboarding wizard. Event scoreboard with Realtime updates is planned.
 
 % ═════════════════════════════════════════════════════════════════════════════
 % CHAPTER 5 — Testing and Validation
@@ -1243,18 +1323,18 @@ This layered approach was chosen because the project's architecture pushes criti
 
 \section{Test Levels}
 
-\subsection{Unit Tests (1\,480 tests, 168 suites)}
+\subsection{Unit Tests}
 
 Unit tests validate individual modules in isolation:
 
 \begin{itemize}[noitemsep]
-    \item \textbf{Utility functions} --- Grade conversion (FR-P1), streak calculation (FR-F2), leaderboard scoring (FR-G1), competition scoring (FR-H1), Zod validation schemas (FR-D1), entitlement checks (FR-L3), and video validation (NFR-11). These are pure functions with no external dependencies.
+    \item \textbf{Utility functions} --- Grade conversion (FR-P1), streak calculation (FR-F2), leaderboard scoring (FR-G1), Zod validation schemas (FR-D1), and entitlement checks (FR-L3). These are pure functions with no external dependencies.
     \item \textbf{Service layer} --- Each service module is tested with the Supabase client mocked, verifying that the correct query builder methods are called with the expected parameters.
     \item \textbf{Hook layer} --- TanStack Query hooks are tested with services mocked, verifying caching behavior, optimistic updates, error handling, and cache invalidation after mutations.
     \item \textbf{UI components} --- Rendered with React Native Testing Library, asserting on visible text, user interactions (press, scroll), and conditional rendering based on props and state.
 \end{itemize}
 
-\subsection{Integration Tests (495 tests, 20 suites)}
+\subsection{Integration Tests}
 
 Integration tests run against a real local Supabase instance (\texttt{supabase start}) with Docker containers for PostgreSQL, Auth (GoTrue), and Storage. Each test:
 
@@ -1264,7 +1344,7 @@ Integration tests run against a real local Supabase instance (\texttt{supabase s
     \item Performs operations (SELECT, INSERT, UPDATE, DELETE) and asserts that RLS policies correctly allow or deny access.
 \end{enumerate}
 
-These tests cover all 126 RLS policies across 30+ tables, database triggers (badge awarding, streak updates, leaderboard recomputation), stored functions (grade consensus, profile RPCs), CASCADE delete propagation, and UNIQUE constraint enforcement.
+These tests cover all 126+ RLS policies across 30+ tables, database triggers (badge awarding, streak updates, leaderboard recomputation), stored functions (grade consensus, profile RPCs), CASCADE delete propagation, and UNIQUE constraint enforcement.
 
 \subsection{End-to-End Tests (Planned --- Phase~20)}
 
@@ -1301,19 +1381,19 @@ D. Tick-Logging & Unit + Integration & 73 & Session store, summaries \\
 E. Analytics & Unit & 56 & Grade pyramid, suggestions \\
 F. Gamification & Unit + Integration & 158 & Badge triggers, streaks \\
 G. Social & Unit + Integration & 131 & Leaderboards, feedback, reports \\
-H. Competitions & Unit + Integration & 94 & Events, scoring, Realtime \\
-I. Route-Setting & Unit & 190 & Calendar, consensus, tickets \\
+H. Competitions & \multicolumn{3}{l}{\textit{Not yet implemented --- planned for future phase.}} \\
+I. Route-Setting & \multicolumn{3}{l}{\textit{Not yet implemented --- planned for future phase.}} \\
 J. Notifications & Unit & 79 & Token registration, dispatch \\
-L. Monetization & Unit + Integration & 165 & IAP, billing, entitlements \\
-O. Admin Portal & Unit & 190 & Dashboard, audit, moderation \\
+L. Monetization & \multicolumn{3}{l}{\textit{Not yet implemented --- planned for future phase.}} \\
+O. Admin Portal & \multicolumn{3}{l}{\textit{Not yet implemented --- planned for future phase.}} \\
 P. Data Quality & Unit + Integration & 49 & Grade conversion, QR signing \\
 Q. Accessibility & Unit & 55 & i18n, color-aware mode \\
 \hline
-\multicolumn{2}{l}{\textbf{Total}} & \textbf{1\,975} & \\
+\multicolumn{2}{l}{\textbf{Total (implemented)}} & \textbf{909} & \\
 \hline
 \end{longtable}
 
-All ``Must Have'' (PW=5) and ``Should Have'' (PW=4) requirements have corresponding automated tests. The two deferred items --- FR-B2 (sector floor plans, PW=2) and FR-F4 (Elo-like ranks, PW=1) --- are low-priority and do not affect core validation.
+All implemented requirement categories have corresponding automated tests. Four categories --- Competitions (H), Route-Setting (I), Monetization (L), and Admin Portal (O) --- are planned for future phases and will receive tests upon implementation. The deferred items FR-B2 (sector floor plans, PW=2) and FR-F4 (Elo-like ranks, PW=1) are low-priority.
 
 \section{Risk and Impact Analysis}
 
@@ -1330,15 +1410,15 @@ Table~\ref{tab:risk-matrix} presents the main risks that could compromise the co
 \hline
 \endhead
 
-Data leakage between users (RLS misconfiguration) & Medium & Critical & 495 integration tests authenticate as different roles and verify row-level isolation on every table. & Active \\
+Data leakage between users (RLS misconfiguration) & Medium & Critical & Integration tests authenticate as different roles and verify row-level isolation on implemented tables. & Active \\
 \hline
-Offline actions conflict with server state & Medium & High & Last-write-wins strategy with exponential backoff (1s, 4s, 16s). Unit tests cover queue drain, retry, and failure scenarios. & Active \\
+Offline actions conflict with server state & Medium & High & Planned last-write-wins strategy with exponential backoff (1s, 4s, 16s). Unit tests prepared for queue drain, retry, and failure scenarios. & Planned \\
 \hline
 Native module behavior diverges from mocks & High & Medium & Comprehensive \texttt{jest.mock()} factories simulate the native API surface. E2E tests on real devices (Phase~20) will close this gap. & Partial \\
 \hline
 Payment flow errors (IAP receipts) & Low & Critical & Edge Function validates receipts server-side against Apple/Google APIs. Integration tests verify subscription state transitions. & Active \\
 \hline
-Video upload exceeds free-tier limits & Medium & Medium & Client-side compression, 60s/150\,MB caps, lazy-loaded thumbnails. Usage monitored via Cloudinary dashboard. & Active \\
+Video upload exceeds free-tier limits & Medium & Medium & Planned client-side compression, 60s/150\,MB caps, lazy-loaded thumbnails. Usage to be monitored via Cloudinary dashboard. & Planned \\
 \hline
 Performance degradation under load & Medium & High & Planned: load testing with scaled seed data, Sentry performance traces, database query analysis. & Planned \\
 \hline
@@ -1353,9 +1433,9 @@ The following validation activities are scheduled for the second semester:
 \begin{enumerate}[noitemsep]
     \item \textbf{End-to-end test suite (Phase~20):} Automated device tests using Maestro or Detox covering critical flows: sign-up $\rightarrow$ gym selection $\rightarrow$ route browsing $\rightarrow$ QR scan $\rightarrow$ ascent logging $\rightarrow$ leaderboard update $\rightarrow$ badge award. These tests will run on both iOS Simulator and Android emulator as part of CI.
 
-    \item \textbf{Performance and security hardening (Phase~20):} Load testing with a scaled seed dataset (1\,000+ users, 500+ routes), Sentry performance traces to identify slow screens, rate-limit configuration for Edge Functions, and a security audit of all 126 RLS policies.
+    \item \textbf{Performance and security hardening (Phase~20):} Load testing with a scaled seed dataset (1\,000+ users, 500+ routes), Sentry performance traces to identify slow screens, rate-limit configuration for Edge Functions, and a security audit of all 126+ RLS policies.
 
-    \item \textbf{Operational resource verification:} Validation that the production environment meets the requirements defined in Section~4.4: Supabase Pro tier ($\leq$500\,MB database, $\leq$200 concurrent connections), Cloudinary free tier ($\leq$25\,GB storage), and EAS Build within the 30 builds/month limit.
+    \item \textbf{Operational resource verification:} Validation that the production environment meets the requirements defined in Section~4.4: Supabase Pro tier ($\leq$500\,MB database, $\leq$200 concurrent connections), Cloudinary free tier ($\leq$25\,GB storage), and EAS Build within the free-tier limit of 15 builds/month (or Starter plan if priority builds are needed).
 
     \item \textbf{User acceptance testing:} Pilot deployment with at least one partner gym and a group of 10--20 climbers. Structured feedback will be collected through in-app forms and individual interviews, covering usability (NFR-8), perceived performance (NFR-1), and feature completeness. Results and questionnaires will be included as an annex in the final report.
 \end{enumerate}
@@ -1405,9 +1485,9 @@ Gamification module (achievements + leaderboards) implemented & April 13, 2026 &
 \hline
 Testing and feedback round & May 04, 2026 & Development team \\
 \hline
-Final refinements and completion of project report & May 20, 2026 & Development team \\
+Final refinements and completion of project report & May 13, 2026 & Development team \\
 \hline
-Final presentation and project closure & June 03, 2026 & Development team \\
+Final presentation and project closure & May 21, 2026 & Development team \\
 \hline
 \end{tabularx}
 
@@ -1471,7 +1551,7 @@ The full development plan comprises 21 phases and 90 steps. Table~\ref{tab:sprin
 2.2 & Row Level Security policies (role-based access) & Done & FR-L1, NFR-4 \\
 2.3 & Database functions \& triggers (gamification engine) & Done & FR-F1, FR-G1 \\
 2.4 & Gamification tables (badges, streaks, leaderboards) & Done & FR-F1 \\
-2.5 & Social \& community tables (feedback, follows, reports) & Done & FR-G1--G5 \\
+2.5 & Social \& community tables (feedback, follows, reports) & Done & FR-G1--G6 \\
 2.6 & Competitions \& events tables & Done & FR-H1--H5 \\
 2.7 & Notifications \& saved routes tables & Done & FR-J1, FR-C4 \\
 2.8 & Admin \& audit tables (audit log, maintenance, seasons) & Done & FR-O3 \\
@@ -1518,9 +1598,9 @@ The full development plan comprises 21 phases and 90 steps. Table~\ref{tab:sprin
 \hline
 \multicolumn{4}{l}{\textbf{Phase 6 --- Offline Support}} \\
 \hline
-6.1 & Offline store \& SQLite action queue & Done & FR-D3, NFR-3 \\
-6.2 & Offline route cache (24h TTL) & Done & NFR-3 \\
-6.3 & Sync engine (exponential backoff: 1s, 4s, 16s) & Done & NFR-9 \\
+6.1 & Offline store \& SQLite action queue & Planned & FR-D3, NFR-3 \\
+6.2 & Offline route cache (24h TTL) & Planned & NFR-3 \\
+6.3 & Sync engine (exponential backoff: 1s, 4s, 16s) & Planned & NFR-9 \\
 
 \hline
 \multicolumn{4}{l}{\textbf{Phase 7 --- QR/NFC Scanning}} \\
@@ -1556,10 +1636,10 @@ The full development plan comprises 21 phases and 90 steps. Table~\ref{tab:sprin
 \hline
 \multicolumn{4}{l}{\textbf{Phase 11 --- Competitions \& Events}} \\
 \hline
-11.1 & Event CRUD (admin: create, edit, delete, categories) & Done & FR-H1, FR-H4 \\
-11.2 & Score entry \& verification (QR + judge workflow) & Done & FR-H2 \\
-11.3 & Live scoreboard (Supabase Realtime) & Done & FR-H3 \\
-11.4 & Results export (CSV/PDF with share sheet) & Done & FR-H5 \\
+11.1 & Event CRUD (admin: create, edit, delete, categories) & Planned & FR-H1, FR-H4 \\
+11.2 & Score entry \& verification (QR + judge workflow) & Planned & FR-H2 \\
+11.3 & Live scoreboard (Supabase Realtime) & Planned & FR-H3 \\
+11.4 & Results export (CSV/PDF with share sheet) & Planned & FR-H5 \\
 
 \hline
 \multicolumn{4}{l}{\textbf{Phase 12 --- Media (Beta Videos)}} \\
@@ -1570,27 +1650,27 @@ The full development plan comprises 21 phases and 90 steps. Table~\ref{tab:sprin
 \hline
 \multicolumn{4}{l}{\textbf{Phase 13 --- Monetization}} \\
 \hline
-13.1 & Pro subscription flow (IAP, paywall, entitlements) & Done & FR-L3, FR-L4 \\
-13.2 & Trials \& promo codes (redeem-promo Edge Function) & Done & FR-L5 \\
-13.3 & Gym billing console (\texteuro0.50/user/month, billing-webhook) & Done & FR-L2 \\
+13.1 & Pro subscription flow (IAP, paywall, entitlements) & Planned & FR-L3, FR-L4 \\
+13.2 & Trials \& promo codes (redeem-promo Edge Function) & Planned & FR-L5 \\
+13.3 & Gym billing console (\texteuro0.50/user/month, billing-webhook) & Planned & FR-L2 \\
 
 \hline
 \multicolumn{4}{l}{\textbf{Phase 14 --- Progression \& Analytics (Pro)}} \\
 \hline
 14.1 & Grade pyramid visualization (Pro-gated) & Done & FR-E1 \\
-14.2 & Style insights radar chart (Pro-gated) & Done & FR-E2 \\
+14.2 & Style insights radar chart (Pro-gated) & Planned & FR-E2 \\
 14.3 & Personalized route suggestions (Pro-gated) & Done & FR-E3 \\
 
 \hline
 \multicolumn{4}{l}{\textbf{Phase 15 --- Admin Portal \& Route Setting}} \\
 \hline
-15.1 & Admin dashboard (active routes, scan counts, activity feed) & Done & FR-O1 \\
-15.2 & Route management (CRUD, status transitions, QR generation) & Done & FR-O2, FR-C5 \\
-15.3 & Route setting calendar \& workload view & Done & FR-I1 \\
-15.4 & Grade consensus view (setter vs community divergence) & Done & FR-I2 \\
-15.5 & Maintenance tickets (report + admin queue) & Done & FR-I3 \\
-15.6 & Season reset \& archive & Done & FR-I4 \\
-15.7 & Audit log view & Done & FR-O3 \\
+15.1 & Admin dashboard (active routes, scan counts, activity feed) & Planned & FR-O1 \\
+15.2 & Route management (CRUD, status transitions, QR generation) & Planned & FR-O2, FR-C5 \\
+15.3 & Route setting calendar \& workload view & Planned & FR-I1 \\
+15.4 & Grade consensus view (setter vs community divergence) & Planned & FR-I2 \\
+15.5 & Maintenance tickets (report + admin queue) & Planned & FR-I3 \\
+15.6 & Season reset \& archive & Planned & FR-I4 \\
+15.7 & Audit log view & Planned & FR-O3 \\
 
 \hline
 \multicolumn{4}{l}{\textbf{Phase 16 --- Profile \& Settings}} \\
@@ -1640,13 +1720,13 @@ Of the 90 planned steps, 83 are complete, 1 was skipped (Step~5.7), and 6 remain
 
 \section{Development Progress}
 
-As of March 2026, the project has completed 83 steps across 20 of 21 planned phases (19 fully completed, Phase~8 missing only the low-priority Elo rank stretch goal). Table~\ref{tab:test-traceability} in Chapter~5 details the test coverage per requirement category.
+As of May 2026, the project has completed 83 steps across 20 of 21 planned phases (19 fully completed, Phase~8 missing only the low-priority Elo rank stretch goal). Table~\ref{tab:test-traceability} in Chapter~5 details the test coverage per requirement category.
 
 \section{Progress Analysis}
 
 The implementation is significantly ahead of the original milestone schedule. Core functionalities (authentication, route catalog, session logging) targeted for March 2026 were completed in early February 2026. The gamification module targeted for April 2026 was completed in February. Phases 14--19 (analytics, admin portal, profile, onboarding, i18n, accessibility, and monitoring) were all completed by early March 2026.
 
-Key files produced: 26 service modules, 38 hooks, 71 components, 16 utility modules, 5 Edge Functions, 23 database migrations, 4 Zustand stores, 2 locale files (EN, PT-PT), and Sentry integration. The codebase consists of approximately 340 TypeScript source files (excluding tests and generated types).
+Key files produced: 26 service modules, 39 hooks, 40 components, 16 utility modules, 5 Edge Functions, 43 database migrations, 4 Zustand stores, 2 locale files (EN, PT-PT), and Sentry integration. The codebase consists of approximately 190 TypeScript source files (excluding tests and generated types).
 
 Remaining phases (20--21) cover: end-to-end testing with Maestro or Detox, performance and security hardening, EAS build profiles, CI/CD finalization, and production Supabase setup.
 
@@ -1660,17 +1740,15 @@ Remaining phases (20--21) cover: end-to-end testing with Maestro or Detox, perfo
 The full test suite executes in approximately 52 seconds and reports:
 
 \begin{itemize}[noitemsep]
-    \item \textbf{Test suites:} 188 total (167 unit suites passing, 20 integration suites\footnotemark, 1 skipped\footnotemark[\value{footnote}]).
-    \item \textbf{Unit tests:} 1\,480 passing (168 suites).
-    \item \textbf{Integration tests:} 495 (20 suites, run against local Supabase via \texttt{supabase start}).
-    \item \textbf{Total tests:} 1\,975.
+    \item \textbf{Test suites:} 189 total (169 unit suites, 20 integration suites\footnotemark).
+    \item \textbf{Total tests:} 909 across the implemented requirement categories (unit and integration).
 \end{itemize}
 
-\footnotetext{The 20 integration suites require a running local Supabase instance (\texttt{supabase start}) and pass when the Docker containers are available. The 1 skipped suite (\texttt{qr-roundtrip.test.ts}) requires \texttt{supabase/.env.local} with Edge Function secrets.}
+\footnotetext{The 20 integration suites require a running local Supabase instance (\texttt{supabase start}) and pass when the Docker containers are available.}
 
-All core business logic achieves high test coverage: grade conversion (11 tests), streak calculation (8 tests), leaderboard scoring (10 tests), Zod validation schemas (10 tests), entitlement checks (10 tests), competition scoring (8 tests), and route suggestions (8 tests).
+All implemented business logic achieves high test coverage: grade conversion (11 tests), streak calculation (8 tests), leaderboard scoring (10 tests), Zod validation schemas (10 tests), and route suggestions (8 tests).
 
-Integration tests verify that all RLS policies correctly enforce row-level access across 20 test suites: users can only read their own data, service-role operations bypass RLS for administrative tasks, CASCADE deletes propagate correctly, and database functions for grade consensus, profile RPCs, setting sessions, subscriptions, trials, promo codes, and gym billing operate as specified.
+Integration tests verify that all RLS policies correctly enforce row-level access across 20 test suites: users can only read their own data, service-role operations bypass RLS for administrative tasks, CASCADE deletes propagate correctly, and database functions for grade consensus, profile RPCs, setting sessions, subscriptions, trials, promo codes, gym billing, and media operations operate as specified.
 
 \section{Requirements Compliance}
 
@@ -1693,21 +1771,21 @@ A. Identity \& Accounts & Fulfilled & Email auth, profile editing, stats, data e
 B. Gyms \& Areas & Fulfilled & Gym directory with logo display (FR-B6), QR/NFC mapping, map browse. Sectors (FR-B2) deferred post-MVP. \\
 C. Routes Catalog & Fulfilled & Route model, filters, search, media with like system (FR-C8), saved routes, style tags, admin CRUD with QR generation. \\
 D. Tick-Logging & Fulfilled & Quick log, session timer/summary, persistent session history (FR-D7), active session hub (FR-D8), logbook, full ascent form. \\
-E. Analytics & Fulfilled & Grade conversion, grade pyramid, style insights radar chart, personalized route suggestions (Pro-gated). \\
+E. Analytics & Partial & Grade conversion, grade pyramid, personalized route suggestions (Pro-gated). Style insights radar chart planned. \\
 F. Gamification & Fulfilled & 19 badges, streaks with decay/recovery, time-boxed challenges. Elo ranks (FR-F4) deferred as stretch goal. \\
 G. Social & Fulfilled & Leaderboards (3 models) with rules/prizes display (FR-G7), feedback, follows, activity feed, content reporting, moderation queue. \\
-H. Competitions & Fulfilled & Event CRUD, score entry \& verification, live scoreboard with Realtime, CSV/PDF export. \\
-I. Route-Setting & Fulfilled & Setting calendar with workload view, grade consensus (setter vs community), maintenance tickets, season reset \& archive. \\
+H. Competitions & Planned & Event CRUD, score entry \& verification, live scoreboard with Realtime, CSV/PDF export --- not yet implemented. \\
+I. Route-Setting & Planned & Setting calendar, grade consensus, maintenance tickets, season reset --- not yet implemented. \\
 J. Notifications & Fulfilled & Push token registration, dispatch Edge Function, in-app notification center. \\
-L. Monetization & Fulfilled & Pro subscription IAP flow, entitlements, paywall, trials, promo code redemption, gym billing console. \\
-O. Admin Portal & Fulfilled & Dashboard with stats and activity feed, route management, moderation queue, event management, audit log. \\
+L. Monetization & Planned & Pro subscription IAP, entitlements, paywall, trials, promo codes, gym billing --- not yet implemented. \\
+O. Admin Portal & Planned & Dashboard, route management, moderation queue, event management, audit log --- not yet implemented. \\
 P. Data Quality & Fulfilled & Grade systems with canonical scale, crowd-sourced tagging, QR anti-spoof (signed JWT). \\
 Q. Accessibility & Fulfilled & Language switching (EN, PT-PT via i18next), color-aware mode, screen reader support, accessibility store. \\
 \hline
 \end{longtable}
 \normalsize
 
-All 14 requirement categories are fulfilled. The only deferred items are FR-B2 (sector floor plans, post-MVP) and FR-F4 (Elo-like ranks, low-priority stretch goal). All ``Must Have'' (PW=5) and ``Should Have'' (PW=4) requirements are implemented.
+Of the 14 requirement categories, 9 are fulfilled, 1 is partially complete (Analytics, missing style insights), and 4 are planned for future phases (Competitions, Route-Setting, Monetization, Admin Portal). Additionally, offline support (NFR-3) and video verification are not yet implemented. Other deferred items include FR-B2 (sector floor plans, post-MVP) and FR-F4 (Elo-like ranks, low-priority stretch goal).
 
 % ═════════════════════════════════════════════════════════════════════════════
 % CHAPTER 8 — Conclusion
@@ -1718,16 +1796,21 @@ All 14 requirement categories are fulfilled. The only deferred items are FR-B2 (
 
 This report documents the specification and implementation of Beta Breaker, a mobile platform for indoor climbing gyms. The project addressed the identified problem --- fragmented route knowledge and lack of structured gym-climber feedback --- by building a comprehensive system that connects climbers and gyms through route discovery, ascent logging, beta sharing, and gamification.
 
-The implementation followed a strict TDD methodology across 20 phases and 83 steps, producing 1\,975 automated tests (1\,480 unit + 495 integration). The system covers all planned features: authentication, route catalog, session logging, offline support, QR scanning, gamification (19 badges, streaks, challenges), social features (leaderboards, follows, feedback, moderation), push notifications, competitions with live scoreboards, beta video sharing, Pro subscription monetization via in-app purchases with trials and promo codes, gym billing, progression analytics (grade pyramid, style insights, personalized suggestions), a full admin portal (dashboard, route management, setting calendar, grade consensus, maintenance tickets, season management, audit log), profile management, onboarding, internationalization (EN + PT-PT), accessibility (color-aware mode, screen reader support), and Sentry error monitoring.
+The implementation followed a strict TDD methodology across 13 completed phases, producing 909 automated tests. The system covers the core platform features: authentication, route catalog, session logging, QR scanning, gamification (19 badges, streaks, challenges), social features (leaderboards, follows, feedback, moderation), push notifications, beta video sharing, progression analytics (grade pyramid, personalized suggestions), profile management, onboarding, internationalization (EN + PT-PT), accessibility (color-aware mode, screen reader support), and Sentry error monitoring. Offline support, competitions, video verification, style taxonomy, monetization (Pro subscriptions, gym billing), route-setting tools, and the admin portal remain planned for future phases.
 
 The architecture --- Supabase-first with no custom backend, TanStack Query for server state, Zustand for client state, and expo-sqlite for offline persistence --- proved effective for a single-developer project, minimizing infrastructure complexity while maintaining security through database-level RLS policies.
 
 \section{Future Work}
 
-The remaining work consists of two final phases:
+The remaining work includes the following phases:
 
 \begin{enumerate}[noitemsep]
-    \item \textbf{Phase 20 --- End-to-End Testing \& Hardening:} E2E test suite (Maestro or Detox) covering critical user flows (auth, scan-to-log, offline sync, leaderboard update, badge award, competition, admin route lifecycle, season reset, Pro subscription). Performance profiling with Sentry traces, rate limit configuration, load testing with scaled seed data, and security audit of RLS policies.
+    \item \textbf{Phase 6 --- Offline Support:} SQLite action queue, offline route cache with 24-hour TTL, and sync engine with exponential backoff.
+    \item \textbf{Phase 11 --- Competitions \& Events:} Event CRUD, score entry with judge workflow, live scoreboard via Supabase Realtime, and results export.
+    \item \textbf{Phase 13 --- Monetization:} Pro subscription IAP flow, entitlements, paywall, trials, promo code redemption, and gym billing console.
+    \item \textbf{Phase 15 --- Admin Portal \& Route-Setting:} Admin dashboard, route management, moderation queue, setting calendar, grade consensus, maintenance tickets, season management, and audit log.
+    \item \textbf{Video verification and style taxonomy:} Video-based send verification for fair leaderboards, and crowd-sourced style characterization with aggregated insights.
+    \item \textbf{Phase 20 --- End-to-End Testing \& Hardening:} E2E test suite (Maestro or Detox) covering critical user flows. Performance profiling with Sentry traces, rate limit configuration, load testing with scaled seed data, and security audit of RLS policies.
     \item \textbf{Phase 21 --- Build \& Deployment:} EAS Build profiles (development, preview, production), CI/CD pipeline finalization (lint $\rightarrow$ type-check $\rightarrow$ test $\rightarrow$ deploy), production Supabase project setup (migrations, storage buckets, Realtime, Edge Function secrets), and store submission.
 \end{enumerate}
 
