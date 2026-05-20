@@ -71,17 +71,24 @@ export function useGym(gymId: string) {
 export function useFavoriteGyms(userId: string | undefined) {
   return useQuery({
     queryKey: ["favorite_gyms", userId],
+    // queryFn returns raw Supabase rows — plain objects and arrays that
+    // TanStack Query's structural sharing (replaceEqualDeep) can compare
+    // by value. This keeps the cached reference stable across background
+    // refetches when the underlying data hasn't changed.
     queryFn: async () => {
       const result = await gymService.getFavoriteGyms(userId!);
       if (result.error) throw result.error;
-      // Extract gym IDs into a Set for fast lookup, and keep
-      // the full gym objects for screens that need them.
-      const ids = new Set((result.data ?? []).map((row: any) => row.gym_id));
-      const gyms = (result.data ?? [])
-        .map((row: any) => row.gyms)
-        .filter(Boolean);
-      return { ids, gyms };
+      return result.data ?? [];
     },
+    // select derives the Set and gym array from the raw rows. TanStack
+    // Query only re-runs select when the raw data reference changes, so
+    // the Set is recreated only when favorites actually change — not on
+    // every background refetch. This prevents downstream useMemo
+    // invalidation in consumers like the map screen.
+    select: (data) => ({
+      ids: new Set(data.map((row: any) => row.gym_id as string)),
+      gyms: data.map((row: any) => row.gyms).filter(Boolean),
+    }),
     enabled: !!userId,
   });
 }

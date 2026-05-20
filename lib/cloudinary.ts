@@ -31,6 +31,38 @@ export const CLOUDINARY_UPLOAD_URL =
 const UPLOAD_PRESET = 'beta_videos';
 
 /**
+ * Inserts Cloudinary transformations into a video URL for mobile-optimized
+ * streaming. Raw upload URLs serve the original file (often 1080p+ from phone
+ * cameras), which is too large for inline mobile playback. This rewrites the
+ * URL to request a 720p-wide, auto-quality, auto-format version — typically
+ * 3-5x smaller, with no perceptible quality loss on phone screens.
+ *
+ * Transformation breakdown:
+ *   - q_auto: Cloudinary picks the optimal quality level per video
+ *   - f_auto: serves WebM on Android (smaller) and MP4 on iOS
+ *   - w_720:  720px width — matches phone viewport; avoids decoding
+ *             excess pixels that the display can't show anyway
+ *   - vc_auto: automatic codec selection (H.265 where supported)
+ *
+ * Only transforms URLs that match the Cloudinary upload pattern. Returns
+ * non-Cloudinary URLs unchanged so it's safe to call unconditionally.
+ */
+export function getOptimizedVideoUrl(rawUrl: string): string {
+  // Cloudinary upload URLs follow: .../video/upload/v<timestamp>/...
+  // Insert transformations between "upload/" and "v<timestamp>".
+  const uploadSegment = '/video/upload/';
+  const idx = rawUrl.indexOf(uploadSegment);
+  if (idx === -1) return rawUrl;
+
+  const insertPoint = idx + uploadSegment.length;
+  return (
+    rawUrl.slice(0, insertPoint) +
+    'q_auto,f_auto,w_720,vc_auto/' +
+    rawUrl.slice(insertPoint)
+  );
+}
+
+/**
  * Upload a video to Cloudinary using an unsigned preset.
  *
  * Uses FormData with the raw file URI — React Native's fetch correctly

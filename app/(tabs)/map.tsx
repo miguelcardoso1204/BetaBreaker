@@ -88,6 +88,12 @@ const DEFAULT_CENTER = {
   longitudeDelta: 5,
 };
 
+// Stable reference for the empty-favorites fallback. Without this, the
+// `?? new Set()` on every render creates a fresh object that breaks
+// useMemo dependency comparison (Object.is sees a different reference
+// each time → mappableGyms recomputes → ClusteredMapView re-clusters).
+const EMPTY_FAVORITE_IDS = new Set<string>();
+
 /** Height of a single gym list item in the bottom panel (px).
  * Each item shows name + address + hours in a py-3 (12px) padded row
  * plus a 1px bottom border. */
@@ -162,7 +168,7 @@ export default function MapScreen() {
   // ── Gyms with coordinates (for map markers) ─────────────────
   // All gyms that have valid lat/lng get a marker on the map.
   // Favorites toggle optionally limits to the user's favorited gyms.
-  const favoriteIds = favData?.ids ?? new Set<string>();
+  const favoriteIds = favData?.ids ?? EMPTY_FAVORITE_IDS;
   const mappableGyms = useMemo(() => {
     if (!gyms) return [];
 

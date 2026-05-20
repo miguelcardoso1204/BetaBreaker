@@ -88,6 +88,15 @@
 \end{subfigure}
 }
 
+% ── Helper to include app screenshots from prints/ ──────────────────────────
+\newcommand{\screenshot}[2]{%
+\begin{subfigure}[t]{0.48\textwidth}
+  \centering
+  \includegraphics[width=0.92\linewidth]{prints/#1}
+  \caption{#2}
+\end{subfigure}
+}
+
 % ── Longtable layout ────────────────────────────────────────────────────────
 \setlength\LTleft{0pt plus 1fil}
 \setlength\LTright{0pt plus 1fil}
@@ -1300,6 +1309,63 @@ The application uses Expo Router for file-based routing with three route groups:
 \end{itemize}
 
 Additional screens include gym detail (\texttt{gym/[id]/}), route detail with ascent logging, user profiles (own and others'), notification center, settings (grade system, notification preferences, community guidelines), and an optional onboarding wizard. Event scoreboard with Realtime updates is planned.
+
+Figures~\ref{fig:screens-core}--\ref{fig:screens-misc} present screenshots captured from the running application on a physical device.
+
+% -------------------- CORE: HOME + PROFILE --------------------
+\begin{figure}[!htbp]
+\centering
+\screenshot{home.PNG}{Home screen with activity feed.}\hfill
+\screenshot{profile.PNG}{User profile with stats and sessions.}
+\caption{Core screens.}
+\label{fig:screens-core}
+\end{figure}
+
+% -------------------- DISCOVERY: MAP + GYM --------------------
+\begin{figure}[p]
+\centering
+\screenshot{map.PNG}{Map-based gym discovery.}\hfill
+\screenshot{gym_page.PNG}{Gym detail screen.}
+\caption{Gym discovery screens.}
+\label{fig:screens-gyms}
+\end{figure}
+
+% -------------------- ROUTES: LIST + DETAIL --------------------
+\begin{figure}[p]
+\centering
+\screenshot{gyn_routes.PNG}{Route list with grade filters.}\hfill
+\screenshot{route.PNG}{Route detail with beta tips and videos.}
+\caption{Route browsing screens.}
+\label{fig:screens-routes}
+\end{figure}
+
+% -------------------- SESSION: GYM GUESS + ACTIVE SESSION --------------------
+\begin{figure}[p]
+\centering
+\screenshot{gym_guess.PNG}{Location-based gym suggestion.}\hfill
+\screenshot{session.PNG}{Active climbing session with timer.}
+\caption{Session screens.}
+\label{fig:screens-session}
+\end{figure}
+
+% -------------------- LEADERBOARDS: USER + GYM + DETAIL --------------------
+\begin{figure}[p]
+\centering
+\screenshot{user_leaderboards.PNG}{Global leaderboard overview.}\hfill
+\screenshot{leaderboards.PNG}{Gym leaderboard list.}
+\caption{Leaderboard screens.}
+\label{fig:screens-leaderboards}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\screenshot{leaderboard.PNG}{Leaderboard detail with rankings.}\hfill
+\screenshot{settings.PNG}{Settings screen.}
+\caption{Leaderboard detail and settings screens.}
+\label{fig:screens-misc}
+\end{figure}
+
+\FloatBarrier
 
 % ═════════════════════════════════════════════════════════════════════════════
 % CHAPTER 5 — Testing and Validation

@@ -53,6 +53,7 @@ import { FeedbackItem } from "@/components/social/FeedbackItem";
 import { ReportSheet } from "@/components/social/ReportSheet";
 import { useRouteMedia, useLikeMedia, useDeleteMedia } from "@/hooks/useMedia";
 import { useSessionStore } from "@/stores/sessionStore";
+import { getOptimizedVideoUrl } from "@/lib/cloudinary";
 import type { RouteStatus } from "@/lib/constants";
 
 /**
@@ -459,7 +460,7 @@ export default function RouteDetailScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <BetaVideoPlayer
-              url={item.url}
+              url={getOptimizedVideoUrl(item.url)}
               uploaderName={item.profile?.display_name ?? "Unknown"}
               uploaderAvatarUrl={item.profile?.avatar_url ?? undefined}
               uploadDate={new Date(item.created_at).toLocaleDateString()}
